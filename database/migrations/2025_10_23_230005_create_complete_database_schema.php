@@ -226,6 +226,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Create behavior_categories table
+        Schema::create('behavior_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
         // Create behaviors table
         Schema::create('behaviors', function (Blueprint $table) {
             $table->id();
@@ -239,15 +248,6 @@ return new class extends Migration
             $table->text('intervention')->nullable();
             $table->text('outcome')->nullable();
             $table->foreignId('reported_by')->constrained('users')->onDelete('cascade');
-            $table->timestamps();
-        });
-
-        // Create behavior_categories table
-        Schema::create('behavior_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 
