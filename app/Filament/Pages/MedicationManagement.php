@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Filament\Pages;
+
+use Filament\Pages\Page;
+use App\Filament\Widgets\MedicationStatsWidget;
+use App\Filament\Widgets\ActiveMedicationsWidget;
+use App\Filament\Widgets\RecentMedicationsWidget;
+
+class MedicationManagement extends Page
+{
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+    protected static string $view = 'filament.pages.medication-management';
+    protected static ?string $title = 'Medication Management';
+    protected static ?string $navigationLabel = 'Medication Management';
+    protected static ?int $navigationSort = 4;
+
+    public function getWidgets(): array
+    {
+        return [
+            MedicationStatsWidget::class,
+            ActiveMedicationsWidget::class,
+            RecentMedicationsWidget::class,
+        ];
+    }
+}
+
