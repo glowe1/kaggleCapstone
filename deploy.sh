@@ -1,19 +1,4 @@
-#!/bin/bash
 
-# Laravel Forge Deployment Script for Edmond Serenity AFH
-# This script will be run automatically by Forge on each deployment
-
-echo "🚀 Starting deployment for Edmond Serenity AFH..."
-
-# Exit on any error
-set -e
-
-# Navigate to the application directory
-cd /home/forge/your-domain.com
-
-# Pull the latest code from the repository
-echo "📥 Pulling latest code from repository..."
-git pull origin master
 
 # Install/update Composer dependencies
 echo "📦 Installing Composer dependencies..."
