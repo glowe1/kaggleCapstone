@@ -37,20 +37,18 @@ return new class extends Migration
 
     private function dropAllTables(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        // Disable foreign key checks for SQLite
+        DB::statement('PRAGMA foreign_keys = OFF');
         
-        $tables = DB::select('SHOW TABLES');
-        $databaseName = DB::getDatabaseName();
-        $tableColumn = 'Tables_in_' . $databaseName;
+        // For SQLite, we need to get table names differently
+        $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('migrations', 'sqlite_sequence')");
         
         foreach ($tables as $table) {
-            $tableName = $table->$tableColumn;
-            if ($tableName !== 'migrations') {
-                DB::statement('DROP TABLE IF EXISTS ' . $tableName);
-            }
+            DB::statement('DROP TABLE IF EXISTS ' . $table->name);
         }
         
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Re-enable foreign key checks
+        DB::statement('PRAGMA foreign_keys = ON');
     }
 
     private function createUsersTable(): void
