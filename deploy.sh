@@ -1,27 +1,14 @@
 #!/bin/bash
 
 # Laravel Forge Deployment Script for Edmond Serenity AFH
-# This script will be run automatically by Forge on each deployment
-
-# echo "🚀 Starting deployment for Edmond Serenity AFH..."
+echo "🚀 Starting deployment for Edmond Serenity AFH..."
 
 # Exit on any error
-# set -e
-
-# Navigate to the application directory
-# cd /home/forge/evergreen-v5ywe0w6.on-forge.com
-
-# Pull the latest code from the repository
-# echo "📥 Pulling latest code from repository..."
-# git pull origin master
+set -e
 
 # Install/update Composer dependencies
 echo "📦 Installing Composer dependencies..."
 composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-
-# Run Filament upgrade after Composer install
-echo "🔧 Running Filament upgrade..."
-php artisan filament:upgrade --force
 
 # Install/update NPM dependencies and build assets
 echo "🎨 Building frontend assets..."
@@ -49,9 +36,15 @@ php artisan event:cache
 # Clear application cache
 php artisan cache:clear
 
-# Restart PHP-FPM
+# Restart PHP-FPM (try different versions)
 echo "🔄 Restarting PHP-FPM..."
-sudo service php8.3-fpm restart
+if command -v php8.3-fpm &> /dev/null; then
+    sudo service php8.3-fpm restart
+elif command -v php8.4-fpm &> /dev/null; then
+    sudo service php8.4-fpm restart
+else
+    sudo service php-fpm restart
+fi
 
 # Restart queue workers (if using queues)
 echo "🔄 Restarting queue workers..."
