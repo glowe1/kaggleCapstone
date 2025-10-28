@@ -31,6 +31,7 @@ class AssessmentPage extends Page implements HasForms, HasActions
     protected static ?string $title = 'Create Assessment';
     protected static ?string $navigationGroup = 'Assessment Management';
     protected static string $view = 'filament.pages.assessment';
+    protected static bool $shouldRegisterNavigation = false;
 
     public ?array $data = [];
     public ?int $selectedBranchId = null;
