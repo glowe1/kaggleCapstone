@@ -17,25 +17,28 @@ class DatabaseSeeder extends Seeder
             // Essential production seeders (run first)
             UnifiedProductionSeeder::class,
             
-            // Additional data seeders (for development/testing)
-            CaregiverSeeder::class,
-            ResidentSeeder::class,
-            AssessmentSeeder::class,
-            AssignmentSeeder::class,
-            VitalSignSeeder::class,
-            MedicationSeeder::class,
-            MedicationAdministrationSeeder::class,
-            AppointmentTypeSeeder::class,
-            AppointmentSeeder::class,
-            SleepPatternSeeder::class,
-            SleepRecordSeeder::class,
-            SleepHourlyDataSeeder::class,
-            BehaviorCategorySeeder::class,
-            BehaviorSeeder::class,
-            IncidentSeeder::class,
-            EmployeeDocumentSeeder::class,
-            HealthcareProviderSeeder::class,
-            LeaveRequestSeeder::class,
+            // Comprehensive data seeder (creates all tables with realistic data)
+            ComprehensiveSeeder::class,
+            
+            // Additional specialized seeders (if needed)
+            // CaregiverSeeder::class,
+            // ResidentSeeder::class,
+            // AssessmentSeeder::class,
+            // AssignmentSeeder::class,
+            // VitalSignSeeder::class,
+            // MedicationSeeder::class,
+            // MedicationAdministrationSeeder::class,
+            // AppointmentTypeSeeder::class,
+            // AppointmentSeeder::class,
+            // SleepPatternSeeder::class,
+            // SleepRecordSeeder::class,
+            // SleepHourlyDataSeeder::class,
+            // BehaviorCategorySeeder::class,
+            // BehaviorSeeder::class,
+            // IncidentSeeder::class,
+            // EmployeeDocumentSeeder::class,
+            // HealthcareProviderSeeder::class,
+            // LeaveRequestSeeder::class,
         ]);
     }
 }
