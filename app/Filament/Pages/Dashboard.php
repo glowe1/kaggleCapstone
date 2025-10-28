@@ -12,7 +12,12 @@ class Dashboard extends Page
     protected static ?string $title = 'Dashboard';
     protected static ?string $navigationLabel = 'Dashboard';
     protected static ?int $navigationSort = -1000;
-    protected static ?string $navigationGroup = 'Dashboard';
+    protected static ?string $navigationGroup = null;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false; // We handle navigation via CustomNavigationProvider
+    }
 
     public function mount(): void
     {

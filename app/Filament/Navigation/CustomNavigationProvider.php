@@ -15,7 +15,7 @@ class CustomNavigationProvider
             ->items([
                 // Dashboard - First item
                 NavigationItem::make('Dashboard')
-                    ->icon('heroicon-o-chart-bar')
+                    ->icon('heroicon-o-home')
                     ->url(route('filament.admin.pages.dashboard'))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.pages.dashboard'))
                     ->sort(-1000),
