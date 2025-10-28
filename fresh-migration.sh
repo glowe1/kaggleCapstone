@@ -3,7 +3,8 @@
 # Fresh Migration Script for Production
 echo "🔄 Starting fresh migration..."
 
-# Navigate to the application directory
+# Navigate to the application directory  
+# Update this path to match your production server path
 cd /home/forge/evergreen-gpga9pd.on-forge.com
 
 # Pull the latest code
