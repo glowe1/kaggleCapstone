@@ -77,7 +77,7 @@ class RoleResource extends Resource
                             ->label('Select Permissions')
                             ->relationship('permissions', 'name')
                             ->options(function () {
-                                return \App\Models\Permission::orderBy('group')->orderBy('name')->get()
+                                return \App\Models\Permission::orderBy('name')->get()
                                     ->mapWithKeys(function ($permission) {
                                         $label = $permission->name;
                                         if ($permission->description) {
