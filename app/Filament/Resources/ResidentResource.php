@@ -22,8 +22,8 @@ class ResidentResource extends Resource
     protected static ?string $navigationLabel = 'Residents';
     protected static ?string $modelLabel = 'Resident';
     protected static ?string $pluralModelLabel = 'Residents';
-    protected static ?string $navigationGroup = 'Resident Care';
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?string $navigationGroup = null; // Top-level navigation item
+    protected static bool $shouldRegisterNavigation = true;
 
     public static function canViewAny(): bool
     {
