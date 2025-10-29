@@ -42,12 +42,11 @@ class CustomNavigationProvider
                         request()->is('admin/vital-signs*'))
                     ->sort(40),
 
-                // Medications - Fifth item
-                NavigationItem::make('Medications')
-                    ->icon('heroicon-o-pill')
-                    ->url('/admin/medications')
-                    ->isActiveWhen(fn (): bool => request()->is('admin/medications*') || 
-                        request()->is('admin/medication-administrations*'))
+                // Medication Management - Fifth item
+                NavigationItem::make('Medication Management')
+                    ->icon('heroicon-o-cube')
+                    ->url(route('filament.admin.pages.medication-management'))
+                    ->isActiveWhen(fn ampere(): bool => request()->routeIs('filament.admin.pages.medication-management'))
                     ->sort(50),
 
                 // Sleep - Sixth item
