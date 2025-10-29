@@ -27,21 +27,14 @@ class CustomNavigationProvider
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.assessments.*'))
                     ->sort(20),
 
-                // Residents - Third item
-                NavigationItem::make('Residents')
-                    ->icon('heroicon-o-users')
-                    ->url(route('filament.admin.resources.residents.index'))
-                    ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.residents.*'))
-                    ->sort(25),
-
-                // Appointment - Fourth item
+                // Appointment - Third item
                 NavigationItem::make('Appointment')
                     ->icon('heroicon-o-calendar-days')
                     ->url(route('filament.admin.resources.appointments.index'))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.appointments.*'))
                     ->sort(30),
 
-                // Vitals - Fifth item
+                // Vitals - Fourth item
                 NavigationItem::make('Vitals')
                     ->icon('heroicon-o-heart')
                     ->url('/admin/view-vitals')
@@ -49,21 +42,21 @@ class CustomNavigationProvider
                         request()->is('admin/vital-signs*'))
                     ->sort(40),
 
-                // Medication - Sixth item
+                // Medication - Fifth item
                 NavigationItem::make('Medication')
                     ->icon('heroicon-o-cube')
                     ->url(route('filament.admin.pages.medication-management'))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.pages.medication-management'))
                     ->sort(50),
 
-                // Sleep - Seventh item
+                // Sleep - Sixth item
                 NavigationItem::make('Sleep')
                     ->icon('heroicon-o-moon')
                     ->url(route('filament.admin.resources.sleep-records.index'))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.sleep-records.*'))
                     ->sort(60),
 
-                // Reports (with dropdown) - Eighth item
+                // Reports (with dropdown) - Seventh item
                 NavigationItem::make('Reports')
                     ->icon('heroicon-o-chart-bar-square')
                     ->url('#')
