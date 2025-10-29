@@ -27,7 +27,7 @@ class FixAdminRoles extends Command
      * Execute the console command.
      */
     public function handle()
-   Margin {
+    {
         $this->info('🔧 Fixing admin user roles...');
         $this->line('');
 
