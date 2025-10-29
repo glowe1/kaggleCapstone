@@ -11,28 +11,56 @@ use App\Models\LeaveRequest;
 
 class ActivityStatsWidget extends BaseWidget
 {
+    protected int | string | array $columnSpan = 'full';
+
     protected function getStats(): array
     {
-        return [
-            Stat::make('Pending Assessments', Assessment::where('completion_percentage', '<', 100)->count())
-                ->description('Awaiting completion')
-                ->descriptionIcon('heroicon-m-document-text')
-                ->color('warning'),
-            
-            Stat::make('Today\'s Vitals', VitalSign::whereDate('measurement_date', today())->count())
-                ->description('Vital signs recorded')
-                ->descriptionIcon('heroicon-m-heart')
-                ->color('danger'),
-            
-            Stat::make('Upcoming Appointments', Appointment::whereDate('appointment_date', '>=', today())->count())
-                ->description('Scheduled appointments')
-                ->descriptionIcon('heroicon-m-calendar-days')
-                ->color('info'),
-            
-            Stat::make('Pending Leave Requests', LeaveRequest::where('status', 'pending')->count())
-                ->description('Awaiting approval')
-                ->descriptionIcon('heroicon-m-clock')
-                ->color('warning'),
-        ];
+        try {
+            return [
+                Stat::make('Pending Assessments', $this->safeCount(function() {
+                    return Assessment::where('completion_percentage', '<', 100);
+                }))
+                    ->description('Awaiting completion')
+                    ->descriptionIcon('heroicon-m-document-text')
+                    ->color('warning'),
+                
+                Stat::make('Today\'s Vitals', $this->safeCount(function() {
+                    return VitalSign::whereDate('measurement_date', today());
+                }))
+                    ->description('Vital signs recorded')
+                    ->descriptionIcon('heroicon-m-heart')
+                    ->color('danger'),
+                
+                Stat::make('Upcoming Appointments', $this->safeCount(function() {
+                    return Appointment::whereDate('appointment_date', '>=', today());
+                }))
+                    ->description('Scheduled appointments')
+                    ->descriptionIcon('heroicon-m-calendar-days')
+                    ->color('info'),
+                
+                Stat::make('Pending Leave Requests', $this->safeCount(function() {
+                    return LeaveRequest::where('status', 'pending');
+                }))
+                    ->description('Awaiting approval')
+                    ->descriptionIcon('heroicon-m-clock')
+                    ->color('warning'),
+            ];
+        } catch (\Exception $e) {
+            \Log::error('ActivityStatsWidget error: ' . $e->getMessage());
+            return [
+                Stat::make('Error', 'N/A')
+                    ->description('Unable to load stats')
+                    ->color('danger'),
+            ];
+        }
+    }
+
+    private function safeCount(callable $callback)
+    {
+        try {
+            return $callback()->count();
+        } catch (\Exception $e) {
+            return 0;
+        }
     }
 }
