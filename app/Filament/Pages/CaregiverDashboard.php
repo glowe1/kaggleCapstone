@@ -104,7 +104,10 @@ class CaregiverDashboard extends Page
         
         // Group by day
         $vitalSignsByDay = $vitalSigns->groupBy(function($item) {
-            return $item->measurement_date->format('Y-m-d');
+            $date = $item->measurement_date instanceof Carbon
+                ? $item->measurement_date
+                : Carbon::parse($item->measurement_date);
+            return $date->format('Y-m-d');
         });
         
         // Create chart data
@@ -131,7 +134,10 @@ class CaregiverDashboard extends Page
             $dateStr = $date->format('Y-m-d');
             
             $dayAssessments = $assessments->filter(function($item) use ($dateStr) {
-                return $item->created_at->format('Y-m-d') === $dateStr;
+                $createdAt = $item->created_at instanceof Carbon
+                    ? $item->created_at
+                    : Carbon::parse($item->created_at);
+                return $createdAt->format('Y-m-d') === $dateStr;
             });
             
             $assessmentData[] = $dayAssessments->count();
@@ -359,12 +365,16 @@ class CaregiverDashboard extends Page
 
         return $residents->map(function($resident) {
             $latestVitals = $resident->vitalSigns->first();
+            $measurementDate = $latestVitals?->measurement_date;
+            if ($measurementDate && !($measurementDate instanceof Carbon)) {
+                $measurementDate = Carbon::parse($measurementDate);
+            }
             return [
                 'id' => $resident->id,
                 'name' => $resident->name,
                 'room' => $resident->room,
-                'branch' => $resident->branch->name,
-                'last_vitals' => $latestVitals ? $latestVitals->measurement_date->format('M d, Y H:i') : 'N/A',
+                'branch' => $resident->branch->name ?? 'N/A',
+                'last_vitals' => $measurementDate ? $measurementDate->format('M d, Y H:i') : 'N/A',
                 'health_status' => $this->getHealthStatus($latestVitals),
             ];
         })->toArray();
