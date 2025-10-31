@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -38,6 +39,7 @@ class UserProfile extends Page implements HasForms
         $this->form->fill([
             'name' => $user->name,
             'email' => $user->email,
+            'profile_image' => $user->profile_image,
             'first_name' => $user->first_name,
             'middle_names' => $user->middle_names,
             'last_name' => $user->last_name,
@@ -69,6 +71,22 @@ class UserProfile extends Page implements HasForms
                             ->disabled()
                             ->dehydrated()
                             ->helperText('Full name is automatically generated from first, middle, and last names'),
+                        
+                        FileUpload::make('profile_image')
+                            ->label('Profile Picture')
+                            ->image()
+                            ->imageEditor()
+                            ->imageEditorAspectRatios([
+                                null,
+                                '16:9',
+                                '4:3',
+                                '1:1',
+                            ])
+                            ->maxSize(5120)
+                            ->disk('public')
+                            ->directory('profile-images')
+                            ->visibility('private')
+                            ->helperText('Upload a profile picture (max 5MB)'),
                         
                         TextInput::make('first_name')
                             ->label('First Name')
