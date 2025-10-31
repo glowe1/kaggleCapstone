@@ -57,8 +57,6 @@ class MedicationAdministrationResource extends Resource
                             ->preload()
                             ->required()
                             ->placeholder('Choose a branch')
-                            ->disabled()
-                            ->dehydrated()
                             ->live(),
                         
                         Forms\Components\Select::make('resident_id')
@@ -77,8 +75,6 @@ class MedicationAdministrationResource extends Resource
                             ->searchable()
                             ->required()
                             ->placeholder('Choose a resident')
-                            ->disabled()
-                            ->dehydrated()
                             ->live(),
                         
                         Forms\Components\Select::make('medication_id')
@@ -97,8 +93,6 @@ class MedicationAdministrationResource extends Resource
                             ->searchable()
                             ->required()
                             ->placeholder('Choose a medication')
-                            ->disabled()
-                            ->dehydrated()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if ($state) {
@@ -236,11 +230,6 @@ class MedicationAdministrationResource extends Resource
                             })
                             ->visible(fn (callable $get) => $get('medication_id'))
                             ->columnSpanFull(),
-                        
-                        // Hidden field to ensure resident_id is always included
-                        Forms\Components\Hidden::make('resident_id')
-                            ->required()
-                            ->dehydrated(),
                     ])
                     ->columns(2),
                     
