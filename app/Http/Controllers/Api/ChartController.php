@@ -35,27 +35,54 @@ class ChartController extends Controller
     }
 
     // Vitals Charts
-    public function vitalsStats(): JsonResponse
+    public function vitalsStats(Request $request): JsonResponse
     {
+        $branchId = $request->get('branch_id');
+        $residentId = $request->get('resident_id');
+        
+        $query = VitalSign::query();
+        
+        if ($branchId) {
+            $query->whereHas('resident', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        if ($residentId) {
+            $query->where('resident_id', $residentId);
+        }
+        
         $stats = [
-            'total_vitals' => VitalSign::count(),
-            'today_vitals' => VitalSign::whereDate('measurement_date', today())->count(),
-            'week_vitals' => VitalSign::whereBetween('measurement_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
-            'month_vitals' => VitalSign::whereMonth('measurement_date', Carbon::now()->month)->count(),
-            'trends' => $this->getVitalsTrends(),
-            'blood_pressure' => $this->getBloodPressureData(),
-            'temperature' => $this->getTemperatureData(),
+            'total_vitals' => $query->count(),
+            'today_vitals' => $query->whereDate('measurement_date', today())->count(),
+            'week_vitals' => $query->whereBetween('measurement_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
+            'month_vitals' => $query->whereMonth('measurement_date', Carbon::now()->month)->count(),
+            'trends' => $this->getVitalsTrends($branchId, $residentId),
+            'blood_pressure' => $this->getBloodPressureData($branchId, $residentId),
+            'temperature' => $this->getTemperatureData($branchId, $residentId),
         ];
 
         return response()->json($stats);
     }
 
-    private function getVitalsTrends(): array
+    private function getVitalsTrends($branchId = null, $residentId = null): array
     {
         $last7Days = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i);
-            $count = VitalSign::whereDate('measurement_date', $date)->count();
+            $query = VitalSign::whereDate('measurement_date', $date);
+            
+            if ($branchId) {
+                $query->whereHas('resident', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            }
+            
+            if ($residentId) {
+                $query->where('resident_id', $residentId);
+            }
+            
+            $count = $query->count();
             $last7Days[] = [
                 'date' => $date->format('M j'),
                 'count' => $count
@@ -64,11 +91,22 @@ class ChartController extends Controller
         return $last7Days;
     }
 
-    private function getBloodPressureData(): array
+    private function getBloodPressureData($branchId = null, $residentId = null): array
     {
-        $vitals = VitalSign::whereNotNull('systolic')
-            ->whereNotNull('diastolic')
-            ->latest('measurement_date')
+        $query = VitalSign::whereNotNull('systolic')
+            ->whereNotNull('diastolic');
+        
+        if ($branchId) {
+            $query->whereHas('resident', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        if ($residentId) {
+            $query->where('resident_id', $residentId);
+        }
+        
+        $vitals = $query->latest('measurement_date')
             ->limit(50)
             ->get();
         
@@ -79,10 +117,21 @@ class ChartController extends Controller
         ];
     }
 
-    private function getTemperatureData(): array
+    private function getTemperatureData($branchId = null, $residentId = null): array
     {
-        $vitals = VitalSign::whereNotNull('temperature')
-            ->latest('measurement_date')
+        $query = VitalSign::whereNotNull('temperature');
+        
+        if ($branchId) {
+            $query->whereHas('resident', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        if ($residentId) {
+            $query->where('resident_id', $residentId);
+        }
+        
+        $vitals = $query->latest('measurement_date')
             ->limit(50)
             ->get();
         
@@ -93,28 +142,55 @@ class ChartController extends Controller
     }
 
     // Assessment Charts
-    public function assessmentStats(): JsonResponse
+    public function assessmentStats(Request $request): JsonResponse
     {
+        $branchId = $request->get('branch_id');
+        $residentId = $request->get('resident_id');
+        
+        $query = Assessment::query();
+        
+        if ($branchId) {
+            $query->whereHas('resident', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        if ($residentId) {
+            $query->where('resident_id', $residentId);
+        }
+        
         $stats = [
-            'total_assessments' => Assessment::count(),
-            'completed_assessments' => Assessment::where('status', 'approved')->count(),
-            'pending_assessments' => Assessment::whereNotIn('status', ['approved', 'archived'])->count(),
-            'this_month' => Assessment::whereMonth('created_at', Carbon::now()->month)->count(),
-            'by_type' => Assessment::selectRaw('assessment_type, COUNT(*) as count')
+            'total_assessments' => $query->count(),
+            'completed_assessments' => $query->where('status', 'approved')->count(),
+            'pending_assessments' => (clone $query)->whereNotIn('status', ['approved', 'archived'])->count(),
+            'this_month' => (clone $query)->whereMonth('created_at', Carbon::now()->month)->count(),
+            'by_type' => (clone $query)->selectRaw('assessment_type, COUNT(*) as count')
                 ->groupBy('assessment_type')
                 ->get(),
-            'completion_trends' => $this->getAssessmentTrends(),
+            'completion_trends' => $this->getAssessmentTrends($branchId, $residentId),
         ];
 
         return response()->json($stats);
     }
 
-    private function getAssessmentTrends(): array
+    private function getAssessmentTrends($branchId = null, $residentId = null): array
     {
         $last7Days = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i);
-            $count = Assessment::whereDate('assessment_date', $date)->count();
+            $query = Assessment::whereDate('assessment_date', $date);
+            
+            if ($branchId) {
+                $query->whereHas('resident', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            }
+            
+            if ($residentId) {
+                $query->where('resident_id', $residentId);
+            }
+            
+            $count = $query->count();
             $last7Days[] = [
                 'date' => $date->format('M j'),
                 'count' => $count
@@ -124,28 +200,55 @@ class ChartController extends Controller
     }
 
     // Appointments Charts
-    public function appointmentStats(): JsonResponse
+    public function appointmentStats(Request $request): JsonResponse
     {
+        $branchId = $request->get('branch_id');
+        $residentId = $request->get('resident_id');
+        
+        $query = Appointment::query();
+        
+        if ($branchId) {
+            $query->whereHas('resident', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        if ($residentId) {
+            $query->where('resident_id', $residentId);
+        }
+        
         $stats = [
-            'total_appointments' => Appointment::count(),
-            'upcoming' => Appointment::where('appointment_date', '>=', Carbon::today())->count(),
-            'completed' => Appointment::where('status', 'completed')->count(),
-            'pending' => Appointment::where('status', 'scheduled')->count(),
-            'by_status' => Appointment::selectRaw('status, COUNT(*) as count')
+            'total_appointments' => $query->count(),
+            'upcoming' => (clone $query)->where('appointment_date', '>=', Carbon::today())->count(),
+            'completed' => (clone $query)->where('status', 'completed')->count(),
+            'pending' => (clone $query)->where('status', 'scheduled')->count(),
+            'by_status' => (clone $query)->selectRaw('status, COUNT(*) as count')
                 ->groupBy('status')
                 ->get(),
-            'trends' => $this->getAppointmentTrends(),
+            'trends' => $this->getAppointmentTrends($branchId, $residentId),
         ];
 
         return response()->json($stats);
     }
 
-    private function getAppointmentTrends(): array
+    private function getAppointmentTrends($branchId = null, $residentId = null): array
     {
         $last7Days = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i);
-            $count = Appointment::whereDate('appointment_date', $date)->count();
+            $query = Appointment::whereDate('appointment_date', $date);
+            
+            if ($branchId) {
+                $query->whereHas('resident', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            }
+            
+            if ($residentId) {
+                $query->where('resident_id', $residentId);
+            }
+            
+            $count = $query->count();
             $last7Days[] = [
                 'date' => $date->format('M j'),
                 'count' => $count
