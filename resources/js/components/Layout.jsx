@@ -19,7 +19,9 @@ import {
     ClipboardList,
     Settings,
     ChevronDown,
-    ChevronRight
+    ChevronRight,
+    Menu,
+    X
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -68,6 +70,7 @@ export default function Layout() {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [expandedMenus, setExpandedMenus] = useState({});
     const [currentUser, setCurrentUser] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Fetch current user data
     useEffect(() => {
@@ -84,8 +87,25 @@ export default function Layout() {
 
     return (
         <div className="flex h-screen bg-gray-50">
+            {/* Mobile menu backdrop */}
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                ></div>
+            )}
+            
             {/* Sidebar */}
-            <aside className="w-64 bg-slate-800 text-white flex flex-col">
+            <aside className={`fixed md:relative inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+                mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            } w-64 bg-slate-800 text-white flex flex-col`}>
+                {/* Mobile close button */}
+                <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="md:hidden absolute top-4 right-4 text-white hover:text-gray-300"
+                >
+                    <X className="w-6 h-6" />
+                </button>
                 {/* Logo */}
                 <div className="p-6 border-b border-slate-700">
                     <div className="flex items-center space-x-3">
@@ -150,6 +170,7 @@ export default function Layout() {
                                                         <Link
                                                             key={child.path}
                                                             to={child.path}
+                                                            onClick={() => setMobileMenuOpen(false)}
                                                             className={`block px-4 py-2 rounded-lg transition-colors text-sm ${
                                                                 isChildActive
                                                                     ? 'bg-slate-700 text-white'
@@ -166,6 +187,7 @@ export default function Layout() {
                                 ) : (
                                     <Link
                                         to={item.path}
+                                        onClick={() => setMobileMenuOpen(false)}
                                         className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                                             isActive
                                                 ? 'bg-[#2D5016] text-white shadow-md'
@@ -183,11 +205,19 @@ export default function Layout() {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
                 {/* Top Bar */}
-                <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
-                    <h1 className="text-xl font-semibold text-gray-900">Healthcare Management System</h1>
-                    <div className="flex items-center space-x-4">
+                <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center space-x-3">
+                        <button
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="md:hidden text-gray-700 hover:text-gray-900"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                        <h1 className="text-lg md:text-xl font-semibold text-gray-900">Healthcare Management System</h1>
+                    </div>
+                    <div className="flex items-center space-x-2 md:space-x-4">
                         <NotificationDropdown />
                         <div className="relative">
                             <button
@@ -237,10 +267,10 @@ export default function Layout() {
                     </div>
                 </header>
 
-                {/* Page Content */}
-                <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-                    <Outlet />
-                </main>
+                    {/* Page Content */}
+                    <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
+                        <Outlet />
+                    </main>
             </div>
         </div>
     );

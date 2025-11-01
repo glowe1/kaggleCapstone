@@ -182,7 +182,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#F5F5DC] to-[#E6E6D4]">
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
                 {error && (
                     <div className="mb-6 bg-white rounded-xl shadow-lg border-l-4 border-amber-500 p-4">
                         <div className="flex items-center space-x-3">
@@ -205,25 +205,25 @@ export default function Dashboard() {
                     <>
                         {/* Modern Welcome Card */}
                         <div className="mb-8 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-                            <div className="p-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-4">
+                            <div className="p-4 md:p-6">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                    <div className="flex items-center space-x-4 mb-4 md:mb-0">
                                         <div className="relative">
                                             <div className="absolute inset-0 bg-gradient-to-br from-[#2D5016] to-[#4a7a2a] rounded-xl blur-sm opacity-50"></div>
-                                            <div className="relative w-16 h-16 bg-gradient-to-br from-[#2D5016] to-[#4a7a2a] rounded-xl flex items-center justify-center">
-                                                <Sparkles className="w-8 h-8 text-white" />
+                                            <div className="relative w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-[#2D5016] to-[#4a7a2a] rounded-xl flex items-center justify-center">
+                                                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
                                             </div>
                                         </div>
                                         <div>
-                                            <h1 className="text-2xl font-bold text-[#2D5016]">
+                                            <h1 className="text-xl md:text-2xl font-bold text-[#2D5016]">
                                                 {greeting}, {currentUser?.first_name || currentUser?.name || 'User'} 👋
                                             </h1>
-                                            <p className="text-sm text-gray-600 mt-1">
+                                            <p className="text-xs md:text-sm text-gray-600 mt-1">
                                                 {isCaregiver ? 'Welcome to your Care Dashboard' : 'Welcome to the Admin Dashboard'}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left md:text-right">
                                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Last Login</p>
                                         <p className="text-sm font-semibold text-[#8B4513]">
                                             {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
