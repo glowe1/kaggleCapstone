@@ -885,42 +885,42 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
         <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
             <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto my-8">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-[#2D5016] to-[#4a7a2a] p-8 text-white rounded-t-xl">
-                    <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center space-x-6">
+                <div className="bg-gradient-to-r from-[#2D5016] to-[#4a7a2a] p-4 md:p-8 text-white rounded-t-xl">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-4 md:space-y-0">
+                        <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-4 md:space-y-0">
                             {/* Profile Picture */}
                             {user.profile_image_url ? (
                                 <img
                                     src={user.profile_image_url}
                                     alt={user.name}
-                                    className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                                    className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-lg mx-auto md:mx-0"
                                     onError={(e) => {
                                         e.target.style.display = 'none';
                                         e.target.nextElementSibling.style.display = 'flex';
                                     }}
                                 />
                             ) : null}
-                            <div className={`w-32 h-32 rounded-full bg-white flex items-center justify-center border-4 border-white shadow-lg ${user.profile_image_url ? 'hidden' : ''}`}>
-                                <span className="text-[#2D5016] font-bold text-5xl">
+                            <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full bg-white flex items-center justify-center border-4 border-white shadow-lg ${user.profile_image_url ? 'hidden' : ''} mx-auto md:mx-0`}>
+                                <span className="text-[#2D5016] font-bold text-4xl md:text-5xl">
                                     {user.name?.charAt(0)?.toUpperCase() || 'U'}
                                 </span>
                             </div>
-                            <div>
-                                <h2 className="text-3xl font-bold mb-2">{user.name || user.email}</h2>
+                            <div className="text-center md:text-left">
+                                <h2 className="text-2xl md:text-3xl font-bold mb-2">{user.name || user.email}</h2>
                                 {user.position && (
-                                    <p className="text-xl text-green-100">{user.position}</p>
+                                    <p className="text-lg md:text-xl text-green-100">{user.position}</p>
                                 )}
                                 {user.email && (
-                                    <div className="flex items-center space-x-2 mt-2 text-green-50">
+                                    <div className="flex items-center justify-center md:justify-start space-x-2 mt-2 text-sm md:text-base text-green-50">
                                         <Mail className="w-4 h-4" />
-                                        <span>{user.email}</span>
+                                        <span className="break-all">{user.email}</span>
                                     </div>
                                 )}
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-white hover:text-green-200 transition-colors"
+                            className="text-white hover:text-green-200 transition-colors absolute top-4 right-4 md:relative md:top-0 md:right-0"
                         >
                             <X className="w-6 h-6" />
                         </button>
@@ -928,14 +928,14 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                 </div>
 
                 {/* Body */}
-                <div className="p-8">
+                <div className="p-4 md:p-8">
                     {/* Personal Information */}
-                    <div className="mb-8">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <div className="mb-6 md:mb-8">
+                        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4 flex items-center">
                             <UserIcon className="w-5 h-5 mr-2 text-[#2D5016]" />
                             Personal Information
                         </h3>
-                        <div className="bg-gray-50 rounded-lg p-6">
+                        <div className="bg-gray-50 rounded-lg p-4 md:p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {user.first_name && (
                                     <div>
@@ -996,12 +996,12 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                     </div>
 
                     {/* Employment Details */}
-                    <div className="mb-8">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <div className="mb-6 md:mb-8">
+                        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4 flex items-center">
                             <Briefcase className="w-5 h-5 mr-2 text-[#2D5016]" />
                             Employment Details
                         </h3>
-                        <div className="bg-gray-50 rounded-lg p-6">
+                        <div className="bg-gray-50 rounded-lg p-4 md:p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {user.role && (
                                     <div>
@@ -1080,15 +1080,15 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                     {/* Additional Information */}
                     {user.notes && (
                         <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-4">Additional Notes</h3>
-                            <div className="bg-gray-50 rounded-lg p-6">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Additional Notes</h3>
+                            <div className="bg-gray-50 rounded-lg p-4 md:p-6">
                                 <p className="text-gray-700 whitespace-pre-wrap">{user.notes}</p>
                             </div>
                         </div>
                     )}
 
                     {/* Action Buttons */}
-                    <div className="mt-8 flex justify-between items-center">
+                    <div className="mt-6 md:mt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-0">
                         <div className="flex items-center space-x-4">
                             <span className="text-sm text-gray-600">Account Status:</span>
                             <label className="flex items-center cursor-pointer">
@@ -1115,10 +1115,10 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                                 </span>
                             </label>
                         </div>
-                        <div className="flex space-x-3">
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
                             <button
                                 onClick={onClose}
-                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto"
                             >
                                 Close
                             </button>
@@ -1127,7 +1127,7 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                                     onClose();
                                     if (onEdit) onEdit(user);
                                 }}
-                                className="px-6 py-2 bg-[#2D5016] text-white rounded-lg hover:bg-[#1a3009] transition-colors flex items-center space-x-2"
+                                className="px-6 py-2 bg-[#2D5016] text-white rounded-lg hover:bg-[#1a3009] transition-colors flex items-center justify-center space-x-2 w-full sm:w-auto"
                             >
                                 <Edit className="w-4 h-4" />
                                 <span>Edit User</span>

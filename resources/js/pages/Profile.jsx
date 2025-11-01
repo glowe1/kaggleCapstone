@@ -216,65 +216,73 @@ export default function Profile() {
             {/* Profile Content */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Personal Information */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                        <UserIcon className="w-5 h-5 mr-2 text-[#2D5016]" />
-                        Personal Information
-                    </h3>
-                    <div className="space-y-4">
-                        {isEditing ? (
-                            <EditPersonalInfo user={editedUser} setUser={setEditedUser} />
-                        ) : (
-                            <ViewPersonalInfo user={user} />
-                        )}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden border-l-4 border-l-[#2D5016]">
+                    <div className="p-6">
+                        <h3 className="text-lg font-bold text-[#2D5016] mb-4 flex items-center">
+                            <UserIcon className="w-5 h-5 mr-2" />
+                            Personal Information
+                        </h3>
+                        <div className="space-y-4">
+                            {isEditing ? (
+                                <EditPersonalInfo user={editedUser} setUser={setEditedUser} />
+                            ) : (
+                                <ViewPersonalInfo user={user} />
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Employment Details */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                        <Briefcase className="w-5 h-5 mr-2 text-[#2D5016]" />
-                        Employment Details
-                    </h3>
-                    <div className="space-y-4">
-                        {isEditing ? (
-                            <EditEmploymentInfo user={editedUser} setUser={setEditedUser} />
-                        ) : (
-                            <ViewEmploymentInfo user={user} />
-                        )}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden border-l-4 border-l-[#8B4513]">
+                    <div className="p-6">
+                        <h3 className="text-lg font-bold text-[#2D5016] mb-4 flex items-center">
+                            <Briefcase className="w-5 h-5 mr-2" />
+                            Employment Details
+                        </h3>
+                        <div className="space-y-4">
+                            {isEditing ? (
+                                <EditEmploymentInfo user={editedUser} setUser={setEditedUser} />
+                            ) : (
+                                <ViewEmploymentInfo user={user} />
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Contact Information */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                        <Phone className="w-5 h-5 mr-2 text-[#2D5016]" />
-                        Contact Information
-                    </h3>
-                    <div className="space-y-4">
-                        {isEditing ? (
-                            <EditContactInfo user={editedUser} setUser={setEditedUser} />
-                        ) : (
-                            <ViewContactInfo user={user} />
-                        )}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden border-l-4 border-l-[#4a7a2a]">
+                    <div className="p-6">
+                        <h3 className="text-lg font-bold text-[#2D5016] mb-4 flex items-center">
+                            <Phone className="w-5 h-5 mr-2" />
+                            Contact Information
+                        </h3>
+                        <div className="space-y-4">
+                            {isEditing ? (
+                                <EditContactInfo user={editedUser} setUser={setEditedUser} />
+                            ) : (
+                                <ViewContactInfo user={user} />
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Additional Information */}
                 {user.notes && (
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">Additional Notes</h3>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            {isEditing ? (
-                                <textarea
-                                    value={editedUser?.notes || ''}
-                                    onChange={(e) => setEditedUser({...editedUser, notes: e.target.value})}
-                                    rows={5}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
-                                />
-                            ) : (
-                                <p className="text-gray-700 whitespace-pre-wrap">{user.notes}</p>
-                            )}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden border-l-4 border-l-[#a0522d]">
+                        <div className="p-6">
+                            <h3 className="text-lg font-bold text-[#2D5016] mb-4">Additional Notes</h3>
+                            <div className="bg-gray-50 rounded-lg p-4">
+                                {isEditing ? (
+                                    <textarea
+                                        value={editedUser?.notes || ''}
+                                        onChange={(e) => setEditedUser({...editedUser, notes: e.target.value})}
+                                        rows={5}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                                    />
+                                ) : (
+                                    <p className="text-gray-700 whitespace-pre-wrap">{user.notes}</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
