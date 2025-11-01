@@ -118,6 +118,17 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // Convert empty strings to null for date fields before validation
+        $input = $request->all();
+        foreach (['date_of_birth', 'date_employed', 'hire_date'] as $dateField) {
+            if (isset($input[$dateField]) && $input[$dateField] === '') {
+                $input[$dateField] = null;
+            }
+        }
+        
+        // Replace request data with cleaned input for validation
+        $request->merge($input);
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
@@ -126,13 +137,13 @@ class UserController extends Controller
             'middle_names' => 'nullable|string|max:255',
             'last_name' => 'sometimes|required|string|max:255',
             'phone_number' => 'sometimes|required|string|max:50',
-            'date_of_birth' => 'sometimes|required|date|before:' . now()->subYears(18)->format('Y-m-d'),
+            'date_of_birth' => 'nullable|date|before:' . now()->subYears(18)->format('Y-m-d'),
             'marital_status' => 'nullable|string|max:50',
             'sex' => 'sometimes|required|string|in:male,female,other',
             'position' => 'sometimes|required|string|max:255',
             'credentials' => 'nullable|string|max:255',
             'credential_details' => 'nullable|string',
-            'date_employed' => 'sometimes|required|date|before_or_equal:today',
+            'date_employed' => 'nullable|date|before_or_equal:today',
             'hire_date' => 'nullable|date',
             'supervisor_name' => 'nullable|string|max:255',
             'provider_name' => 'nullable|string|max:255',
