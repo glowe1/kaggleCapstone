@@ -32,22 +32,7 @@ const navigation = [
     { name: 'Vitals', icon: Heart, path: '/vitals', children: null },
     { name: 'Medication', icon: Pill, path: '/medications', children: null },
     { name: 'Sleep', icon: Moon, path: '/sleep', children: null },
-    { 
-        name: 'Reports', 
-        icon: FileText, 
-        path: '/reports', 
-        children: [
-            { name: 'Chart Reports', path: '/reports/charts' },
-            { name: 'Resident Charts', path: '/reports/resident-charts' },
-            { name: 'Vitals Charts', path: '/reports/vitals-charts' },
-            { name: 'Vitals Reports', path: '/reports/vitals-reports' },
-            { name: 'Assessment Charts', path: '/reports/assessment-charts' },
-            { name: 'Appointments Charts', path: '/reports/appointments-charts' },
-            { name: 'Vitals History', path: '/reports/vitals-history' },
-            { name: 'Sleep Charts', path: '/reports/sleep-charts' },
-            { name: 'Staff Charts', path: '/reports/staff-charts' },
-        ]
-    },
+    { name: 'Reports', icon: FileText, path: '/reports', children: null },
     { 
         name: 'Administration', 
         icon: Settings, 
