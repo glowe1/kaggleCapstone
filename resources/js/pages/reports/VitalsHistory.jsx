@@ -23,16 +23,7 @@ export default function VitalsHistory() {
         },
     });
 
-    if (isLoading) {
-        return (
-            <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D5016]"></div>
-                <p className="mt-4 text-gray-600">Loading vitals history...</p>
-            </div>
-        );
-    }
-
-    // Process data for charts
+    // Process data for charts - must be called unconditionally before early return
     const chartData = React.useMemo(() => {
         if (!vitalsData?.data?.length) return null;
 
@@ -48,6 +39,15 @@ export default function VitalsHistory() {
             pulse: sorted.filter(v => v.pulse).map(v => v.pulse),
         };
     }, [vitalsData]);
+
+    if (isLoading) {
+        return (
+            <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D5016]"></div>
+                <p className="mt-4 text-gray-600">Loading vitals history...</p>
+            </div>
+        );
+    }
 
     return (
         <div>
