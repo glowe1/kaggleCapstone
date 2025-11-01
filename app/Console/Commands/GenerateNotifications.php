@@ -56,7 +56,7 @@ class GenerateNotifications extends Command
 
         // Get appointments in the next 7 days
         $appointments = Appointment::with(['resident.assignments.caregiver'])
-            ->where('status', 'scheduled')
+            ->whereIn('status', ['scheduled', 'confirmed'])
             ->whereBetween('appointment_date', [$now->toDateString(), $now->copy()->addDays(7)->toDateString()])
             ->get();
 
@@ -79,7 +79,7 @@ class GenerateNotifications extends Command
                 $exists = Notification::where('user_id', $caregiver->id)
                     ->where('type', 'appointment_upcoming')
                     ->whereJsonContains('metadata->appointment_id', $appointment->id)
-                    ->where('created_at', '>=', $now->subDay())
+                    ->where('created_at', '>=', $now->copy()->subDay())
                     ->exists();
 
                 if (!$exists) {
