@@ -116,6 +116,36 @@ function initApp() {
     }
 }
 
+// Suppress Cloudflare cookie warnings (harmless, just noisy)
+const originalWarn = console.warn;
+console.warn = function(...args) {
+    const message = args.join(' ').toString();
+    if (message.includes('Cookie "_cf_bm"') || 
+        message.includes('Cookie "__cf_bm"') || 
+        message.includes('Cookie "cf_clearance"') ||
+        message.includes('Cookie "_cf_bm') ||
+        message.includes('Cookie "__cf_bm')) {
+        // Suppress Cloudflare cookie warnings
+        return;
+    }
+    originalWarn.apply(console, args);
+};
+
+const originalError = console.error;
+console.error = function(...args) {
+    const message = args.join(' ').toString();
+    if (message.includes('Cookie "_cf_bm"') || 
+        message.includes('Cookie "__cf_bm"') || 
+        message.includes('Cookie "cf_clearance"') ||
+        message.includes('Cookie "_cf_bm') ||
+        message.includes('Cookie "__cf_bm') ||
+        message.includes('has been rejected for invalid domain')) {
+        // Suppress Cloudflare cookie errors
+        return;
+    }
+    originalError.apply(console, args);
+};
+
 // Initialize immediately - don't wait for DOMContentLoaded
 // This ensures React initializes as soon as the script loads
 console.log('app.jsx file loaded, readyState:', document.readyState);
