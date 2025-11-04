@@ -15,6 +15,7 @@ import Assessments from './pages/Assessments';
 import AssessmentDetail from './pages/AssessmentDetail';
 import AssessmentReview from './pages/AssessmentReview';
 import Sleep from './pages/Sleep';
+import SleepPatterns from './pages/SleepPatterns';
 import Facilities from './pages/Facilities';
 import Branches from './pages/Branches';
 import VitalRanges from './pages/VitalRanges';
@@ -59,6 +60,7 @@ function App() {
                 <Route path="vitals" element={<Vitals />} />
                 <Route path="medications" element={<Medications />} />
                 <Route path="sleep" element={<Sleep />} />
+                <Route path="sleep-patterns" element={<SleepPatterns />} />
                 
                 {/* Reports */}
                 <Route path="reports" element={<Reports />} />

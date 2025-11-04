@@ -31,7 +31,15 @@ const navigation = [
     { name: 'Appointment', icon: Calendar, path: '/appointments', children: null },
     { name: 'Vitals', icon: Heart, path: '/vitals', children: null },
     { name: 'Medication', icon: Pill, path: '/medications', children: null },
-    { name: 'Sleep', icon: Moon, path: '/sleep', children: null },
+    { 
+        name: 'Sleep', 
+        icon: Moon, 
+        path: '/sleep', 
+        children: [
+            { name: 'Sleep Records', path: '/sleep' },
+            { name: 'Sleep Pattern', path: '/sleep-patterns' },
+        ]
+    },
     { name: 'Reports', icon: FileText, path: '/reports', children: null },
     { 
         name: 'Administration', 

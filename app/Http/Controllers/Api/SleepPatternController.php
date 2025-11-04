@@ -1,0 +1,241 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\SleepPattern;
+use App\Models\SleepRecord;
+use App\Models\SleepHourlyData;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
+
+class SleepPatternController extends Controller
+{
+    public function getPattern(Request $request): JsonResponse
+    {
+        $request->validate([
+            'resident_id' => 'required|exists:residents,id',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2020|max:2100',
+        ]);
+
+        $residentId = $request->get('resident_id');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        // Get or create sleep pattern for this month/year
+        $pattern = SleepPattern::where('resident_id', $residentId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->with(['resident', 'hourlyData'])
+            ->first();
+
+        if (!$pattern) {
+            // Calculate pattern from sleep records
+            $pattern = $this->calculatePattern($residentId, $month, $year);
+        }
+
+        // Get daily sleep records for the chart
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $sleepRecords = SleepRecord::where('resident_id', $residentId)
+            ->whereBetween('sleep_date', [$startDate, $endDate])
+            ->orderBy('sleep_date', 'asc')
+            ->get();
+
+        // Format daily data for chart
+        $dailyData = [];
+        foreach ($sleepRecords as $record) {
+            $day = Carbon::parse($record->sleep_date)->day;
+            $sleepHours = (float) $record->total_sleep_hours;
+            $awakeHours = 24 - $sleepHours;
+            
+            $dailyData[] = [
+                'day' => $day,
+                'sleep_hours' => $sleepHours,
+                'awake_hours' => $awakeHours,
+                'total_hours' => 24,
+            ];
+        }
+
+        // Get hourly distribution if available
+        $hourlyDistribution = [];
+        if ($pattern && $pattern->hourlyData) {
+            $hourlyData = $pattern->hourlyData;
+            for ($i = 0; $i < 24; $i++) {
+                $hour = str_pad($i, 2, '0', STR_PAD_LEFT);
+                $hourlyDistribution[] = [
+                    'hour' => $hour,
+                    'percentage' => (float) $hourlyData->getHourValue($i),
+                ];
+            }
+        } else {
+            // Calculate from records if no hourly data
+            $hourlyDistribution = $this->calculateHourlyDistribution($sleepRecords);
+        }
+
+        // Get key observations
+        $keyObservations = $this->getKeyObservations($pattern, $sleepRecords);
+
+        return response()->json([
+            'pattern' => $pattern,
+            'daily_data' => $dailyData,
+            'hourly_distribution' => $hourlyDistribution,
+            'key_observations' => $keyObservations,
+        ]);
+    }
+
+    private function calculatePattern($residentId, $month, $year)
+    {
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $sleepRecords = SleepRecord::where('resident_id', $residentId)
+            ->whereBetween('sleep_date', [$startDate, $endDate])
+            ->get();
+
+        if ($sleepRecords->isEmpty()) {
+            return null;
+        }
+
+        $totalSleepHours = $sleepRecords->sum('total_sleep_hours');
+        $totalAwakeHours = (24 * $sleepRecords->count()) - $totalSleepHours;
+        $avgSleepHours = $totalSleepHours / $sleepRecords->count();
+        $daysWithRecords = $sleepRecords->unique('sleep_date')->count();
+
+        // Get most common sleep and wake times
+        $sleepTimes = $sleepRecords->pluck('sleep_time')->filter();
+        $wakeTimes = $sleepRecords->pluck('wake_time')->filter();
+
+        $commonSleepTime = $this->getMostCommonTime($sleepTimes);
+        $commonWakeTime = $this->getMostCommonTime($wakeTimes);
+
+        // Calculate sleep quality score (average of sleep quality ratings if available)
+        $qualityScores = $sleepRecords->where('sleep_quality', '!=', null)->pluck('sleep_quality');
+        $sleepQualityScore = $qualityScores->isNotEmpty() 
+            ? round(($qualityScores->avg() / 10) * 100) 
+            : null;
+
+        // Create or update pattern
+        $pattern = SleepPattern::updateOrCreate(
+            [
+                'resident_id' => $residentId,
+                'month' => $month,
+                'year' => $year,
+            ],
+            [
+                'total_sleep_hours' => round($totalSleepHours, 2),
+                'total_awake_hours' => round($totalAwakeHours, 2),
+                'avg_sleep_hours' => round($avgSleepHours, 2),
+                'days_with_records' => $daysWithRecords,
+                'common_sleep_time' => $commonSleepTime,
+                'common_wake_time' => $commonWakeTime,
+                'sleep_quality_score' => $sleepQualityScore,
+            ]
+        );
+
+        return $pattern->load('resident');
+    }
+
+    private function getMostCommonTime($times)
+    {
+        if ($times->isEmpty()) {
+            return null;
+        }
+
+        // Group by hour:minute and count
+        $timeCounts = $times->map(function ($time) {
+            if (is_string($time)) {
+                return substr($time, 0, 5); // Get HH:mm format
+            }
+            return Carbon::parse($time)->format('H:i');
+        })->countBy();
+
+        $mostCommon = $timeCounts->sort()->keys()->last();
+        return $mostCommon ? $mostCommon . ':00' : null;
+    }
+
+    private function calculateHourlyDistribution($sleepRecords)
+    {
+        $hourlyCounts = array_fill(0, 24, 0);
+        $totalRecords = $sleepRecords->count();
+
+        foreach ($sleepRecords as $record) {
+            $sleepTime = Carbon::parse($record->sleep_time);
+            $wakeTime = Carbon::parse($record->wake_time);
+            
+            if ($wakeTime->lessThan($sleepTime)) {
+                $wakeTime->addDay();
+            }
+
+            $current = $sleepTime->copy();
+            while ($current->lessThan($wakeTime)) {
+                $hour = (int) $current->format('H');
+                $hourlyCounts[$hour]++;
+                $current->addHour();
+            }
+        }
+
+        $distribution = [];
+        for ($i = 0; $i < 24; $i++) {
+            $percentage = $totalRecords > 0 ? ($hourlyCounts[$i] / $totalRecords) * 100 : 0;
+            $distribution[] = [
+                'hour' => str_pad($i, 2, '0', STR_PAD_LEFT),
+                'percentage' => round($percentage, 2),
+            ];
+        }
+
+        return $distribution;
+    }
+
+    private function getKeyObservations($pattern, $sleepRecords)
+    {
+        $observations = [];
+
+        if ($sleepRecords->isEmpty()) {
+            return ['No sleep records found for this period.'];
+        }
+
+        // Find deepest sleep hours
+        if ($pattern && $pattern->hourlyData) {
+            $hourlyData = $pattern->hourlyData;
+            $hourlyValues = [];
+            for ($i = 0; $i < 24; $i++) {
+                $hourlyValues[$i] = (float) $hourlyData->getHourValue($i);
+            }
+            arsort($hourlyValues);
+            $topHours = array_slice(array_keys($hourlyValues), 0, 3);
+            $deepestHours = array_map(function($h) {
+                return str_pad($h, 2, '0', STR_PAD_LEFT) . ':00';
+            }, $topHours);
+            $observations[] = 'Deepest sleep hours: ' . implode(', ', $deepestHours);
+        }
+
+        // Sleep pattern quality
+        if ($pattern) {
+            $avgHours = $pattern->avg_sleep_hours;
+            if ($avgHours >= 7 && $avgHours <= 9) {
+                $observations[] = 'Sleep pattern shows normal transitions between sleep and wakefulness.';
+            } elseif ($avgHours < 6) {
+                $observations[] = 'Sleep duration may be below recommended levels.';
+            } elseif ($avgHours > 10) {
+                $observations[] = 'Extended sleep duration observed.';
+            }
+
+            if ($pattern->sleep_quality_score) {
+                if ($pattern->sleep_quality_score >= 80) {
+                    $observations[] = 'Overall sleep quality appears good.';
+                } elseif ($pattern->sleep_quality_score >= 60) {
+                    $observations[] = 'Sleep quality is moderate.';
+                } else {
+                    $observations[] = 'Sleep quality may need attention.';
+                }
+            }
+        }
+
+        return $observations;
+    }
+}
+

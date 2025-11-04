@@ -69,6 +69,7 @@ Route::prefix('v1')->group(function () {
 
     // Sleep Records
     Route::apiResource('sleep-records', SleepRecordController::class)->middleware('auth:sanctum');
+    Route::get('sleep-patterns', [\App\Http\Controllers\Api\SleepPatternController::class, 'getPattern'])->middleware('auth:sanctum');
 
     // Facilities & Branches
     Route::apiResource('facilities', FacilityController::class)->middleware('auth:sanctum');
