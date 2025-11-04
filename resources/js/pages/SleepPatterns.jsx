@@ -427,7 +427,10 @@ export default function SleepPatterns() {
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm text-gray-700">Healthy sleep pattern</span>
                                             <span className="text-sm font-medium text-gray-900">
-                                                {patternData.pattern?.avg_sleep_hours || 0} hrs
+                                                {(patternData.pattern?.avg_sleep_hours ?? 
+                                                    (patternData.daily_data && patternData.daily_data.length > 0 
+                                                        ? (patternData.daily_data.reduce((sum, d) => sum + d.sleep_hours, 0) / patternData.daily_data.length) 
+                                                        : 0)).toFixed(1)} hrs
                                             </span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-3">
@@ -440,15 +443,6 @@ export default function SleepPatterns() {
                                                             : 0)) / 10 * 100, 100)}%`
                                                 }}
                                             ></div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="text-sm text-gray-700">Healthy sleep pattern</span>
-                                            <span className="text-sm font-medium text-gray-900">
-                                                {(patternData.pattern?.avg_sleep_hours ?? 
-                                                    (patternData.daily_data && patternData.daily_data.length > 0 
-                                                        ? (patternData.daily_data.reduce((sum, d) => sum + d.sleep_hours, 0) / patternData.daily_data.length) 
-                                                        : 0)).toFixed(1)} hrs
-                                            </span>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 mt-4">
