@@ -589,12 +589,21 @@ function HourlyHeatmap({ data }) {
         );
     }
 
+    // Helper function to safely convert to number
+    const toNumber = (value) => {
+        if (value === null || value === undefined) return 0;
+        const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+        return isNaN(num) ? 0 : num;
+    };
+
     // Get the maximum percentage for color scaling
-    const maxPercentage = Math.max(...data.map(d => d.percentage || 0), 1);
+    const percentages = data.map(d => toNumber(d.percentage));
+    const maxPercentage = Math.max(...percentages, 1);
 
     // Function to get color intensity based on percentage
     const getColor = (percentage) => {
-        const intensity = Math.min(percentage / maxPercentage, 1);
+        const numPercentage = toNumber(percentage);
+        const intensity = Math.min(numPercentage / maxPercentage, 1);
         // Use purple gradient from light to dark
         const opacity = 0.3 + (intensity * 0.7); // Range from 0.3 to 1.0
         return `rgba(147, 51, 234, ${opacity})`;
@@ -602,13 +611,14 @@ function HourlyHeatmap({ data }) {
 
     // Function to get text color based on background
     const getTextColor = (percentage) => {
-        const intensity = percentage / maxPercentage;
+        const numPercentage = toNumber(percentage);
+        const intensity = numPercentage / maxPercentage;
         return intensity > 0.5 ? 'text-white' : 'text-gray-700';
     };
 
     // Format hour for display (12-hour format with AM/PM)
     const formatHour = (hour) => {
-        const hourNum = parseInt(hour);
+        const hourNum = parseInt(hour) || 0;
         if (hourNum === 0) return '12 AM';
         if (hourNum < 12) return `${hourNum} AM`;
         if (hourNum === 12) return '12 PM';
@@ -647,8 +657,8 @@ function HourlyHeatmap({ data }) {
             {/* Heatmap Grid */}
             <div className="grid grid-cols-12 gap-2 mb-6">
                 {data.map((item, index) => {
-                    const hour = parseInt(item.hour);
-                    const percentage = item.percentage || 0;
+                    const hour = parseInt(item.hour) || 0;
+                    const percentage = toNumber(item.percentage);
                     const isNewPeriod = hour % 6 === 0;
 
                     return (
@@ -683,11 +693,12 @@ function HourlyHeatmap({ data }) {
             {/* Time Period Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 {timePeriods.map((period) => {
-                    const periodData = data.filter(item => 
-                        period.hours.includes(parseInt(item.hour))
-                    );
+                    const periodData = data.filter(item => {
+                        const hour = parseInt(item.hour) || 0;
+                        return period.hours.includes(hour);
+                    });
                     const avgPercentage = periodData.length > 0
-                        ? periodData.reduce((sum, item) => sum + (item.percentage || 0), 0) / periodData.length
+                        ? periodData.reduce((sum, item) => sum + toNumber(item.percentage), 0) / periodData.length
                         : 0;
 
                     return (
