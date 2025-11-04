@@ -42,8 +42,28 @@ class CreateVitalRange extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
+        // Check if parameter already exists
+        $existing = static::getModel()::where('parameter', $data['parameter'])->first();
+        if ($existing) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'parameter' => 'A vital range with this parameter already exists. Please edit the existing record instead.',
+            ]);
+        }
+
         try {
             return static::getModel()::create($data);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Handle unique constraint violation
+            if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'parameter' => 'A vital range with this parameter already exists. Please edit the existing record instead.',
+                ]);
+            }
+            \Log::error('VitalRange creation failed: ' . $e->getMessage(), [
+                'data' => $data,
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         } catch (\Exception $e) {
             \Log::error('VitalRange creation failed: ' . $e->getMessage(), [
                 'data' => $data,
