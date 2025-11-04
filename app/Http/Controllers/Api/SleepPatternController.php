@@ -221,6 +221,15 @@ class SleepPatternController extends Controller
             ? round(($qualityScores->avg() / 10) * 100) 
             : null;
 
+        // Get branch_id from the first sleep record (all records for a resident should have the same branch_id)
+        $branchId = $sleepRecords->first()->branch_id ?? null;
+        
+        // If branch_id is not in sleep records, try to get it from the resident
+        if (!$branchId) {
+            $resident = \App\Models\Resident::find($residentId);
+            $branchId = $resident->branch_id ?? null;
+        }
+
         // Create or update pattern
         $pattern = SleepPattern::updateOrCreate(
             [
@@ -229,6 +238,7 @@ class SleepPatternController extends Controller
                 'year' => $year,
             ],
             [
+                'branch_id' => $branchId,
                 'total_sleep_hours' => round($totalSleepHours, 2),
                 'total_awake_hours' => round($totalAwakeHours, 2),
                 'avg_sleep_hours' => round($avgSleepHours, 2),

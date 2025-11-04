@@ -11,6 +11,7 @@ class SleepPattern extends Model
 
     protected $fillable = [
         'resident_id',
+        'branch_id',
         'month',
         'year',
         'total_sleep_hours',
