@@ -11,6 +11,8 @@ class CustomNavigationProvider
 {
     public function __invoke(NavigationBuilder $builder): NavigationBuilder
     {
+        // Replace all navigation items with our custom navigation
+        // This prevents auto-discovered resources from showing up
         return $builder
             ->items([
                 // Dashboard - First item

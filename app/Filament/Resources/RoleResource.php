@@ -22,7 +22,7 @@ class RoleResource extends Resource
     protected static ?string $modelLabel = 'Role';
     protected static ?string $pluralModelLabel = 'Roles';
     protected static ?string $navigationGroup = 'Administration';
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false; // Handled by CustomNavigationProvider
 
     public static function canViewAny(): bool
     {
