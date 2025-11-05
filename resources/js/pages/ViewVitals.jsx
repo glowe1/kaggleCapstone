@@ -332,11 +332,6 @@ export default function ViewVitals() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-                <h1 className="text-3xl font-bold text-[#2D5016]">Resident Vitals</h1>
-            </div>
-
             <div className="p-6">
                 {/* Filters */}
                 <div className="bg-white rounded-lg shadow p-4 mb-6">
