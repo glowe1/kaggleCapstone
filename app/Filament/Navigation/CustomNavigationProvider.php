@@ -11,43 +11,9 @@ class CustomNavigationProvider
 {
     public function __invoke(NavigationBuilder $builder): NavigationBuilder
     {
-        // First, get existing items and filter out auto-discovered Administration resources
-        $existingItems = $builder->getItems();
-        
-        // Filter out any items that are in Administration group and user doesn't have permission
-        $filteredItems = collect($existingItems)->filter(function ($item) {
-            // If it's an auto-discovered resource item, check its group
-            if (method_exists($item, 'getGroup')) {
-                $group = $item->getGroup();
-                if ($group === 'Administration') {
-                    // Check if user has permission to see this
-                    if (!auth()->check()) {
-                        return false;
-                    }
-                    $user = auth()->user();
-                    
-                    // Caregivers should NEVER see Administration resources
-                    if ($user->hasRole('caregiver') || $user->role === 'caregiver' || $user->role === 'care_giver') {
-                        return false;
-                    }
-                    
-                    // Check if user has admin permissions
-                    return $user->hasPermission('view_users') ||
-                        $user->hasPermission('view_facilities') ||
-                        $user->hasPermission('view_branches') ||
-                        $user->hasPermission('view_vital_ranges') ||
-                        $user->hasPermission('view_roles') ||
-                        $user->hasRole('administrator') ||
-                        $user->hasRole('super_admin');
-                }
-            }
-            return true;
-        })->toArray();
-        
-        // Replace all navigation items with our custom navigation
-        // This prevents auto-discovered resources from showing up
-        return $builder
-            ->items([
+        // COMPLETELY REPLACE navigation - don't use auto-discovered items
+        // This ensures caregivers can't see Administration menu
+        $items = [
                 // Dashboard - First item
                 NavigationItem::make('Dashboard')
                     ->icon('heroicon-o-home')
@@ -147,12 +113,23 @@ class CustomNavigationProvider
                             ->icon('heroicon-o-chart-bar')
                             ->url(route('filament.admin.pages.staff-charts'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.pages.staff-charts')),
-                    ]),
-
-                // Administration (with dropdown) - Eighth item
-                // Only show if user has at least one administrative permission
-                // CAREGIVERS SHOULD NOT SEE THIS - they only have view_leave_requests which is for their own requests
-                NavigationItem::make('Administration')
+                    ]);
+        
+        // Only add Administration menu if user is NOT a caregiver
+        if (auth()->check()) {
+            $user = auth()->user();
+            $isCaregiver = $user->hasRole('caregiver') || $user->role === 'caregiver' || $user->role === 'care_giver';
+            
+            if (!$isCaregiver && (
+                $user->hasPermission('view_users') ||
+                $user->hasPermission('view_facilities') ||
+                $user->hasPermission('view_branches') ||
+                $user->hasPermission('view_vital_ranges') ||
+                $user->hasPermission('view_roles') ||
+                $user->hasRole('administrator') ||
+                $user->hasRole('super_admin')
+            )) {
+                $items[] = NavigationItem::make('Administration')
                     ->icon('heroicon-o-cog-6-tooth')
                     ->url('#')
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.facilities.*') || 
@@ -163,29 +140,7 @@ class CustomNavigationProvider
                         request()->routeIs('filament.admin.resources.roles.*') ||
                         request()->routeIs('filament.admin.resources.employee-documents.*'))
                     ->sort(80)
-                    ->visible(function (): bool {
-                        if (!auth()->check()) {
-                            return false;
-                        }
-                        
-                        $user = auth()->user();
-                        
-                        // Caregivers should NEVER see Administration menu
-                        if ($user->hasRole('caregiver') || $user->role === 'caregiver' || $user->role === 'care_giver') {
-                            return false;
-                        }
-                        
-                        // Only show if user has administrative permissions (excluding view_leave_requests which caregivers have)
-                        return $user->hasPermission('view_users') ||
-                            $user->hasPermission('view_facilities') ||
-                            $user->hasPermission('view_branches') ||
-                            $user->hasPermission('view_vital_ranges') ||
-                            $user->hasPermission('view_roles') ||
-                            $user->hasRole('administrator') ||
-                            $user->hasRole('super_admin');
-                    })
                     ->childItems([
-                        // Facility Management
                         NavigationItem::make('Facilities')
                             ->url(route('filament.admin.resources.facilities.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.facilities.*'))
@@ -194,7 +149,6 @@ class CustomNavigationProvider
                                 auth()->user()->hasRole('administrator') ||
                                 auth()->user()->hasRole('super_admin')
                             )),
-                        
                         NavigationItem::make('Branches')
                             ->url(route('filament.admin.resources.branches.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.branches.*'))
@@ -203,7 +157,6 @@ class CustomNavigationProvider
                                 auth()->user()->hasRole('administrator') ||
                                 auth()->user()->hasRole('super_admin')
                             )),
-                        
                         NavigationItem::make('Vital Ranges')
                             ->url(route('filament.admin.resources.vital-ranges.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.vital-ranges.*'))
@@ -212,20 +165,13 @@ class CustomNavigationProvider
                                 auth()->user()->hasRole('administrator') ||
                                 auth()->user()->hasRole('super_admin')
                             )),
-                        
                         NavigationItem::make('Leave Requests')
                             ->url(route('filament.admin.resources.leave-requests.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.leave-requests.*'))
-                            ->visible(function (): bool {
-                                if (!auth()->check()) {
-                                    return false;
-                                }
-                                $user = auth()->user();
-                                // Only administrators can see Leave Requests in Administration menu
-                                // Caregivers access their own leave requests elsewhere
-                                return $user->hasRole('administrator') || $user->hasRole('super_admin');
-                            }),
-                        
+                            ->visible(fn (): bool => auth()->check() && (
+                                auth()->user()->hasRole('administrator') ||
+                                auth()->user()->hasRole('super_admin')
+                            )),
                         NavigationItem::make('Roles & Permissions')
                             ->url(route('filament.admin.resources.roles.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.roles.*'))
@@ -234,7 +180,6 @@ class CustomNavigationProvider
                                 auth()->user()->hasRole('administrator') ||
                                 auth()->user()->hasRole('super_admin')
                             )),
-                        
                         NavigationItem::make('Users')
                             ->url(route('filament.admin.resources.users.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.users.*'))
@@ -243,7 +188,6 @@ class CustomNavigationProvider
                                 auth()->user()->hasRole('administrator') ||
                                 auth()->user()->hasRole('super_admin')
                             )),
-                        
                         NavigationItem::make('Employee Documents')
                             ->url(route('filament.admin.resources.employee-documents.index'))
                             ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.employee-documents.*'))
@@ -251,8 +195,12 @@ class CustomNavigationProvider
                                 auth()->user()->hasRole('administrator') ||
                                 auth()->user()->hasRole('super_admin')
                             )),
-                    ]),
-            ]);
+                    ]);
+            }
+        }
+        
+        // Completely replace all navigation items
+        return $builder->items($items);
     }
 }
 
