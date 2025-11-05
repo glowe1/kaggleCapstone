@@ -11,6 +11,39 @@ class CustomNavigationProvider
 {
     public function __invoke(NavigationBuilder $builder): NavigationBuilder
     {
+        // First, get existing items and filter out auto-discovered Administration resources
+        $existingItems = $builder->getItems();
+        
+        // Filter out any items that are in Administration group and user doesn't have permission
+        $filteredItems = collect($existingItems)->filter(function ($item) {
+            // If it's an auto-discovered resource item, check its group
+            if (method_exists($item, 'getGroup')) {
+                $group = $item->getGroup();
+                if ($group === 'Administration') {
+                    // Check if user has permission to see this
+                    if (!auth()->check()) {
+                        return false;
+                    }
+                    $user = auth()->user();
+                    
+                    // Caregivers should NEVER see Administration resources
+                    if ($user->hasRole('caregiver') || $user->role === 'caregiver' || $user->role === 'care_giver') {
+                        return false;
+                    }
+                    
+                    // Check if user has admin permissions
+                    return $user->hasPermission('view_users') ||
+                        $user->hasPermission('view_facilities') ||
+                        $user->hasPermission('view_branches') ||
+                        $user->hasPermission('view_vital_ranges') ||
+                        $user->hasPermission('view_roles') ||
+                        $user->hasRole('administrator') ||
+                        $user->hasRole('super_admin');
+                }
+            }
+            return true;
+        })->toArray();
+        
         // Replace all navigation items with our custom navigation
         // This prevents auto-discovered resources from showing up
         return $builder

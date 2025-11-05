@@ -41,6 +41,7 @@ class EmployeeDocumentResource extends Resource
     protected static ?string $pluralModelLabel = 'Employee Documents';
     protected static ?string $navigationGroup = 'Administration';
     protected static ?int $navigationSort = 10;
+    protected static bool $shouldRegisterNavigation = false; // Handled by CustomNavigationProvider
 
     public static function canViewAny(): bool
     {
