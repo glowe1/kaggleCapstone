@@ -113,15 +113,16 @@ class LeaveRequestResource extends Resource
                             ->label('Start Date')
                             ->required()
                             ->native(false)
-                            ->minDate(now())
                             ->displayFormat('m/d/Y')
+                            ->format('Y-m-d')
                             ->placeholder('MM/DD/YYYY'),
                         Forms\Components\DatePicker::make('end_date')
                             ->label('End Date')
                             ->required()
                             ->native(false)
-                            ->minDate(fn ($get) => $get('start_date') ?: now())
                             ->displayFormat('m/d/Y')
+                            ->format('Y-m-d')
+                            ->after('start_date')
                             ->placeholder('MM/DD/YYYY'),
                         Forms\Components\Textarea::make('reason')
                             ->label('Reason for Leave')
