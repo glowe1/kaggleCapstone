@@ -118,7 +118,13 @@ class CustomNavigationProvider
         // Only add Administration menu if user is NOT a caregiver
         if (auth()->check()) {
             $user = auth()->user();
-            $isCaregiver = $user->hasRole('caregiver') || $user->role === 'caregiver' || $user->role === 'care_giver';
+            // Check for caregiver in multiple formats: 'caregiver', 'care_giver', 'care giver'
+            $roleValue = strtolower(trim($user->role ?? ''));
+            $isCaregiver = $user->hasRole('caregiver') || 
+                           $user->hasRole('care_giver') || 
+                           $roleValue === 'caregiver' || 
+                           $roleValue === 'care_giver' || 
+                           $roleValue === 'care giver';
             
             if (!$isCaregiver && (
                 $user->hasPermission('view_users') ||
