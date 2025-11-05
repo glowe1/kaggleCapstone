@@ -13,6 +13,10 @@ class CustomNavigationProvider
     {
         // COMPLETELY REPLACE navigation - don't use auto-discovered items
         // This ensures caregivers can't see Administration menu
+        
+        // First, clear all existing items and groups
+        $builder = $builder->items([])->groups([]);
+        
         $items = [
                 // Dashboard - First item
                 NavigationItem::make('Dashboard')
@@ -208,8 +212,10 @@ class CustomNavigationProvider
             }
         }
         
-        // Completely replace all navigation items
-        return $builder->items($items);
+        // Completely replace all navigation items and groups
+        return $builder
+            ->items($items)
+            ->groups([]); // Clear all groups to prevent auto-discovered items from showing
     }
 }
 

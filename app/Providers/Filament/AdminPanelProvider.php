@@ -44,15 +44,8 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\QuickActionsWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
-            ->navigationGroups([
-                'Dashboard',
-                'Resident Care',
-                'Medications',
-                'Staff Management',
-                'Reports',
-                'Administration',
-            ])
             ->navigation(CustomNavigationProvider::class)
+            // Removed navigationGroups to prevent auto-discovery from creating groups
             ->topNavigation()
             ->brandName('Evergreen Oasis Care Home')
             ->brandLogo(asset('images/logo.jpeg'))
