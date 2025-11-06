@@ -40,6 +40,7 @@ export default function Appointments() {
             const response = await api.get('/appointments', { params });
             return response.data;
         },
+        enabled: !!(branchFilter || residentFilter), // Only fetch when filtered
     });
 
     // Branches for form
@@ -287,7 +288,25 @@ export default function Appointments() {
                 </button>
             </SectionCard>
 
-            {isLoading ? (
+            {!branchFilter && !residentFilter ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <div className="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-10 h-10 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                        </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Filters to View Appointments</h3>
+                    <p className="text-gray-600 mb-4">
+                        Choose a branch and/or resident from the filters above to view appointment history
+                    </p>
+                    <div className="inline-flex items-center space-x-2 text-sm text-sky-600 bg-sky-50 px-4 py-2 rounded-lg">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Use the Branch or Resident filters to get started</span>
+                    </div>
+                </div>
+            ) : isLoading ? (
                 <div className="text-center py-12 bg-white rounded-xl shadow-sm">
                     <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500"></div>
                     <p className="mt-4 text-gray-600 font-medium">Loading appointments...</p>
