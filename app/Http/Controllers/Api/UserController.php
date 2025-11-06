@@ -119,6 +119,9 @@ class UserController extends Controller
             $user->roles()->sync($roleIds);
         }
 
+        // Refresh the model to get accessors (like profile_image_url)
+        $user->refresh();
+
         return response()->json($user->load(['assignedBranch', 'roles']), 201);
     }
 
@@ -206,6 +209,9 @@ class UserController extends Controller
         if ($roleIds !== null) {
             $user->roles()->sync($roleIds);
         }
+
+        // Refresh the model to get updated accessors (like profile_image_url)
+        $user->refresh();
 
         return response()->json($user->load(['assignedBranch', 'roles']));
     }
