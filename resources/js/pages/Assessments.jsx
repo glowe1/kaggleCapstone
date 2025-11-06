@@ -118,16 +118,16 @@ export default function Assessments() {
                         <p className="text-gray-600">View and manage resident assessments.</p>
                     </div>
                     {!isCaregiver && (
-                        <button
-                            onClick={() => {
-                                setEditing(null);
-                                setShowForm(true);
-                            }}
-                            className="w-full sm:w-auto px-4 py-2 bg-[#2D5016] text-white rounded-lg hover:bg-[#1a3009] transition-colors flex items-center justify-center space-x-2 text-sm md:text-base"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span>Add Assessment</span>
-                        </button>
+                    <button
+                        onClick={() => {
+                            setEditing(null);
+                            setShowForm(true);
+                        }}
+                        className="w-full sm:w-auto px-4 py-2 bg-[#2D5016] text-white rounded-lg hover:bg-[#1a3009] transition-colors flex items-center justify-center space-x-2 text-sm md:text-base"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Assessment</span>
+                    </button>
                     )}
                 </div>
 
@@ -289,29 +289,29 @@ export default function Assessments() {
                                 )}
 
                                 {!isCaregiver && (
-                                    <div className="flex space-x-2 mt-4">
-                                        <button
-                                            onClick={() => {
-                                                setEditing(assessment);
-                                                setShowForm(true);
-                                            }}
-                                            className="p-2 text-[#8B4513] hover:bg-amber-50 rounded-lg transition-colors"
-                                            title="Edit"
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (window.confirm('Are you sure you want to delete this assessment?')) {
-                                                    deleteMutation.mutate(assessment.id);
-                                                }
-                                            }}
-                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Delete"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                <div className="flex space-x-2 mt-4">
+                                    <button
+                                        onClick={() => {
+                                            setEditing(assessment);
+                                            setShowForm(true);
+                                        }}
+                                        className="p-2 text-[#8B4513] hover:bg-amber-50 rounded-lg transition-colors"
+                                        title="Edit"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm('Are you sure you want to delete this assessment?')) {
+                                                deleteMutation.mutate(assessment.id);
+                                            }
+                                        }}
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                                 )}
                             </Card>
                         ))

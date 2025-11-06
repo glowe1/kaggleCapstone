@@ -11,8 +11,12 @@ use App\Models\LeaveRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use App\Filament\Widgets\HeroSectionWidget;
 use App\Filament\Widgets\CaregiverOverviewStatsWidget;
 use App\Filament\Widgets\CaregiverWeeklyActivityChartWidget;
+use App\Filament\Widgets\MyResidentsWidget;
+use App\Filament\Widgets\TodayTasksWidget;
+use App\Filament\Widgets\RecentMedicationActivityWidget;
 
 class CaregiverDashboard extends BaseDashboard
 {
@@ -43,7 +47,11 @@ class CaregiverDashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            HeroSectionWidget::class,
             CaregiverOverviewStatsWidget::class,
+            TodayTasksWidget::class,
+            MyResidentsWidget::class,
+            RecentMedicationActivityWidget::class,
             CaregiverWeeklyActivityChartWidget::class,
         ];
     }

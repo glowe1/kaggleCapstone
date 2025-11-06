@@ -110,7 +110,7 @@ export default function LeaveRequests() {
                     <div className="mt-auto pt-4 border-t border-gray-100">
                       <p className="text-xs font-medium text-gray-500 uppercase mb-1">Reason</p>
                       <p className="text-sm text-gray-700 line-clamp-2">{lr.reason}</p>
-                    </div>
+                  </div>
                   )}
                 </div>
               </div>
@@ -202,14 +202,14 @@ function LeaveForm({ record, currentUser, isCaregiver, onClose, onSuccess }) {
             </div>
             {/* Only admins can approve/reject leave requests */}
             {!isCaregiver && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent">
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent">
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
                   <option value="declined">Declined</option>
-                </select>
-              </div>
+              </select>
+            </div>
             )}
             <div className="flex items-center justify-end space-x-3 pt-4 border-t">
               <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>

@@ -7,11 +7,10 @@ import SectionCard from '../components/SectionCard';
 
 export default function Appointments() {
     const queryClient = useQueryClient();
-    const [dateFilter, setDateFilter] = useState('upcoming');
-    const [statusFilter, setStatusFilter] = useState('all');
     const [residentFilter, setResidentFilter] = useState('');
     const [branchFilter, setBranchFilter] = useState('');
     const [showForm, setShowForm] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
     const [formData, setFormData] = useState({
         branch_id: '',
         resident_id: '',
@@ -23,13 +22,32 @@ export default function Appointments() {
         status: 'scheduled',
     });
 
+    // Fetch current user
+    React.useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const response = await api.get('/user');
+                setCurrentUser(response.data);
+            } catch (err) {
+                console.error('Failed to fetch current user:', err);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    // Check if user is a caregiver
+    const isCaregiver = React.useMemo(() => {
+        if (!currentUser) return false;
+        const role = currentUser.role?.toLowerCase().trim() || '';
+        const roleNormalized = role.replace(/[\s_]/g, '');
+        return roleNormalized === 'caregiver' || (role.includes('care') && role.includes('giver'));
+    }, [currentUser]);
+
     const { data, isLoading, refetch } = useQuery({
-        queryKey: ['appointments', dateFilter, statusFilter, residentFilter, branchFilter],
+        queryKey: ['appointments', residentFilter, branchFilter],
         queryFn: async () => {
             const params = {
-                date_filter: dateFilter,
-                status: statusFilter,
-                per_page: 50,
+                per_page: 100,
             };
             if (residentFilter) {
                 params.resident_id = residentFilter;
@@ -40,7 +58,7 @@ export default function Appointments() {
             const response = await api.get('/appointments', { params });
             return response.data;
         },
-        enabled: !!(branchFilter || residentFilter), // Only fetch when filtered
+        enabled: true, // Always fetch appointments
     });
 
     // Branches for form
@@ -146,43 +164,36 @@ export default function Appointments() {
 
     return (
         <div className="space-y-6">
-            {/* Modern Header */}
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 shadow-lg">
-                <div className="absolute top-0 right-0 -mt-8 -mr-16 opacity-10">
-                    <svg className="w-64 h-64" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V9h14v10zM5 7V5h14v2H5z"/>
-                    </svg>
-                </div>
-                
-                <div className="relative px-6 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-white mb-2">Appointment Management</h1>
-                            <p className="text-sky-100">View, filter, update, and create resident appointments.</p>
+            {/* Filters Card */}
+            <SectionCard>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                            </svg>
                         </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                {isCaregiver ? 'Appointment Management' : 'View Appointments'}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                {isCaregiver 
+                                    ? 'Create and manage resident appointments' 
+                                    : 'Select branch and resident to view appointment history'}
+                            </p>
+                        </div>
+                    </div>
+                    {/* Only caregivers can add appointments */}
+                    {isCaregiver && (
                         <button
                             onClick={() => setShowForm(true)}
-                            className="hidden md:flex items-center space-x-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200"
+                            className="hidden md:flex items-center space-x-2 bg-[#2D5016] text-white px-4 py-2 rounded-lg hover:bg-[#1a3009] transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             <span>Add Appointment</span>
                         </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Filters Card */}
-            <SectionCard>
-                <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Filter Appointments</h3>
-                        <p className="text-sm text-gray-500">Select branch and resident to view appointment history</p>
-                    </div>
+                    )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -197,7 +208,7 @@ export default function Appointments() {
                                     setBranchFilter(e.target.value);
                                     setResidentFilter(''); // Clear resident when branch changes
                                 }}
-                                className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent appearance-none bg-white"
+                                className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent appearance-none bg-white"
                             >
                                 <option value="">All Branches</option>
                                 {(branchesData?.data || branchesData || []).map(branch => (
@@ -216,7 +227,7 @@ export default function Appointments() {
                             <select
                                 value={residentFilter}
                                 onChange={(e) => setResidentFilter(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent appearance-none bg-white"
+                                className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent appearance-none bg-white"
                             >
                                 <option value="">All Residents</option>
                                 {(allResidentsData?.data || []).map(r => (
@@ -230,145 +241,55 @@ export default function Appointments() {
                     </div>
                 </div>
 
-                {/* Date and Status Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Date:</label>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => setDateFilter('upcoming')}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                    dateFilter === 'upcoming'
-                                        ? 'bg-sky-500 text-white shadow-sm'
-                                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                }`}
-                            >
-                                Upcoming
-                            </button>
-                            <button
-                                onClick={() => setDateFilter('past')}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                    dateFilter === 'past'
-                                        ? 'bg-sky-500 text-white shadow-sm'
-                                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                }`}
-                            >
-                                Past
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Status:</label>
-                        <div className="flex flex-wrap gap-2">
-                            {['all', 'scheduled', 'completed', 'cancelled'].map((status) => (
-                                <button
-                                    key={status}
-                                    onClick={() => setStatusFilter(status)}
-                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                                        statusFilter === status
-                                            ? 'bg-sky-500 text-white shadow-sm'
-                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    {status}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Mobile Add Button */}
-                <button
-                    onClick={() => setShowForm(true)}
-                    className="md:hidden w-full mt-4 flex items-center justify-center space-x-2 bg-sky-500 hover:bg-sky-600 text-white px-4 py-3 rounded-lg transition-all duration-200"
-                >
-                    <Plus className="w-5 h-5" />
-                    <span>Add Appointment</span>
-                </button>
+                {/* Mobile Add Button - Only for caregivers */}
+                {isCaregiver && (
+                    <button
+                        onClick={() => setShowForm(true)}
+                        className="md:hidden w-full mt-4 flex items-center justify-center space-x-2 bg-[#2D5016] hover:bg-[#1a3009] text-white px-4 py-3 rounded-lg transition-all duration-200"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Add Appointment</span>
+                    </button>
+                )}
             </SectionCard>
 
-            {!branchFilter && !residentFilter ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                    <div className="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-10 h-10 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                        </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Filters to View Appointments</h3>
-                    <p className="text-gray-600 mb-4">
-                        Choose a branch and/or resident from the filters above to view appointment history
-                    </p>
-                    <div className="inline-flex items-center space-x-2 text-sm text-sky-600 bg-sky-50 px-4 py-2 rounded-lg">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span>Use the Branch or Resident filters to get started</span>
-                    </div>
-                </div>
-            ) : isLoading ? (
+            {isLoading ? (
                 <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                    <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500"></div>
+                    <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#2D5016]"></div>
                     <p className="mt-4 text-gray-600 font-medium">Loading appointments...</p>
                 </div>
             ) : (
                 <div>
                     {data?.data?.length > 0 ? (
-                        <div>
-                            {(residentFilter || branchFilter) && (
-                                <div className="mb-4 p-4 bg-sky-50 border border-sky-200 rounded-lg">
-                                    <p className="text-sm text-sky-900">
-                                        <strong>Filtered by:</strong>{' '}
-                                        {(() => {
-                                            const parts = [];
-                                            if (branchFilter) {
-                                                const branch = (branchesData?.data || branchesData || []).find(b => b.id == branchFilter);
-                                                parts.push(`Branch: ${branch?.name || 'Selected Branch'}`);
-                                            }
-                                            if (residentFilter) {
-                                                const resident = (allResidentsData?.data || []).find(r => r.id == residentFilter);
-                                                parts.push(`Resident: ${resident ? `${resident.first_name} ${resident.last_name}` : 'Selected Resident'}`);
-                                            }
-                                            return parts.join(' | ');
-                                        })()}
-                                    </p>
-                                </div>
-                            )}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {data.data.map((appointment) => (
-                            <Card
-                                key={appointment.id}
-                                borderColor={
-                                    appointment.status === 'scheduled' ? 'border-l-4 border-l-amber-500' :
-                                    appointment.status === 'completed' ? 'border-l-4 border-l-emerald-500' :
-                                    appointment.status === 'cancelled' ? 'border-l-4 border-l-red-500' :
-                                    'border-l-4 border-l-sky-500'
-                                }
-                            >
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-lg font-semibold text-gray-900">
-                                        {appointment.resident?.first_name} {appointment.resident?.last_name}
-                                    </h3>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                        appointment.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
-                                        appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                        appointment.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
-                                        appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                        'bg-gray-100 text-gray-800'
-                                    }`}>
-                                        {appointment.status?.charAt(0).toUpperCase() + appointment.status?.slice(1)}
-                                    </span>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                    <p className="text-gray-600 mb-1">
-                                        <span className="font-medium">{appointment.appointment_type?.name || 'Appointment'}</span>
-                                    </p>
-                                    
-                                    {/* Date and Time */}
-                                    <p className="text-gray-700 text-sm">
-                                        <span className="font-medium">Date & Time:</span>{' '}
-                                        {(() => {
+                        <div className="bg-white rounded-lg shadow overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Resident Name
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Date Taken
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Type
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Other Details
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Next Appointment Date
+                                            </th>
+                                            {isCaregiver && (
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Status
+                                                </th>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {data.data.map((appointment) => {
                                             const date = new Date(appointment.appointment_date);
                                             const dateStr = date.toLocaleDateString('en-US', { 
                                                 month: 'short', 
@@ -376,89 +297,78 @@ export default function Appointments() {
                                                 year: 'numeric' 
                                             });
                                             
+                                            let timeStr = '';
                                             if (appointment.appointment_time) {
-                                                // Time is stored as "HH:mm:ss" string format
-                                                let timeStr = appointment.appointment_time;
-                                                if (typeof timeStr === 'string') {
-                                                    // Extract hours and minutes from "HH:mm:ss" or "HH:mm"
-                                                    const timeParts = timeStr.split(':');
-                                                    if (timeParts.length >= 2) {
-                                                        const hours = parseInt(timeParts[0]) || 0;
-                                                        const minutes = timeParts[1] || '00';
-                                                        const hour12 = hours % 12 || 12;
-                                                        const ampm = hours >= 12 ? 'PM' : 'AM';
-                                                        timeStr = `${hour12}:${minutes} ${ampm}`;
-                                                    }
+                                                const timeParts = appointment.appointment_time.split(':');
+                                                if (timeParts.length >= 2) {
+                                                    const hours = parseInt(timeParts[0]) || 0;
+                                                    const minutes = timeParts[1] || '00';
+                                                    const hour12 = hours % 12 || 12;
+                                                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                                                    timeStr = `${hour12}:${minutes} ${ampm}`;
                                                 }
-                                                return `${dateStr} at ${timeStr}`;
                                             }
-                                            return dateStr;
-                                        })()}
-                                    </p>
-                                    
-                                    {/* Provider */}
-                                    {(appointment.provider_name || appointment.healthcare_provider) && (
-                                        <p className="text-gray-700 text-sm">
-                                            <span className="font-medium">Provider:</span>{' '}
-                                            {appointment.provider_name || appointment.healthcare_provider?.name}
-                                        </p>
-                                    )}
-                                    
-                                    {/* Location */}
-                                    {appointment.location && (
-                                        <p className="text-gray-700 text-sm">
-                                            <span className="font-medium">Location:</span>{' '}
-                                            {appointment.location}
-                                        </p>
-                                    )}
-                                    
-                                    {/* Description */}
-                                    {appointment.description && (
-                                        <p className="text-gray-600 text-sm">
-                                            <span className="font-medium">Description:</span>{' '}
-                                            {appointment.description}
-                                        </p>
-                                    )}
-                                    
-                                    {/* Notes (for completed appointments) */}
-                                    {appointment.status === 'completed' && appointment.notes && (
-                                        <p className="text-gray-600 text-sm bg-green-50 p-2 rounded">
-                                            <span className="font-medium">Outcome:</span>{' '}
-                                            {appointment.notes}
-                                        </p>
-                                    )}
-                                </div>
-                                
-                                {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && (
-                                    <div className="flex space-x-2 mt-4 pt-4 border-t border-gray-100">
-                                        <button
-                                            onClick={() => handleComplete(appointment.id)}
-                                            className="flex-1 px-3 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all flex items-center justify-center space-x-2 text-sm"
-                                        >
-                                            <CheckCircle className="w-4 h-4" />
-                                            <span>Complete</span>
-                                        </button>
-                                        <button
-                                            onClick={() => handleCancel(appointment.id)}
-                                            className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all flex items-center justify-center space-x-2 text-sm"
-                                        >
-                                            <XCircle className="w-4 h-4" />
-                                            <span>Cancel</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </Card>
-                        ))}
+
+                                            return (
+                                                <tr key={appointment.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {appointment.resident?.first_name} {appointment.resident?.last_name}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">
+                                                            {dateStr}
+                                                            {timeStr && <div className="text-xs text-gray-500">{timeStr}</div>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">
+                                                            {appointment.appointment_type?.name || 'Other'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm text-gray-900">
+                                                            {appointment.description || appointment.provider_name || '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">
+                                                            {appointment.next_appointment_date 
+                                                                ? new Date(appointment.next_appointment_date).toLocaleDateString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric'
+                                                                })
+                                                                : '-'}
+                                                        </div>
+                                                    </td>
+                                                    {isCaregiver && (
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                                appointment.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
+                                                                appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                                                appointment.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                                                                appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                                {appointment.status?.charAt(0).toUpperCase() + appointment.status?.slice(1)}
+                                                            </span>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     ) : (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                            <Calendar className="w-16 h-16 text-sky-300 mx-auto mb-4" />
+                            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <p className="text-gray-900 text-lg font-semibold mb-2">No Appointments Found</p>
                             <p className="text-gray-500 text-sm">
-                                {dateFilter === 'upcoming' 
-                                    ? 'No upcoming appointments scheduled.' 
-                                    : 'No past appointments found.'}
+                                No appointments match your current filters.
                             </p>
                             <p className="text-gray-400 text-xs mt-2">
                                 Try adjusting your filters or add a new appointment.
@@ -496,7 +406,7 @@ export default function Appointments() {
                                 rows={4}
                                 value={completionNotes}
                                 onChange={(e) => setCompletionNotes(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
                                 placeholder="Enter notes about the appointment outcome..."
                             />
                         </div>
@@ -587,12 +497,12 @@ function AddAppointmentModal({ branches, residents, formData, setFormData, onClo
                                     setFormData({ ...formData, resident_id: e.target.value });
                                     setErrors({ ...errors, resident_id: null });
                                 }}
-                                className={`w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                                className={`w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent ${
                                     errors.resident_id ? 'border-red-300' : 'border-gray-300'
                                 }`}
                                 >
                                     <option value="">Select resident</option>
-                                    {(residents?.data || []).map(r => (
+                                    {(residents || []).map(r => (
                                         <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>
                                     ))}
                                 </select>
@@ -609,7 +519,7 @@ function AddAppointmentModal({ branches, residents, formData, setFormData, onClo
                                     setErrors({ ...errors, appointment_date: null });
                                 }}
                                 required
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent ${
                                     errors.appointment_date ? 'border-red-300' : 'border-gray-300'
                                 }`}
                             />
@@ -630,7 +540,7 @@ function AddAppointmentModal({ branches, residents, formData, setFormData, onClo
                                     type="text"
                                     value={formData.provider_name}
                                     onChange={(e) => setFormData({ ...formData, provider_name: e.target.value })}
-                                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
                                     placeholder="Dr. Smith"
                                 />
                             </div>
@@ -643,7 +553,7 @@ function AddAppointmentModal({ branches, residents, formData, setFormData, onClo
                                     type="text"
                                     value={formData.location}
                                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
                                     placeholder="Clinic / Room"
                                 />
                             </div>
@@ -655,7 +565,7 @@ function AddAppointmentModal({ branches, residents, formData, setFormData, onClo
                             rows={3}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
                             placeholder="Additional details..."
                         />
                     </div>
@@ -685,7 +595,7 @@ function AddAppointmentModal({ branches, residents, formData, setFormData, onClo
                         <button
                             type="submit"
                             disabled={isSubmitting || !formData.resident_id || !formData.appointment_date}
-                            className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-[#2D5016] text-white rounded-lg hover:bg-[#1a3009] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Creating...' : 'Create Appointment'}
                         </button>
@@ -759,7 +669,7 @@ function TimePicker({ value, onChange, className = '' }) {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white text-left flex items-center justify-between ${className}`}
+                className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent bg-white text-left flex items-center justify-between ${className}`}
             >
                 <span className={value ? 'text-gray-900' : 'text-gray-400'}>
                     {displayValue}
@@ -782,7 +692,7 @@ function TimePicker({ value, onChange, className = '' }) {
                                     const newHours = parseInt(e.target.value);
                                     handleTimeChange(newHours, minutes, period);
                                 }}
-                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-center text-lg font-semibold"
+                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent text-center text-lg font-semibold"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {hourOptions.map(h => (
@@ -799,7 +709,7 @@ function TimePicker({ value, onChange, className = '' }) {
                                     const newMinutes = parseInt(e.target.value);
                                     handleTimeChange(hours, newMinutes, period);
                                 }}
-                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-center text-lg font-semibold"
+                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent text-center text-lg font-semibold"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {minuteOptions.map(m => (
@@ -814,7 +724,7 @@ function TimePicker({ value, onChange, className = '' }) {
                                     const newPeriod = e.target.value;
                                     handleTimeChange(hours, minutes, newPeriod);
                                 }}
-                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-center text-lg font-semibold"
+                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent text-center text-lg font-semibold"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <option value="AM">AM</option>

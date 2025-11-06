@@ -4,10 +4,14 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
+use App\Filament\Widgets\HeroSectionWidget;
+use App\Filament\Widgets\StatsOverviewWidget;
+use App\Filament\Widgets\QuickActionsWidget;
+use App\Filament\Widgets\AdminUpcomingAppointmentsWidget;
+use App\Filament\Widgets\AdminResidentsWidget;
+use App\Filament\Widgets\AdminMedicationRemindersWidget;
 use App\Filament\Widgets\ResidentStatsWidget;
 use App\Filament\Widgets\ActivityStatsWidget;
-use App\Filament\Widgets\VitalTrendsChartWidget;
-use App\Filament\Widgets\BranchChartWidget;
 
 class AdminDashboard extends BaseDashboard
 {
@@ -37,10 +41,14 @@ class AdminDashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            HeroSectionWidget::class,
+            StatsOverviewWidget::class,
+            QuickActionsWidget::class,
             ResidentStatsWidget::class,
             ActivityStatsWidget::class,
-            VitalTrendsChartWidget::class,
-            BranchChartWidget::class,
+            AdminUpcomingAppointmentsWidget::class,
+            AdminResidentsWidget::class,
+            AdminMedicationRemindersWidget::class,
         ];
     }
 
