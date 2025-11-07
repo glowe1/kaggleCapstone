@@ -354,7 +354,7 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
             const roleValue = getRoleValue(record);
             console.log('Setting role to:', roleValue);
             
-            setFormData({
+            const newFormData = {
                 first_name: record.first_name || '',
                 middle_names: record.middle_names || '',
                 last_name: record.last_name || '',
@@ -373,7 +373,9 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                 assigned_branch_id: record.assigned_branch_id || '',
                 is_active: record.is_active ?? true,
                 notes: record.notes || '',
-            });
+            };
+            console.log('Setting formData with role:', roleValue, 'Full formData:', newFormData);
+            setFormData(newFormData);
         } else {
             // Reset form when no record (creating new user)
             setFormData({
@@ -910,8 +912,11 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                                         Role *
                                     </label>
                                     <select
-                                        value={formData.role}
-                                        onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                        value={formData.role || ''}
+                                        onChange={(e) => {
+                                            console.log('Role changed to:', e.target.value);
+                                            setFormData({...formData, role: e.target.value});
+                                        }}
                                         required
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
                                     >
@@ -924,6 +929,9 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                                         <option value="support_staff">Support Staff</option>
                                     </select>
                                     {errors.role && <p className="text-xs text-red-600 mt-1">{errors.role[0]}</p>}
+                                    {formData.role && (
+                                        <p className="text-xs text-gray-500 mt-1">Current role: {formData.role}</p>
+                                    )}
                                 </div>
 
                                 <div>
