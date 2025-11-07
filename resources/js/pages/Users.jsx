@@ -505,104 +505,132 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
             ].filter(Boolean);
             const name = nameParts.join(' ') || formData.email;
 
-            const formDataToSend = new FormData();
+            let response;
             
-            // Add all form fields
-            formDataToSend.append('name', name);
-            formDataToSend.append('first_name', formData.first_name);
-            formDataToSend.append('middle_names', formData.middle_names || '');
-            formDataToSend.append('last_name', formData.last_name);
-            formDataToSend.append('email', formData.email);
-            formDataToSend.append('phone_number', formData.phone_number || '');
-            formDataToSend.append('date_of_birth', formData.date_of_birth || '');
-            formDataToSend.append('marital_status', formData.marital_status || '');
-            formDataToSend.append('sex', formData.sex || '');
-            formDataToSend.append('credentials', formData.credentials || '');
-            formDataToSend.append('credential_details', formData.credential_details || '');
-            formDataToSend.append('date_employed', formData.date_employed || '');
-            formDataToSend.append('supervisor_name', formData.supervisor_name || '');
-            formDataToSend.append('provider_name', formData.provider_name || '');
-            formDataToSend.append('role', formData.role || '');
-            if (formData.assigned_branch_id) {
-                formDataToSend.append('assigned_branch_id', formData.assigned_branch_id);
-            }
-            formDataToSend.append('is_active', formData.is_active ? '1' : '0');
-            formDataToSend.append('notes', formData.notes || '');
-            
-            // Add password if provided
-            if (formData.password) {
-                formDataToSend.append('password', formData.password);
-            }
-            
-            // Handle profile image
-            if (profileImage) {
-                // New image selected - append the file
-                formDataToSend.append('profile_image', profileImage);
-                console.log('Profile image file added to FormData:', profileImage.name, profileImage.type, profileImage.size);
-            } else if (imageRemoved && record) {
-                // Image was explicitly removed - send a flag to clear it
-                // We'll handle this on the backend by checking for a special value
-                formDataToSend.append('remove_profile_image', '1');
-                console.log('Profile image removal requested');
-            } else {
-                console.log('No new profile image selected. Existing image should be preserved.');
-            }
+            // Use FormData if there's an image or image removal, otherwise use JSON (like residents)
+            if (profileImage || (imageRemoved && record)) {
+                const formDataToSend = new FormData();
+                
+                // Add all form fields
+                formDataToSend.append('name', name);
+                formDataToSend.append('first_name', formData.first_name);
+                formDataToSend.append('middle_names', formData.middle_names || '');
+                formDataToSend.append('last_name', formData.last_name);
+                formDataToSend.append('email', formData.email);
+                formDataToSend.append('phone_number', formData.phone_number || '');
+                formDataToSend.append('date_of_birth', formData.date_of_birth || '');
+                formDataToSend.append('marital_status', formData.marital_status || '');
+                formDataToSend.append('sex', formData.sex || '');
+                formDataToSend.append('credentials', formData.credentials || '');
+                formDataToSend.append('credential_details', formData.credential_details || '');
+                formDataToSend.append('date_employed', formData.date_employed || '');
+                formDataToSend.append('supervisor_name', formData.supervisor_name || '');
+                formDataToSend.append('provider_name', formData.provider_name || '');
+                formDataToSend.append('role', formData.role || '');
+                if (formData.assigned_branch_id) {
+                    formDataToSend.append('assigned_branch_id', formData.assigned_branch_id);
+                }
+                formDataToSend.append('is_active', formData.is_active ? '1' : '0');
+                formDataToSend.append('notes', formData.notes || '');
+                
+                // Add password if provided
+                if (formData.password) {
+                    formDataToSend.append('password', formData.password);
+                }
+                
+                // Handle profile image
+                if (profileImage) {
+                    formDataToSend.append('profile_image', profileImage);
+                    console.log('Profile image file added to FormData:', profileImage.name, profileImage.type, profileImage.size);
+                } else if (imageRemoved && record) {
+                    formDataToSend.append('remove_profile_image', '1');
+                    console.log('Profile image removal requested');
+                }
 
-            // Debug: Log FormData contents
-            console.log('FormData contents:');
-            for (let pair of formDataToSend.entries()) {
-                if (pair[0] === 'profile_image') {
-                    console.log(pair[0] + ': [File]', pair[1].name, pair[1].size, 'bytes');
+                // Debug: Log FormData contents
+                console.log('FormData contents:');
+                for (let pair of formDataToSend.entries()) {
+                    if (pair[0] === 'profile_image') {
+                        console.log(pair[0] + ': [File]', pair[1].name, pair[1].size, 'bytes');
+                    } else {
+                        console.log(pair[0] + ': ' + pair[1]);
+                    }
+                }
+
+                // Don't set Content-Type - let browser set it automatically for FormData
+                const config = {};
+
+                if (record) {
+                    // For file uploads with PUT, use POST with _method override (like residents)
+                    formDataToSend.append('_method', 'PUT');
+                    response = await api.post(`/users/${record.id}`, formDataToSend, config);
+                    console.log('User updated successfully (with FormData):', response.data);
                 } else {
-                    console.log(pair[0] + ': ' + pair[1]);
+                    if (!formData.password) {
+                        setErrors({ password: ['Password is required for new users'] });
+                        setIsSubmitting(false);
+                        return;
+                    }
+                    console.log('Creating new user...');
+                    response = await api.post('/users', formDataToSend, config);
+                    console.log('User created successfully:', response.data);
                 }
-            }
-
-            if (record) {
-                // Don't send password if it's empty (for updates)
-                if (!formData.password) {
-                    // Remove password from FormData if it wasn't set
-                }
-                
-                // For file uploads with PUT, use POST with _method override (browser compatibility)
-                // This is necessary because some browsers don't properly handle file uploads in PUT requests
-                // Always use this approach when FormData is involved to ensure file uploads work correctly
-                formDataToSend.append('_method', 'PUT');
-                const response = await api.post(`/users/${record.id}`, formDataToSend);
-                console.log('User updated successfully:', response.data);
-                console.log('Profile image URL:', response.data.profile_image_url);
-                
-                // Invalidate queries to refresh the user list BEFORE showing alert
-                await queryClient.invalidateQueries({ queryKey: ['users'] });
-                
-                // Wait a bit for the invalidation to trigger refetch
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-                // Show success message
-                alert('User updated successfully!');
-                
-                // Close form and refresh
-                onSuccess();
             } else {
-                if (!formData.password) {
-                    setErrors({ password: ['Password is required for new users'] });
-                    setIsSubmitting(false);
-                    return;
+                // No image, use JSON payload (like residents do)
+                const payload = {
+                    name: name,
+                    first_name: formData.first_name,
+                    middle_names: formData.middle_names || null,
+                    last_name: formData.last_name,
+                    email: formData.email,
+                    phone_number: formData.phone_number || null,
+                    date_of_birth: formData.date_of_birth || null,
+                    marital_status: formData.marital_status || null,
+                    sex: formData.sex,
+                    credentials: formData.credentials || null,
+                    credential_details: formData.credential_details || null,
+                    date_employed: formData.date_employed || null,
+                    supervisor_name: formData.supervisor_name || null,
+                    provider_name: formData.provider_name || null,
+                    role: formData.role,
+                    assigned_branch_id: formData.assigned_branch_id || null,
+                    is_active: formData.is_active,
+                    notes: formData.notes || null,
+                };
+                
+                // Add password if provided
+                if (formData.password) {
+                    payload.password = formData.password;
                 }
-                console.log('Creating new user...');
-                const response = await api.post('/users', formDataToSend);
-                console.log('User created successfully:', response.data);
-                
-                // Invalidate queries to refresh the user list
-                await queryClient.invalidateQueries({ queryKey: ['users'] });
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-                // Show success message
-                alert('User created successfully!');
-                
-                // Close form and refresh
-                onSuccess();
+
+                if (record) {
+                    response = await api.put(`/users/${record.id}`, payload);
+                    console.log('User updated successfully (with JSON):', response.data);
+                } else {
+                    if (!formData.password) {
+                        setErrors({ password: ['Password is required for new users'] });
+                        setIsSubmitting(false);
+                        return;
+                    }
+                    console.log('Creating new user...');
+                    response = await api.post('/users', payload);
+                    console.log('User created successfully:', response.data);
+                }
             }
+            
+            console.log('Profile image URL:', response.data?.profile_image_url);
+            
+            // Invalidate queries to refresh the user list BEFORE showing alert
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
+            
+            // Wait a bit for the invalidation to trigger refetch
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Show success message
+            alert(record ? 'User updated successfully!' : 'User created successfully!');
+            
+            // Close form and refresh
+            onSuccess();
         } catch (error) {
             console.error('User creation/update error:', error);
             if (error.response?.data?.errors) {

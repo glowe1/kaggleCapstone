@@ -161,14 +161,19 @@ class AppointmentSeeder extends Seeder
                 $resident = Resident::where('name', $appointmentData['resident_name'])->first();
                 if (!$resident && $appointmentData['branch']) {
                     // Create the resident if it doesn't exist
+                    $firstName = explode(' ', $appointmentData['resident_name'])[0];
+                    $gender = $this->guessGender($firstName);
+                    
                     $resident = Resident::create([
                         'name' => $appointmentData['resident_name'],
-                        'first_name' => explode(' ', $appointmentData['resident_name'])[0],
+                        'first_name' => $firstName,
                         'last_name' => explode(' ', $appointmentData['resident_name'])[1] ?? '',
                         'branch_id' => $appointmentData['branch']->id,
                         'is_active' => true,
                         'date_of_birth' => Carbon::now()->subYears(rand(65, 95)),
+                        'admission_date' => Carbon::now()->subMonths(rand(1, 24)),
                         'diagnosis' => 'General care',
+                        'gender' => $gender,
                     ]);
                 }
             } else {
@@ -198,26 +203,41 @@ class AppointmentSeeder extends Seeder
     private function createSampleResidents($bothellBranch, $edmondsBranch)
     {
         $sampleResidents = [
-            ['name' => 'Angasa Wanjalatan', 'branch' => $bothellBranch],
-            ['name' => 'John Smith', 'branch' => $edmondsBranch],
-            ['name' => 'Mary Johnson', 'branch' => $bothellBranch],
-            ['name' => 'Robert Davis', 'branch' => $edmondsBranch],
-            ['name' => 'Sarah Wilson', 'branch' => $bothellBranch],
+            ['name' => 'Angasa Wanjalatan', 'branch' => $bothellBranch, 'gender' => 'Male'],
+            ['name' => 'John Smith', 'branch' => $edmondsBranch, 'gender' => 'Male'],
+            ['name' => 'Mary Johnson', 'branch' => $bothellBranch, 'gender' => 'Female'],
+            ['name' => 'Robert Davis', 'branch' => $edmondsBranch, 'gender' => 'Male'],
+            ['name' => 'Sarah Wilson', 'branch' => $bothellBranch, 'gender' => 'Female'],
         ];
 
         foreach ($sampleResidents as $residentData) {
             if ($residentData['branch']) {
+                $firstName = explode(' ', $residentData['name'])[0];
+                $gender = $residentData['gender'] ?? $this->guessGender($firstName);
+                
                 Resident::create([
                     'name' => $residentData['name'],
-                    'first_name' => explode(' ', $residentData['name'])[0],
+                    'first_name' => $firstName,
                     'last_name' => explode(' ', $residentData['name'])[1] ?? '',
                     'branch_id' => $residentData['branch']->id,
                     'is_active' => true,
                     'date_of_birth' => Carbon::now()->subYears(rand(65, 95)),
+                    'admission_date' => Carbon::now()->subMonths(rand(1, 24)),
                     'diagnosis' => 'General care',
+                    'gender' => $gender,
                 ]);
             }
         }
+    }
+
+    /**
+     * Guess gender from common first names (simple heuristic)
+     */
+    private function guessGender(string $firstName): string
+    {
+        $femaleNames = ['Mary', 'Patricia', 'Linda', 'Barbara', 'Elizabeth', 'Jennifer', 'Maria', 'Susan', 'Sarah', 'Jessica', 'Emily', 'Ashley', 'Amanda', 'Melissa', 'Deborah', 'Stephanie', 'Rebecca', 'Sharon', 'Michelle', 'Laura', 'Kimberly', 'Amy', 'Angela', 'Brenda', 'Emma', 'Olivia', 'Sophia', 'Isabella', 'Mia', 'Charlotte'];
+        
+        return in_array($firstName, $femaleNames) ? 'Female' : 'Male';
     }
 
     private function createHealthcareProviders()
@@ -247,8 +267,47 @@ class AppointmentSeeder extends Seeder
 
         $appointments = [];
 
-        // Generate appointments for the next 30 days
-        for ($i = 0; $i < 20; $i++) {
+        // Generate past completed appointments (last 60 days)
+        for ($i = 0; $i < 30; $i++) {
+            $resident = $residents->random();
+            $branch = $branches->random();
+            $appointmentType = $appointmentTypes->random();
+            $provider = $providers->random();
+
+            $appointmentDate = Carbon::now()->subDays(rand(1, 60));
+            $appointmentTime = Carbon::createFromTime(rand(8, 16), rand(0, 59));
+
+            $locations = ['in-house', 'external', 'telehealth'];
+            $completionNotes = [
+                'Appointment completed successfully. Resident responded well to treatment.',
+                'Follow-up appointment completed. No concerns noted.',
+                'Regular checkup completed. Vital signs stable.',
+                'Treatment administered as scheduled. No adverse reactions.',
+                'Consultation completed. Treatment plan reviewed and updated.',
+                'Appointment completed on time. Resident in good spirits.',
+                'Follow-up completed. Progress noted in treatment.',
+                'Routine appointment completed without issues.',
+            ];
+
+            $appointments[] = [
+                'resident' => $resident,
+                'branch' => $branch,
+                'appointment_type' => $appointmentType,
+                'appointment_date' => $appointmentDate,
+                'appointment_time' => $appointmentTime,
+                'provider_name' => $provider->name,
+                'healthcare_provider' => $provider,
+                'location' => $locations[array_rand($locations)],
+                'description' => 'Regular appointment for ' . $appointmentType->name,
+                'status' => 'completed',
+                'next_appointment_date' => rand(0, 1) ? $appointmentDate->copy()->addDays(rand(7, 30)) : null,
+                'recurrence_pattern' => ['one-time', 'weekly', 'monthly', 'custom'][array_rand(['one-time', 'weekly', 'monthly', 'custom'])],
+                'notes' => $completionNotes[array_rand($completionNotes)],
+            ];
+        }
+
+        // Generate upcoming scheduled appointments (next 30 days)
+        for ($i = 0; $i < 25; $i++) {
             $resident = $residents->random();
             $branch = $branches->random();
             $appointmentType = $appointmentTypes->random();
@@ -257,7 +316,7 @@ class AppointmentSeeder extends Seeder
             $appointmentDate = Carbon::now()->addDays(rand(1, 30));
             $appointmentTime = Carbon::createFromTime(rand(8, 16), rand(0, 59));
 
-            $statuses = ['scheduled', 'confirmed', 'completed', 'cancelled'];
+            $statuses = ['scheduled', 'confirmed'];
             $locations = ['in-house', 'external', 'telehealth'];
             $patterns = ['one-time', 'weekly', 'monthly', 'custom'];
 
@@ -274,7 +333,36 @@ class AppointmentSeeder extends Seeder
                 'status' => $statuses[array_rand($statuses)],
                 'next_appointment_date' => rand(0, 1) ? $appointmentDate->copy()->addDays(rand(7, 30)) : null,
                 'recurrence_pattern' => $patterns[array_rand($patterns)],
-                'notes' => 'Sample appointment for testing purposes',
+                'notes' => 'Scheduled appointment - awaiting completion',
+            ];
+        }
+
+        // Generate some in-progress appointments (today)
+        for ($i = 0; $i < 5; $i++) {
+            $resident = $residents->random();
+            $branch = $branches->random();
+            $appointmentType = $appointmentTypes->random();
+            $provider = $providers->random();
+
+            $appointmentDate = Carbon::today();
+            $appointmentTime = Carbon::createFromTime(rand(8, 16), rand(0, 59));
+
+            $locations = ['in-house', 'external', 'telehealth'];
+
+            $appointments[] = [
+                'resident' => $resident,
+                'branch' => $branch,
+                'appointment_type' => $appointmentType,
+                'appointment_date' => $appointmentDate,
+                'appointment_time' => $appointmentTime,
+                'provider_name' => $provider->name,
+                'healthcare_provider' => $provider,
+                'location' => $locations[array_rand($locations)],
+                'description' => 'Regular appointment for ' . $appointmentType->name,
+                'status' => 'in_progress',
+                'next_appointment_date' => rand(0, 1) ? $appointmentDate->copy()->addDays(rand(7, 30)) : null,
+                'recurrence_pattern' => ['one-time', 'weekly', 'monthly', 'custom'][array_rand(['one-time', 'weekly', 'monthly', 'custom'])],
+                'notes' => 'Appointment in progress',
             ];
         }
 

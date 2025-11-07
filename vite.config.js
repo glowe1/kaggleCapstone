@@ -7,6 +7,9 @@ export default defineConfig({
     plugins: [
         react({
             jsxRuntime: 'automatic',
+            babel: {
+                plugins: [],
+            },
         }),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.jsx'],
@@ -14,4 +17,13 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    optimizeDeps: {
+        include: ['react', 'react-dom'],
+        exclude: ['resources/js/app.jsx'],
+    },
+    server: {
+        hmr: {
+            host: 'localhost',
+        },
+    },
 });

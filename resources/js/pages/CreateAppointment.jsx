@@ -2,13 +2,22 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Calendar, Edit, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Calendar, Edit, ArrowLeft, CheckCircle, Stethoscope, MapPin, ChevronDown, X } from 'lucide-react';
 
 export default function CreateAppointment() {
     const { residentId } = useParams();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [additionalDetails, setAdditionalDetails] = useState('');
+    const [formData, setFormData] = useState({
+        appointment_date: new Date().toISOString().split('T')[0],
+        appointment_time: '',
+        provider_name: '',
+        location: '',
+        description: '',
+    });
+    const [errors, setErrors] = useState({});
+    const [completingAppointment, setCompletingAppointment] = useState(null);
+    const [completionNotes, setCompletionNotes] = useState('');
 
     // Fetch resident data
     const { data: residentData, isLoading: residentLoading } = useQuery({
@@ -35,18 +44,18 @@ export default function CreateAppointment() {
         enabled: !!residentId,
     });
 
-    // Submit additional details mutation
+    // Submit appointment mutation
     const submitMutation = useMutation({
         mutationFn: async () => {
             const payload = {
                 resident_id: parseInt(residentId),
                 branch_id: residentData?.branch_id || '',
-                appointment_date: new Date().toISOString().split('T')[0],
-                appointment_time: null,
-                provider_name: null,
-                location: null,
-                description: additionalDetails || null,
-                notes: additionalDetails || null,
+                appointment_date: formData.appointment_date,
+                appointment_time: formData.appointment_time || null,
+                provider_name: formData.provider_name || null,
+                location: formData.location || null,
+                description: formData.description || null,
+                notes: formData.description || null,
                 status: 'scheduled',
             };
             
@@ -54,16 +63,67 @@ export default function CreateAppointment() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['appointments', residentId]);
-            setAdditionalDetails('');
+            setFormData({
+                appointment_date: new Date().toISOString().split('T')[0],
+                appointment_time: '',
+                provider_name: '',
+                location: '',
+                description: '',
+            });
+            setErrors({});
             refetch();
         },
         onError: (error) => {
             console.error('Error creating appointment:', error);
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            }
         },
     });
 
+    // Mark appointment as complete mutation
+    const markCompleteMutation = useMutation({
+        mutationFn: async ({ appointmentId, notes }) => {
+            return await api.patch(`/appointments/${appointmentId}/status`, {
+                status: 'completed',
+                notes: notes || null,
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['appointments', residentId]);
+            setCompletingAppointment(null);
+            setCompletionNotes('');
+            refetch();
+        },
+        onError: (error) => {
+            console.error('Error marking appointment as complete:', error);
+            alert('Failed to mark appointment as complete. Please try again.');
+        },
+    });
+
+    const handleMarkComplete = (appointment) => {
+        setCompletingAppointment(appointment);
+        setCompletionNotes('');
+    };
+
+    const handleCompleteSubmit = () => {
+        if (!completingAppointment) return;
+        markCompleteMutation.mutate({
+            appointmentId: completingAppointment.id,
+            notes: completionNotes,
+        });
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        setErrors({});
+        
+        // Validate required fields
+        if (!formData.appointment_date) {
+            setErrors({ appointment_date: 'Date is required' });
+            return;
+        }
+        
         submitMutation.mutate();
     };
 
@@ -103,24 +163,114 @@ export default function CreateAppointment() {
                 </div>
             </div>
 
-            {/* Additional Details Form */}
+            {/* Appointment Form */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Details (optional)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Appointment Details</h3>
                 <form onSubmit={handleSubmit}>
-                    <textarea
-                        value={additionalDetails}
-                        onChange={(e) => setAdditionalDetails(e.target.value)}
-                        placeholder="Enter any additional details..."
-                        rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent resize-none"
-                    />
-                    <div className="flex justify-center mt-4">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Date *
+                                </label>
+                                <input
+                                    type="date"
+                                    value={formData.appointment_date}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, appointment_date: e.target.value });
+                                        setErrors({ ...errors, appointment_date: null });
+                                    }}
+                                    required
+                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent ${
+                                        errors.appointment_date ? 'border-red-300' : 'border-gray-300'
+                                    }`}
+                                />
+                                {errors.appointment_date && (
+                                    <p className="text-xs text-red-600 mt-1">{errors.appointment_date}</p>
+                                )}
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Time
+                                </label>
+                                <input
+                                    type="time"
+                                    value={formData.appointment_time}
+                                    onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Provider Name
+                                </label>
+                                <div className="relative">
+                                    <Stethoscope className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={formData.provider_name}
+                                        onChange={(e) => setFormData({ ...formData, provider_name: e.target.value })}
+                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                                        placeholder="Dr. Smith"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Location
+                                </label>
+                                <div className="relative">
+                                    <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={formData.location}
+                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                                        placeholder="Clinic / Room"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Notes / Description
+                            </label>
+                            <textarea
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Enter any additional details..."
+                                rows={4}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent resize-none"
+                            />
+                        </div>
+                        
+                        {submitMutation.isError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p className="text-sm text-red-800">
+                                    {submitMutation.error?.response?.data?.message || 'Failed to create appointment. Please try again.'}
+                                </p>
+                                {submitMutation.error?.response?.data?.errors && (
+                                    <ul className="mt-2 list-disc list-inside text-xs text-red-700">
+                                        {Object.entries(submitMutation.error.response.data.errors).map(([key, messages]) => (
+                                            <li key={key}>{key}: {Array.isArray(messages) ? messages.join(', ') : messages}</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex justify-center mt-6">
                         <button
                             type="submit"
-                            disabled={submitMutation.isPending}
-                            className="px-6 py-2 bg-gray-200 text-black font-bold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={submitMutation.isPending || !formData.appointment_date}
+                            className="px-6 py-2 bg-[#2D5016] text-white font-bold rounded-lg hover:bg-[#1a3009] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {submitMutation.isPending ? 'Submitting...' : 'Submit'}
+                            {submitMutation.isPending ? 'Creating...' : 'Create Appointment'}
                         </button>
                     </div>
                 </form>
@@ -210,9 +360,25 @@ export default function CreateAppointment() {
                                                     <span className="font-medium">Next Appointment:</span> {nextApptDateStr}
                                                 </div>
                                             )}
+                                            {appointment.notes && (
+                                                <div className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                                                    <span className="font-medium">Notes:</span>
+                                                    <p className="text-gray-700 mt-1 whitespace-pre-wrap">{appointment.notes}</p>
+                                                </div>
+                                            )}
                                         </div>
                                         
-                                        <div className="flex items-center justify-end">
+                                        <div className="flex items-center justify-end space-x-2">
+                                            {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                                                <button
+                                                    onClick={() => handleMarkComplete(appointment)}
+                                                    className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                                    title="Mark as Complete"
+                                                >
+                                                    <CheckCircle className="w-4 h-4" />
+                                                    <span>Mark Complete</span>
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => {
                                                     // Navigate to edit appointment or open modal
@@ -237,6 +403,70 @@ export default function CreateAppointment() {
                     )}
                 </div>
             </div>
+
+            {/* Mark Complete Modal */}
+            {completingAppointment && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 className="text-xl font-semibold text-gray-900">Mark Appointment as Complete</h3>
+                            <button
+                                onClick={() => {
+                                    setCompletingAppointment(null);
+                                    setCompletionNotes('');
+                                }}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="px-6 py-4">
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-2">
+                                    <span className="font-medium">Date:</span> {completingAppointment.appointment_date ? new Date(completingAppointment.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                                </p>
+                                <p className="text-sm text-gray-600 mb-2">
+                                    <span className="font-medium">Provider:</span> {completingAppointment.provider_name || 'N/A'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    <span className="font-medium">Type:</span> {completingAppointment.appointment_type?.name || completingAppointment.appointmentType?.name || 'Other'}
+                                </p>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Completion Notes <span className="text-gray-500">(Optional)</span>
+                                </label>
+                                <textarea
+                                    value={completionNotes}
+                                    onChange={(e) => setCompletionNotes(e.target.value)}
+                                    placeholder="Enter notes about the appointment outcome..."
+                                    rows={4}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent resize-none"
+                                />
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                            <button
+                                onClick={() => {
+                                    setCompletingAppointment(null);
+                                    setCompletionNotes('');
+                                }}
+                                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                disabled={markCompleteMutation.isPending}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCompleteSubmit}
+                                disabled={markCompleteMutation.isPending}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {markCompleteMutation.isPending ? 'Marking...' : 'Mark as Complete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

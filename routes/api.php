@@ -87,6 +87,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/permissions', [RoleController::class, 'permissions'])->middleware('auth:sanctum');
 
     // Users
+    // Allow POST for file uploads (browser compatibility) - must come before apiResource
+    Route::post('/users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
     Route::apiResource('users', UserController::class)->middleware('auth:sanctum');
 
     // Employee Documents

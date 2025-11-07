@@ -1,38 +1,3 @@
-// Suppress Cloudflare cookie warnings FIRST - before anything else runs
-// This prevents these harmless errors from cluttering the console
-(function() {
-    const originalWarn = console.warn;
-    const originalError = console.error;
-    
-    console.warn = function(...args) {
-        const message = args.join(' ').toString().toLowerCase();
-        if (message.includes('cookie') && (
-            message.includes('_cf_bm') || 
-            message.includes('__cf_bm') || 
-            message.includes('cf_clearance') ||
-            message.includes('rejected for invalid domain')
-        )) {
-            // Suppress Cloudflare cookie warnings
-            return;
-        }
-        originalWarn.apply(console, args);
-    };
-    
-    console.error = function(...args) {
-        const message = args.join(' ').toString().toLowerCase();
-        if (message.includes('cookie') && (
-            message.includes('_cf_bm') || 
-            message.includes('__cf_bm') || 
-            message.includes('cf_clearance') ||
-            message.includes('rejected for invalid domain')
-        )) {
-            // Suppress Cloudflare cookie errors
-            return;
-        }
-        originalError.apply(console, args);
-    };
-})();
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -40,6 +5,57 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import '../css/app.css';
+
+// Suppress Cloudflare cookie warnings - after imports
+// This prevents these harmless errors from cluttering the console
+(function() {
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    const originalLog = console.log;
+    
+    // Helper function to check if message should be suppressed
+    function shouldSuppress(message) {
+        const lowerMessage = message.toString().toLowerCase();
+        return (
+            lowerMessage.includes('cookie') && (
+                lowerMessage.includes('_cf_bm') || 
+                lowerMessage.includes('__cf_bm') || 
+                lowerMessage.includes('cf_clearance') ||
+                lowerMessage.includes('cf_bm') ||
+                lowerMessage.includes('rejected for invalid domain') ||
+                lowerMessage.includes('has been rejected')
+            )
+        ) || (
+            lowerMessage.includes('__cf_bm') ||
+            lowerMessage.includes('_cf_bm')
+        );
+    }
+    
+    console.warn = function(...args) {
+        const message = args.join(' ');
+        if (shouldSuppress(message)) {
+            return; // Suppress Cloudflare cookie warnings
+        }
+        originalWarn.apply(console, args);
+    };
+    
+    console.error = function(...args) {
+        const message = args.join(' ');
+        if (shouldSuppress(message)) {
+            return; // Suppress Cloudflare cookie errors
+        }
+        originalError.apply(console, args);
+    };
+    
+    // Also override console.log in case errors are logged there
+    console.log = function(...args) {
+        const message = args.join(' ');
+        if (shouldSuppress(message)) {
+            return; // Suppress Cloudflare cookie logs
+        }
+        originalLog.apply(console, args);
+    };
+})();
 
 const queryClient = new QueryClient({
     defaultOptions: {

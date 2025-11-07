@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { CheckCircle, XCircle, Calendar, Plus, User, Stethoscope, MapPin, ChevronDown, Edit } from 'lucide-react';
 import Card from '../components/Card';
@@ -331,7 +331,9 @@ export default function Appointments() {
 
     // Handle opening appointment view for a specific resident
     const handleOpenAppointmentView = (residentId) => {
-        navigate(`/appointments/create/${residentId}`);
+        console.log('Navigating to appointment page for resident:', residentId);
+        // Navigate to the create appointment page
+        window.location.href = `/app/appointments/create/${residentId}`;
     };
 
 
@@ -495,13 +497,18 @@ export default function Appointments() {
                                                 )}
 
                                                 {/* Appointment Button */}
-                                                <button
-                                                    onClick={() => handleOpenAppointmentView(resident.id)}
-                                                    className="w-full bg-[#2D5016] hover:bg-[#1a3009] text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                                                <Link
+                                                    to={`/appointments/create/${resident.id}`}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        window.location.href = `/app/appointments/create/${resident.id}`;
+                                                    }}
+                                                    className="w-full bg-[#2D5016] hover:bg-[#1a3009] text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 no-underline"
                                                 >
                                                     <Calendar className="w-4 h-4" />
                                                     <span>Schedule Appointment</span>
-                                                </button>
+                                                </Link>
                                             </div>
                                         </div>
                                     );

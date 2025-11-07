@@ -12,35 +12,51 @@
                 // Capture console methods before anything else
                 const originalWarn = console.warn;
                 const originalError = console.error;
+                const originalLog = console.log;
+                
+                // Helper function to check if message should be suppressed
+                function shouldSuppress(message) {
+                    const lowerMessage = message.toLowerCase();
+                    return (
+                        lowerMessage.includes('cookie') && (
+                            lowerMessage.includes('_cf_bm') || 
+                            lowerMessage.includes('__cf_bm') || 
+                            lowerMessage.includes('cf_clearance') ||
+                            lowerMessage.includes('cf_bm') ||
+                            lowerMessage.includes('rejected for invalid domain') ||
+                            lowerMessage.includes('has been rejected')
+                        )
+                    ) || (
+                        lowerMessage.includes('__cf_bm') ||
+                        lowerMessage.includes('_cf_bm')
+                    );
+                }
                 
                 // Override console.warn
                 console.warn = function() {
-                    const message = Array.from(arguments).join(' ').toLowerCase();
-                    if (message.includes('cookie') && (
-                        message.includes('_cf_bm') || 
-                        message.includes('__cf_bm') || 
-                        message.includes('cf_clearance') ||
-                        message.includes('rejected for invalid domain')
-                    )) {
-                        // Suppress Cloudflare cookie warnings
-                        return;
+                    const message = Array.from(arguments).join(' ');
+                    if (shouldSuppress(message)) {
+                        return; // Suppress Cloudflare cookie warnings
                     }
                     originalWarn.apply(console, arguments);
                 };
                 
                 // Override console.error
                 console.error = function() {
-                    const message = Array.from(arguments).join(' ').toLowerCase();
-                    if (message.includes('cookie') && (
-                        message.includes('_cf_bm') || 
-                        message.includes('__cf_bm') || 
-                        message.includes('cf_clearance') ||
-                        message.includes('rejected for invalid domain')
-                    )) {
-                        // Suppress Cloudflare cookie errors
-                        return;
+                    const message = Array.from(arguments).join(' ');
+                    if (shouldSuppress(message)) {
+                        return; // Suppress Cloudflare cookie errors
                     }
                     originalError.apply(console, arguments);
+                };
+                
+                // Also override console.log in case errors are logged there
+                console.log = function() {
+                    const message = Array.from(arguments).join(' ');
+                    if (shouldSuppress(message)) {
+                        return; // Suppress Cloudflare cookie logs
+                    }
+                    originalLog.apply(console, arguments);
                 };
             })();
         </script>

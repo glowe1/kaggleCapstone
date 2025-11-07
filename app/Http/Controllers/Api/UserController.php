@@ -129,6 +129,15 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // Convert is_active from FormData string to boolean if present (like residents do)
+        // This handles both FormData ('1'/'0') and JSON (true/false) formats
+        if ($request->has('is_active')) {
+            $isActive = $request->input('is_active');
+            if (is_string($isActive)) {
+                $request->merge(['is_active' => filter_var($isActive, FILTER_VALIDATE_BOOLEAN)]);
+            }
+        }
+
         // Convert empty strings to null for date fields before validation
         $input = $request->all();
         foreach (['date_of_birth', 'date_employed', 'hire_date'] as $dateField) {
