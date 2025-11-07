@@ -145,36 +145,36 @@ export default function UsersPage() {
                     <p className="mt-4 text-gray-600">Loading users...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
                     {data?.data?.length > 0 ? (
                         data.data.map((user) => (
-                            <div key={user.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
+                            <div key={user.id} className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-200 hover:border-[#2D5016]">
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="flex items-center space-x-4 flex-1">
                                         {user.profile_image_url ? (
                                             <img
                                                 src={user.profile_image_url}
                                                 alt={user.name}
-                                                className="w-12 h-12 rounded-full object-cover border-2 border-[#2D5016]"
+                                                className="w-16 h-16 rounded-full object-cover border-[3px] border-[#2D5016] shadow-md"
                                                 onError={(e) => {
                                                     e.target.style.display = 'none';
                                                     e.target.nextElementSibling.style.display = 'flex';
                                                 }}
                                             />
                                         ) : null}
-                                        <div className={`w-12 h-12 rounded-full bg-[#2D5016] flex items-center justify-center ${user.profile_image_url ? 'hidden' : ''}`}>
-                                            <span className="text-white font-medium text-lg">
+                                        <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-[#2D5016] to-[#4a7a2a] flex items-center justify-center shadow-md ${user.profile_image_url ? 'hidden' : ''}`}>
+                                            <span className="text-white font-bold text-xl">
                                                 {user.name?.charAt(0)?.toUpperCase() || 'U'}
                                             </span>
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-gray-900">
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-xl font-bold text-gray-900 mb-1 truncate">
                                                 {user.name || user.email}
                                             </h3>
-                                            <p className="text-sm text-gray-500">{user.email}</p>
+                                            <p className="text-sm text-gray-500 truncate">{user.email}</p>
                                         </div>
                                     </div>
-                                    <div className="flex space-x-2">
+                                    <div className="flex space-x-2 ml-2">
                                         <button
                                             onClick={async () => {
                                                 try {
@@ -187,45 +187,49 @@ export default function UsersPage() {
                                                     setShowForm(true);
                                                 }
                                             }}
-                                            className="p-2 text-[#2D5016] hover:bg-green-50 rounded-lg transition-colors"
+                                            className="p-2.5 text-[#2D5016] hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-[#2D5016]"
                                             title="Edit User"
                                         >
-                                            <Edit className="w-4 h-4" />
+                                            <Edit className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => setViewingProfile(user)}
-                                            className="p-2 text-[#2D5016] hover:bg-green-50 rounded-lg transition-colors"
+                                            className="p-2.5 text-[#2D5016] hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-[#2D5016]"
                                             title="View Profile"
                                         >
-                                            <Eye className="w-4 h-4" />
+                                            <Eye className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>
-                                <div className="space-y-2 text-sm">
+                                <div className="space-y-3 text-sm border-t border-gray-100 pt-4">
                                     {user.assigned_branch && (
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Branch:</span>
-                                            <span className="font-medium text-gray-900">{user.assigned_branch.name}</span>
+                                        <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                            <span className="text-gray-600 font-medium">Branch:</span>
+                                            <span className="font-semibold text-gray-900">{user.assigned_branch.name}</span>
                                         </div>
                                     )}
                                     {user.roles && user.roles.length > 0 && (
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Roles:</span>
-                                            <span className="font-medium text-gray-900">
+                                        <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                            <span className="text-gray-600 font-medium">Roles:</span>
+                                            <span className="font-semibold text-gray-900">
                                                 {user.roles.map(r => r.name).join(', ')}
                                             </span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Status:</span>
-                                        <span className={`font-medium ${user.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                                    <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                        <span className="text-gray-600 font-medium">Status:</span>
+                                        <span className={`font-semibold px-3 py-1 rounded-full text-xs ${
+                                            user.is_active 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-red-100 text-red-700'
+                                        }`}>
                                             {user.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
                                     {user.phone_number && (
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Phone:</span>
-                                            <span className="font-medium text-gray-900">{user.phone_number}</span>
+                                        <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                            <span className="text-gray-600 font-medium">Phone:</span>
+                                            <span className="font-semibold text-gray-900">{user.phone_number}</span>
                                         </div>
                                     )}
                                 </div>

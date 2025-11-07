@@ -286,35 +286,15 @@ export default function Medications() {
                                                 <div className="mb-2">
                                                     <p className="text-xs font-medium text-gray-700">Administration Times:</p>
                                                 </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {medication.time_1 && formatTime(medication.time_1) && (
-                                                        <span className="inline-flex items-center px-2 py-1 bg-green-100 text-[#2D5016] rounded text-xs">
-                                                            <Clock className="w-3 h-3 mr-1" />
-                                                            {formatTime(medication.time_1)}
-                                                        </span>
-                                                    )}
-                                                    {medication.time_2 && formatTime(medication.time_2) && (
-                                                        <span className="inline-flex items-center px-2 py-1 bg-green-100 text-[#2D5016] rounded text-xs">
-                                                            <Clock className="w-3 h-3 mr-1" />
-                                                            {formatTime(medication.time_2)}
-                                                        </span>
-                                                    )}
-                                                    {medication.time_3 && formatTime(medication.time_3) && (
-                                                        <span className="inline-flex items-center px-2 py-1 bg-green-100 text-[#2D5016] rounded text-xs">
-                                                            <Clock className="w-3 h-3 mr-1" />
-                                                            {formatTime(medication.time_3)}
-                                                        </span>
-                                                    )}
-                                                    {medication.time_4 && formatTime(medication.time_4) && (
-                                                        <span className="inline-flex items-center px-2 py-1 bg-green-100 text-[#2D5016] rounded text-xs">
-                                                            <Clock className="w-3 h-3 mr-1" />
-                                                            {formatTime(medication.time_4)}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                <MedicationTimeBadges medication={medication} />
 
                                                 {/* Quick Administer */}
-                                                <QuickAdminister medication={medication} onSuccess={() => { queryClient.invalidateQueries(['medications']); queryClient.invalidateQueries(['medication-administrations']); }} />
+                                                <QuickAdminister medication={medication} onSuccess={() => { 
+                                                    queryClient.invalidateQueries(['medications']); 
+                                                    queryClient.invalidateQueries(['medication-administrations']); 
+                                                    queryClient.invalidateQueries(['medication-administrations-today', medication.id]);
+                                                    queryClient.invalidateQueries(['medication-administrations-today-check', medication.id]);
+                                                }} />
 
                                                 <button onClick={()=> setShowHistory(showHistory === medication.id ? null : medication.id)} className="mt-2 text-xs text-[#2D5016] hover:underline">
                                                     {showHistory === medication.id ? 'Hide History' : 'View History'}
@@ -862,6 +842,20 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
         queryFn: async () => (await api.get('/drugs', { params: { active_only: 'true', per_page: 1000 } })).data,
     });
 
+    // Deduplicate drugs by ID to prevent duplicates in dropdown
+    const uniqueDrugs = React.useMemo(() => {
+        if (!drugsData?.data) return [];
+        const seenIds = new Set();
+        const unique = [];
+        for (const drug of drugsData.data) {
+            if (!seenIds.has(drug.id)) {
+                seenIds.add(drug.id);
+                unique.push(drug);
+            }
+        }
+        return unique;
+    }, [drugsData?.data]);
+
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -963,7 +957,7 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
                                 <select
                                     value={formData.drug_id}
                                     onChange={(e) => {
-                                        const selectedDrug = drugsData?.data?.find(d => d.id == e.target.value);
+                                        const selectedDrug = uniqueDrugs.find(d => d.id == e.target.value);
                                         setFormData({ 
                                             ...formData, 
                                             drug_id: e.target.value,
@@ -974,7 +968,7 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
                                 >
                                     <option value="">Select Drug</option>
-                                    {drugsData?.data?.map(d => (
+                                    {uniqueDrugs.map(d => (
                                         <option key={d.id} value={d.id}>
                                             {d.name}{d.generic_name ? ` (${d.generic_name})` : ''}
                                         </option>
@@ -1115,6 +1109,167 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
     );
 }
 
+// Medication Time Badges Component
+function MedicationTimeBadges({ medication }) {
+    const formatTime = (timeValue) => {
+        if (!timeValue) return null;
+        try {
+            let date;
+            if (typeof timeValue === 'string') {
+                if (timeValue.includes('T') || timeValue.includes(' ')) {
+                    date = new Date(timeValue);
+                } else if (timeValue.match(/^\d{2}:\d{2}/)) {
+                    date = new Date(`2000-01-01T${timeValue}`);
+                } else {
+                    date = new Date(timeValue);
+                }
+            } else {
+                date = new Date(timeValue);
+            }
+            
+            if (isNaN(date.getTime())) {
+                return null;
+            }
+            
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        } catch {
+            return null;
+        }
+    };
+
+    // Fetch today's administrations for this medication
+    const { data: todayAdminData } = useQuery({
+        queryKey: ['medication-administrations-today', medication.id],
+        queryFn: async () => {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await api.get('/medication-administrations', {
+                params: {
+                    medication_id: medication.id,
+                    date_from: today,
+                    date_to: today,
+                    per_page: 100,
+                },
+            });
+            return response.data;
+        },
+    });
+
+    // Helper to get the status of a time (completed, missed, refused, or null if not administered)
+    const getTimeStatus = (timeValue) => {
+        if (!timeValue || !todayAdminData?.data || todayAdminData.data.length === 0) return null;
+        
+        const timeStr = formatTime(timeValue);
+        if (!timeStr) return null;
+
+        // Parse the scheduled time from the medication time value
+        let scheduledTime = new Date();
+        try {
+            if (typeof timeValue === 'string') {
+                if (timeValue.includes('T') || timeValue.includes(' ')) {
+                    const parsed = new Date(timeValue);
+                    scheduledTime.setHours(parsed.getHours(), parsed.getMinutes(), 0, 0);
+                } else if (timeValue.match(/^\d{2}:\d{2}/)) {
+                    const [hours, minutes] = timeValue.split(':').map(Number);
+                    scheduledTime.setHours(hours, minutes, 0, 0);
+                } else {
+                    const parsed = new Date(timeValue);
+                    scheduledTime.setHours(parsed.getHours(), parsed.getMinutes(), 0, 0);
+                }
+            } else {
+                const parsed = new Date(timeValue);
+                scheduledTime.setHours(parsed.getHours(), parsed.getMinutes(), 0, 0);
+            }
+        } catch {
+            return null;
+        }
+
+        // Find the administration that matches this time (within 30 minutes)
+        const matchingAdmin = todayAdminData.data.find(admin => {
+            const adminTime = new Date(admin.administered_at);
+            
+            // Calculate time difference in minutes
+            const adminMinutes = adminTime.getHours() * 60 + adminTime.getMinutes();
+            const scheduledMinutes = scheduledTime.getHours() * 60 + scheduledTime.getMinutes();
+            const diffMinutes = Math.abs(adminMinutes - scheduledMinutes);
+            
+            // Allow up to 30 minutes difference
+            return diffMinutes <= 30;
+        });
+
+        return matchingAdmin ? matchingAdmin.status : null;
+    };
+
+    const times = [
+        { value: medication.time_1, label: 'Time 1' },
+        { value: medication.time_2, label: 'Time 2' },
+        { value: medication.time_3, label: 'Time 3' },
+        { value: medication.time_4, label: 'Time 4' },
+    ].filter(t => t.value);
+
+    return (
+        <div className="flex flex-wrap gap-2">
+            {times.map((time, idx) => {
+                const timeStr = formatTime(time.value);
+                const status = getTimeStatus(time.value);
+                
+                const getStatusStyles = (status) => {
+                    switch (status) {
+                        case 'completed':
+                            return 'bg-green-500 text-white';
+                        case 'missed':
+                            return 'bg-red-500 text-white';
+                        case 'refused':
+                            return 'bg-yellow-500 text-white';
+                        default:
+                            return 'bg-green-100 text-[#2D5016]';
+                    }
+                };
+
+                const getStatusIcon = (status) => {
+                    switch (status) {
+                        case 'completed':
+                            return <CheckCircle className="w-3 h-3 ml-1" />;
+                        case 'missed':
+                            return <XCircle className="w-3 h-3 ml-1" />;
+                        case 'refused':
+                            return <AlertCircle className="w-3 h-3 ml-1" />;
+                        default:
+                            return null;
+                    }
+                };
+
+                const getStatusLabel = (status) => {
+                    switch (status) {
+                        case 'completed':
+                            return 'Taken';
+                        case 'missed':
+                            return 'Missed';
+                        case 'refused':
+                            return 'Refused';
+                        default:
+                            return '';
+                    }
+                };
+                
+                return timeStr ? (
+                    <span
+                        key={idx}
+                        className={`inline-flex items-center px-2 py-1 rounded text-xs ${getStatusStyles(status)}`}
+                        title={status ? `${getStatusLabel(status)} at ${timeStr}` : `Scheduled for ${timeStr}`}
+                    >
+                        <Clock className="w-3 h-3 mr-1" />
+                        {timeStr}
+                        {getStatusIcon(status)}
+                        {status && (
+                            <span className="ml-1 text-xs font-medium">{getStatusLabel(status)}</span>
+                        )}
+                    </span>
+                ) : null;
+            })}
+        </div>
+    );
+}
+
 // Quick Administer Component
 function QuickAdminister({ medication, onSuccess }) {
     const queryClient = useQueryClient();
@@ -1123,6 +1278,47 @@ function QuickAdminister({ medication, onSuccess }) {
     const [error, setError] = useState('');
     const [isWithinTimeWindow, setIsWithinTimeWindow] = useState(false);
     const [timeMessage, setTimeMessage] = useState('');
+    const [isDailyLimitReached, setIsDailyLimitReached] = useState(false);
+
+    // Fetch today's administrations to check daily limit
+    const { data: todayAdminData } = useQuery({
+        queryKey: ['medication-administrations-today-check', medication.id],
+        queryFn: async () => {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await api.get('/medication-administrations', {
+                params: {
+                    medication_id: medication.id,
+                    date_from: today,
+                    date_to: today,
+                    per_page: 100,
+                },
+            });
+            return response.data;
+        },
+    });
+
+    // Calculate daily limit based on instructions
+    const getDailyLimit = () => {
+        const instruction = (medication.instructions || '').toLowerCase().trim();
+        if (instruction === 'prn') return null; // unlimited
+        if (['b.i.d', 'bid', 'b.i.d.'].includes(instruction)) return 2;
+        if (['t.i.d', 'tid', 't.i.d.'].includes(instruction)) return 3;
+        if (['q.i.d', 'qid', 'q.i.d.'].includes(instruction)) return 4;
+        if (['a.m', 'am', 'p.m', 'pm', 'h.s', 'hs'].includes(instruction)) return 1;
+        return null; // unknown instruction, allow
+    };
+
+    // Check if daily limit is reached
+    React.useEffect(() => {
+        const dailyLimit = getDailyLimit();
+        if (dailyLimit === null) {
+            setIsDailyLimitReached(false);
+            return;
+        }
+
+        const countToday = todayAdminData?.data?.length || 0;
+        setIsDailyLimitReached(countToday >= dailyLimit);
+    }, [todayAdminData, medication.instructions]);
 
     // Helper function to parse time and convert to today's date
     const parseTimeToToday = (timeValue) => {
@@ -1276,6 +1472,8 @@ function QuickAdminister({ medication, onSuccess }) {
                 status,
             });
             queryClient.invalidateQueries(['medication-administrations']);
+            queryClient.invalidateQueries(['medication-administrations-today', medication.id]);
+            queryClient.invalidateQueries(['medication-administrations-today-check', medication.id]);
             onSuccess?.();
         } catch (e) {
             const msg = e?.response?.data?.message || 'Unable to record administration.';
@@ -1284,6 +1482,8 @@ function QuickAdminister({ medication, onSuccess }) {
             setSubmitting(false);
         }
     };
+
+    const isButtonDisabled = submitting || isDailyLimitReached || (!isWithinTimeWindow && !medication.instructions?.includes('PRN'));
 
     return (
         <div className="mt-3">
@@ -1295,17 +1495,24 @@ function QuickAdminister({ medication, onSuccess }) {
                 </select>
                 <button 
                     onClick={handleRecord} 
-                    disabled={submitting || (!isWithinTimeWindow && !medication.instructions?.includes('PRN'))} 
+                    disabled={isButtonDisabled} 
                     className="px-2 py-1 bg-[#2D5016] text-white rounded text-xs hover:bg-[#1a3009] disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={!isWithinTimeWindow && !medication.instructions?.includes('PRN') ? timeMessage : ''}
+                    title={
+                        isDailyLimitReached 
+                            ? 'Daily administration limit reached for this medication'
+                            : (!isWithinTimeWindow && !medication.instructions?.includes('PRN') ? timeMessage : '')
+                    }
                 >
-                    {submitting ? 'Recording...' : 'Record Now'}
+                    {submitting ? 'Administering...' : 'Administer'}
                 </button>
             </div>
             {error && (
                 <p className="mt-2 text-xs text-red-600">{error}</p>
             )}
-            {!isWithinTimeWindow && !medication.instructions?.includes('PRN') && timeMessage && (
+            {isDailyLimitReached && (
+                <p className="mt-2 text-xs text-red-600">Daily administration limit reached for this medication.</p>
+            )}
+            {!isWithinTimeWindow && !medication.instructions?.includes('PRN') && timeMessage && !isDailyLimitReached && (
                 <p className="mt-1 text-xs text-amber-600">{timeMessage}</p>
             )}
         </div>
