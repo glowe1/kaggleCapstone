@@ -18,7 +18,20 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials)) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
+
+            if (!$user?->is_active) {
+                // Immediately end the session and block login for inactive accounts
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return response()->json([
+                    'message' => 'This account has been deactivated. Please contact an administrator.',
+                ], 403);
+            }
+
             $token = $user->createToken('api-token')->plainTextToken;
             
             // Regenerate session to prevent session fixation attacks

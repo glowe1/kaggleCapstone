@@ -376,9 +376,9 @@ public function panel(Panel $panel): Panel
         ->path('admin')
         ->login()
         ->colors([
-            'primary' => '#2D5016',   // Dark green
+            'primary' => '#25603E',   // Dark green
             'gray' => '#654321',      // Dark brown
-            'success' => '#2D5016',
+            'success' => '#25603E',
             'warning' => '#D4A574',   // Warm beige
             'danger' => '#8B4513',    // Dark brown
         ])
@@ -541,9 +541,9 @@ Route::get('/', function () {
 - **Name**: Evergreen Oasis Care Home
 - **Logo**: Green tree logo (public/images/logo.jpeg)
 - **Colors**: 
-  - Primary: Dark green (#2D5016)
+  - Primary: Dark green (#25603E)
   - Secondary: Dark brown (#654321)
-  - Success: Dark green (#2D5016)
+  - Success: Dark green (#25603E)
   - Warning: Warm beige (#D4A574)
   - Danger: Dark brown (#8B4513)
 

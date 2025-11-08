@@ -276,7 +276,18 @@ class UserController extends Controller
             unset($validated['role_ids']);
         }
 
+        $wasActive = (bool) $user->is_active;
+
         $user->update($validated);
+
+        // Revoke any active API tokens when an account is deactivated
+        if (
+            array_key_exists('is_active', $validated)
+            && $wasActive
+            && $validated['is_active'] === false
+        ) {
+            $user->tokens()->delete();
+        }
 
         // Update roles if provided
         if ($roleIds !== null) {
