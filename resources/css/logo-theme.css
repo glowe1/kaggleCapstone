@@ -24,7 +24,7 @@ body {
 .filament-login-page .filament-login-page-card {
     background-color: white;
     border: 2px solid var(--logo-green);
-    box-shadow: 0 4px 6px rgba(45, 80, 22, 0.1);
+    box-shadow: 0 4px 6px rgba(37, 96, 62, 0.1);
 }
 
 /* Customize button colors to match logo */

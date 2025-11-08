@@ -583,7 +583,7 @@ function ResidentVitalsChart({ data }) {
                 },
             },
             tooltip: {
-                backgroundColor: 'rgba(45, 80, 22, 0.9)',
+                backgroundColor: 'rgba(37, 96, 62, 0.9)',
                 padding: 12,
                 titleFont: {
                     size: 13,
