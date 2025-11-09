@@ -1253,6 +1253,19 @@ function QuickAdminister({ medication, onSuccess }) {
     const [isWithinTimeWindow, setIsWithinTimeWindow] = useState(false);
     const [timeMessage, setTimeMessage] = useState('');
     const [isDailyLimitReached, setIsDailyLimitReached] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [nextWindowStart, setNextWindowStart] = useState(null);
+    const [nextWindowCountdown, setNextWindowCountdown] = useState('');
+    const [upcomingScheduledDisplay, setUpcomingScheduledDisplay] = useState('');
+
+    const normalizedInstruction = React.useMemo(
+        () => (medication.instructions || '').toLowerCase().trim(),
+        [medication.instructions]
+    );
+    const isPrnMedication = React.useMemo(
+        () => normalizedInstruction.includes('prn'),
+        [normalizedInstruction]
+    );
 
     // Fetch today's administrations to check daily limit
     const { data: todayAdminData } = useQuery({
