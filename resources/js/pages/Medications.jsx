@@ -32,6 +32,37 @@ const formatInstructionDisplay = (value) => {
     return INSTRUCTION_DISPLAY_MAP[normalized] ?? value;
 };
 
+const isMedicationPeriodActiveNow = (medication, referenceDate = new Date()) => {
+    if (!medication || !(referenceDate instanceof Date) || Number.isNaN(referenceDate.getTime())) {
+        return false;
+    }
+
+    const parseDate = (value) => {
+        if (!value) return null;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const startDate = parseDate(medication.start_date);
+    const endDate = parseDate(medication.end_date);
+
+    if (startDate) {
+        const startBoundary = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+        if (referenceDate < startBoundary) {
+            return false;
+        }
+    }
+
+    if (endDate) {
+        const endBoundary = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+        if (referenceDate > endBoundary) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
 export default function Medications() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
@@ -124,6 +155,191 @@ export default function Medications() {
             return response.data;
         },
     });
+
+    const medicationsList = React.useMemo(() => data?.data ?? [], [data?.data]);
+    const { activePeriodMedications, endedPeriodMedications } = React.useMemo(() => {
+        const now = new Date();
+        const active = [];
+        const ended = [];
+
+        medicationsList.forEach((medication) => {
+            if (isMedicationPeriodActiveNow(medication, now)) {
+                active.push(medication);
+            } else {
+                ended.push(medication);
+            }
+        });
+
+        return { activePeriodMedications: active, endedPeriodMedications: ended };
+    }, [medicationsList]);
+
+    const renderMedicationCard = (medication) => {
+        const residentName = [
+            medication.resident?.first_name,
+            medication.resident?.last_name,
+        ]
+            .filter(Boolean)
+            .join(' ')
+            || medication.resident?.name
+            || 'Resident';
+        const branchName = medication.branch?.name;
+        const periodActive = isMedicationPeriodActiveNow(medication);
+
+        return (
+            <div
+                key={medication.id}
+                className={`bg-white rounded-lg shadow p-6 ${periodActive ? '' : 'border border-amber-200'}`}
+            >
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    {residentName}
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                    {branchName || 'No branch assigned'}
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                {medication.is_active && periodActive && (
+                                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                        Active
+                                    </span>
+                                )}
+                                {!periodActive && (
+                                    <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                                        Period Ended
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <p className="text-lg font-semibold text-gray-900 mb-2">
+                            {medication.name || 'Medication'}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            {medication.instructions && (
+                                <div className="flex items-start space-x-2">
+                                    <Pill className="w-4 h-4 text-gray-400 mt-1" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">Instructions</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            {formatInstructionDisplay(medication.instructions)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {medication.quantity && (
+                                <div className="flex items-start space-x-2">
+                                    <Pill className="w-4 h-4 text-gray-400 mt-1" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">Quantity</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            {medication.quantity}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {medication.start_date && (
+                                <div className="flex items-start space-x-2">
+                                    <Calendar className="w-4 h-4 text-gray-400 mt-1" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">Start Date</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            {new Date(medication.start_date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {medication.end_date && (
+                                <div className="flex items-start space-x-2">
+                                    <Calendar className="w-4 h-4 text-gray-400 mt-1" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">End Date</p>
+                                        <p className={`text-sm font-medium ${periodActive ? 'text-gray-900' : 'text-amber-700'}`}>
+                                            {new Date(medication.end_date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Medication Times */}
+                        {(medication.time_1 || medication.time_2 || medication.time_3 || medication.time_4) && (
+                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <p className="text-xs font-medium text-gray-700">Administration Times:</p>
+                                    {!periodActive && (
+                                        <span className="text-xs text-amber-600 font-medium">
+                                            Outside administration period
+                                        </span>
+                                    )}
+                                </div>
+                                <MedicationTimeBadges medication={medication} />
+
+                                {/* Quick Administer */}
+                                <QuickAdminister medication={medication} onSuccess={() => { 
+                                    queryClient.invalidateQueries(['medications']); 
+                                    queryClient.invalidateQueries(['medication-administrations']); 
+                                    queryClient.invalidateQueries(['medication-administrations-today', medication.id]);
+                                    queryClient.invalidateQueries(['medication-administrations-today-check', medication.id]);
+                                }} />
+
+                                <button
+                                    onClick={() => {
+                                        if (medication?.resident_id) {
+                                            navigate(`/medication-history?resident=${medication.resident_id}`);
+                                        } else {
+                                            navigate('/medication-history');
+                                        }
+                                    }}
+                                    className="mt-2 text-xs text-[#25603E] hover:underline"
+                                >
+                                    Medication History
+                                </button>
+                            </div>
+                        )}
+
+                        {medication.diagnosis && (
+                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    <span className="font-medium">Diagnosis: </span>
+                                    {medication.diagnosis}
+                                </p>
+                            </div>
+                        )}
+
+                        {medication.notes && (
+                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    <span className="font-medium">Notes: </span>
+                                    {medication.notes}
+                                </p>
+                            </div>
+                        )}
+
+                        {!periodActive && medication.end_date && (
+                            <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                <p className="text-sm text-amber-700">
+                                    Medication period ended on {new Date(medication.end_date).toLocaleDateString()}.
+                                </p>
+                                {medication.is_active && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                        Medication is still marked Active; review status if this period should remain closed.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     // Reset to page 1 when filters change
     React.useEffect(() => {
@@ -286,158 +502,51 @@ export default function Medications() {
                             Reset Filters
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        {data?.data?.length > 0 ? (
-                            data.data.map((medication) => {
-                                const residentName = [
-                                    medication.resident?.first_name,
-                                    medication.resident?.last_name,
-                                ]
-                                    .filter(Boolean)
-                                    .join(' ')
-                                    || medication.resident?.name
-                                    || 'Resident';
-                                const branchName = medication.branch?.name;
-
-                                return (
-                                    <div key={medication.id} className="bg-white rounded-lg shadow p-6">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-start justify-between gap-3 mb-2">
-                                                    <div>
-                                                        <h3 className="text-lg font-semibold text-gray-900">
-                                                            {residentName}
-                                                        </h3>
-                                                        <p className="text-sm text-gray-500">
-                                                            {branchName || 'No branch assigned'}
-                                                        </p>
-                                                    </div>
-                                                    {medication.is_active && (
-                                                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium self-start">
-                                                            Active
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <p className="text-lg font-semibold text-gray-900 mb-2">
-                                                    {medication.name || 'Medication'}
-                                                </p>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                            {medication.instructions && (
-                                                <div className="flex items-start space-x-2">
-                                                    <Pill className="w-4 h-4 text-gray-400 mt-1" />
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">Instructions</p>
-                                                        <p className="text-sm font-medium text-gray-900">
-                                                            {formatInstructionDisplay(medication.instructions)}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            
-                                            {medication.quantity && (
-                                                <div className="flex items-start space-x-2">
-                                                    <Pill className="w-4 h-4 text-gray-400 mt-1" />
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">Quantity</p>
-                                                        <p className="text-sm font-medium text-gray-900">
-                                                            {medication.quantity}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {medication.start_date && (
-                                                <div className="flex items-start space-x-2">
-                                                    <Calendar className="w-4 h-4 text-gray-400 mt-1" />
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">Start Date</p>
-                                                        <p className="text-sm font-medium text-gray-900">
-                                                            {new Date(medication.start_date).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {medication.end_date && (
-                                                <div className="flex items-start space-x-2">
-                                                    <Calendar className="w-4 h-4 text-gray-400 mt-1" />
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">End Date</p>
-                                                        <p className="text-sm font-medium text-gray-900">
-                                                            {new Date(medication.end_date).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Medication Times */}
-                                        {(medication.time_1 || medication.time_2 || medication.time_3 || medication.time_4) && (
-                                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                                                <div className="mb-2">
-                                                    <p className="text-xs font-medium text-gray-700">Administration Times:</p>
-                                                </div>
-                                                <MedicationTimeBadges medication={medication} />
-
-                                                {/* Quick Administer */}
-                                                <QuickAdminister medication={medication} onSuccess={() => { 
-                                                    queryClient.invalidateQueries(['medications']); 
-                                                    queryClient.invalidateQueries(['medication-administrations']); 
-                                                    queryClient.invalidateQueries(['medication-administrations-today', medication.id]);
-                                                    queryClient.invalidateQueries(['medication-administrations-today-check', medication.id]);
-                                                }} />
-
-                                                <button
-                                                    onClick={() => {
-                                                        if (medication?.resident_id) {
-                                                            navigate(`/medication-history?resident=${medication.resident_id}`);
-                                                        } else {
-                                                            navigate('/medication-history');
-                                                        }
-                                                    }}
-                                                    className="mt-2 text-xs text-[#25603E] hover:underline"
-                                                >
-                                                    Medication History
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {medication.diagnosis && (
-                                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                                                <p className="text-sm text-gray-700">
-                                                    <span className="font-medium">Diagnosis: </span>
-                                                    {medication.diagnosis}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                                {medication.notes && (
-                                                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                                                        <p className="text-sm text-gray-700">
-                                                            <span className="font-medium">Notes: </span>
-                                                            {medication.notes}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                    {medicationsList.length > 0 ? (
+                        <div className="space-y-8">
+                            {activePeriodMedications.length > 0 && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-base font-semibold text-gray-900">
+                                            Active Medication Periods
+                                        </h3>
+                                        <span className="text-xs text-gray-500">
+                                            Showing {activePeriodMedications.length} medication{activePeriodMedications.length === 1 ? '' : 's'}
+                                        </span>
                                     </div>
-                                );
-                            })
-                        ) : (
-                            <div className="bg-white rounded-lg shadow p-12 text-center col-span-full">
-                                <Pill className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-600 text-lg font-medium">No medications found</p>
-                                <p className="text-gray-500 text-sm mt-2">
-                                    {activeOnly 
-                                        ? 'No active medications found.' 
-                                        : 'Try adjusting your search or filters.'}
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {activePeriodMedications.map(renderMedicationCard)}
+                                    </div>
+                                </div>
+                            )}
+
+                            {endedPeriodMedications.length > 0 && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-base font-semibold text-gray-900">
+                                            Completed Medication Periods
+                                        </h3>
+                                        <span className="text-xs text-gray-500">
+                                            Showing {endedPeriodMedications.length} medication{endedPeriodMedications.length === 1 ? '' : 's'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {endedPeriodMedications.map(renderMedicationCard)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-lg shadow p-12 text-center col-span-full">
+                            <Pill className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600 text-lg font-medium">No medications found</p>
+                            <p className="text-gray-500 text-sm mt-2">
+                                {activeOnly 
+                                    ? 'No active medications found.' 
+                                    : 'Try adjusting your search or filters.'}
+                            </p>
+                        </div>
+                    )}
 
                     {/* Pagination */}
                     {data?.data?.length > 0 && data?.meta && (
@@ -1263,6 +1372,7 @@ function QuickAdminister({ medication, onSuccess }) {
     const [nextWindowCountdown, setNextWindowCountdown] = useState('');
     const [upcomingScheduledDisplay, setUpcomingScheduledDisplay] = useState('');
     const [isLateMode, setIsLateMode] = useState(false);
+    const [isMedicationPeriodActive, setIsMedicationPeriodActive] = useState(true);
 
     const closeDosageModal = React.useCallback(() => {
         if (submitting) return;
@@ -1378,6 +1488,11 @@ function QuickAdminister({ medication, onSuccess }) {
         [parseTimeToToday]
     );
 
+    const computeMedicationPeriodActive = React.useCallback(
+        () => isMedicationPeriodActiveNow(medication),
+        [medication.start_date, medication.end_date]
+    );
+
     // Check if current time is within 60 minutes before or after any scheduled time
     const checkTimeWindow = React.useCallback(() => {
         const windowBeforeMinutes = 60;
@@ -1388,6 +1503,19 @@ function QuickAdminister({ medication, onSuccess }) {
             medication.time_3,
             medication.time_4,
         ].filter(Boolean);
+
+        const periodActive = computeMedicationPeriodActive();
+        setIsMedicationPeriodActive(periodActive);
+
+        if (!periodActive) {
+            setIsWithinTimeWindow(false);
+            setHasClosedWindow(false);
+            setTimeMessage('Medication administration period has ended.');
+            setNextWindowStart(null);
+            setNextWindowCountdown('');
+            setUpcomingScheduledDisplay('');
+            return;
+        }
 
         if (isPrnMedication || times.length === 0) {
             setIsWithinTimeWindow(true);
@@ -1459,6 +1587,7 @@ function QuickAdminister({ medication, onSuccess }) {
         setHasClosedWindow(pastWindowExists);
     }, [
         formatScheduledTime,
+        computeMedicationPeriodActive,
         isPrnMedication,
         medication.time_1,
         medication.time_2,
@@ -1525,9 +1654,14 @@ function QuickAdminister({ medication, onSuccess }) {
     }, [nextWindowStart, checkTimeWindow]);
 
     const isButtonDisabled =
-        submitting || isDailyLimitReached || (!isWithinTimeWindow && !isPrnMedication);
+        submitting || isDailyLimitReached || !isMedicationPeriodActive || (!isWithinTimeWindow && !isPrnMedication);
     const showLateButton =
-        !isPrnMedication && !isWithinTimeWindow && hasClosedWindow && !isDailyLimitReached && !submitting;
+        !isPrnMedication &&
+        !isWithinTimeWindow &&
+        hasClosedWindow &&
+        !isDailyLimitReached &&
+        !submitting &&
+        isMedicationPeriodActive;
 
     const openDosageModal = (late = false) => {
         if (late) {
@@ -1553,6 +1687,10 @@ function QuickAdminister({ medication, onSuccess }) {
                 </select>
                 <button 
                     onClick={() => {
+                        if (!isMedicationPeriodActive) {
+                            setError('Medication administration period has ended.');
+                            return;
+                        }
                         if (!isWithinTimeWindow && !isPrnMedication) {
                             return;
                         }
@@ -1563,16 +1701,24 @@ function QuickAdminister({ medication, onSuccess }) {
                     title={
                         isDailyLimitReached 
                             ? 'Daily administration limit reached for this medication'
-                            : (!isWithinTimeWindow && !isPrnMedication
+                            : (!isMedicationPeriodActive
+                                ? 'Medication administration period has ended.'
+                                : (!isWithinTimeWindow && !isPrnMedication
                                 ? (timeMessage || (nextWindowCountdown ? `Next window in ${nextWindowCountdown}` : 'Outside scheduled window'))
-                                : '')
+                                : ''))
                     }
                 >
                     {submitting ? 'Administering...' : 'Administer'}
                 </button>
                 {showLateButton && (
                     <button
-                        onClick={() => openDosageModal(true)}
+                        onClick={() => {
+                            if (!isMedicationPeriodActive) {
+                                setError('Medication administration period has ended.');
+                                return;
+                            }
+                            openDosageModal(true);
+                        }}
                         className="px-2 py-1 bg-amber-600 text-white rounded text-xs hover:bg-amber-700 transition-colors"
                     >
                         Late Administer
@@ -1588,7 +1734,10 @@ function QuickAdminister({ medication, onSuccess }) {
             {isDailyLimitReached && (
                 <p className="mt-2 text-xs text-red-600">Daily administration limit reached for this medication.</p>
             )}
-            {!isWithinTimeWindow && !isPrnMedication && !isDailyLimitReached && (timeMessage || nextWindowCountdown) && (
+            {!isMedicationPeriodActive && timeMessage && (
+                <p className="mt-1 text-xs text-red-600">{timeMessage}</p>
+            )}
+            {isMedicationPeriodActive && !isWithinTimeWindow && !isPrnMedication && !isDailyLimitReached && (timeMessage || nextWindowCountdown) && (
                 <p className="mt-1 text-xs text-amber-600">
                     {timeMessage}
                     {upcomingScheduledDisplay && timeMessage ? ` (${upcomingScheduledDisplay})` : upcomingScheduledDisplay}
