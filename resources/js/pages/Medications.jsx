@@ -1250,6 +1250,10 @@ function QuickAdminister({ medication, onSuccess }) {
     const [status, setStatus] = useState('completed');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [isDosageModalOpen, setIsDosageModalOpen] = useState(false);
+    const [dosageGiven, setDosageGiven] = useState('');
+    const [dosageNotes, setDosageNotes] = useState('');
+    const [dosageValidationError, setDosageValidationError] = useState('');
     const [isWithinTimeWindow, setIsWithinTimeWindow] = useState(false);
     const [timeMessage, setTimeMessage] = useState('');
     const [isDailyLimitReached, setIsDailyLimitReached] = useState(false);
@@ -1257,6 +1261,15 @@ function QuickAdminister({ medication, onSuccess }) {
     const [nextWindowStart, setNextWindowStart] = useState(null);
     const [nextWindowCountdown, setNextWindowCountdown] = useState('');
     const [upcomingScheduledDisplay, setUpcomingScheduledDisplay] = useState('');
+
+    const closeDosageModal = React.useCallback(() => {
+        if (submitting) return;
+        setIsDosageModalOpen(false);
+        setDosageValidationError('');
+        setError('');
+        setDosageGiven('');
+        setDosageNotes('');
+    }, [submitting]);
 
     const normalizedInstruction = React.useMemo(
         () => (medication.instructions || '').toLowerCase().trim(),
@@ -1364,7 +1377,8 @@ function QuickAdminister({ medication, onSuccess }) {
 
     // Check if current time is within 30 minutes of any scheduled time
     const checkTimeWindow = React.useCallback(() => {
-        const windowMinutes = 30;
+        const windowBeforeMinutes = 0;
+        const windowAfterMinutes = 30;
         const times = [
             medication.time_1,
             medication.time_2,
@@ -1391,9 +1405,9 @@ function QuickAdminister({ medication, onSuccess }) {
                     .filter(Boolean)
                     .map((scheduledDate) => {
                         const start = new Date(scheduledDate);
-                        start.setMinutes(start.getMinutes() - windowMinutes);
+                        start.setMinutes(start.getMinutes() - windowBeforeMinutes);
                         const end = new Date(scheduledDate);
-                        end.setMinutes(end.getMinutes() + windowMinutes);
+                        end.setMinutes(end.getMinutes() + windowAfterMinutes);
                         const label =
                             formatScheduledTime(timeValue) ||
                             scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1409,6 +1423,7 @@ function QuickAdminister({ medication, onSuccess }) {
                 setNextWindowStart(null);
                 setNextWindowCountdown('');
                 setUpcomingScheduledDisplay(window.label || '');
+                setError('');
                 return;
             }
 
@@ -1501,54 +1516,6 @@ function QuickAdminister({ medication, onSuccess }) {
         return () => clearInterval(interval);
     }, [nextWindowStart, checkTimeWindow]);
 
-    const handleRecord = async () => {
-        if (!isWithinTimeWindow && !isPrnMedication) {
-            setError('Can only record within 30 minutes of scheduled medication time');
-            return;
-        }
-
-        setSuccessMessage('');
-
-        const medicationName = medication.name || medication.drug?.name || 'this medication';
-        const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
-
-        if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
-            const confirmed = window.confirm(
-                `Confirm marking ${medicationName} as ${statusLabel.toLowerCase()}?`
-            );
-            if (!confirmed) {
-                return;
-            }
-        }
-
-        try {
-            setSubmitting(true);
-            setError('');
-            await api.post('/medication-administrations', {
-                medication_id: medication.id,
-                resident_id: medication.resident_id,
-                branch_id: medication.branch_id,
-                administered_at: new Date().toISOString().slice(0,16),
-                status,
-            });
-            queryClient.invalidateQueries(['medication-administrations']);
-            queryClient.invalidateQueries(['medication-administrations-today', medication.id]);
-            queryClient.invalidateQueries(['medication-administrations-today-check', medication.id]);
-            const successText = `Medication ${statusLabel} recorded successfully.`;
-            setSuccessMessage(successText);
-            if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-                window.alert(successText);
-            }
-            checkTimeWindow();
-            onSuccess?.();
-        } catch (e) {
-            const msg = e?.response?.data?.message || 'Unable to record administration.';
-            setError(msg);
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
     const isButtonDisabled =
         submitting || isDailyLimitReached || (!isWithinTimeWindow && !isPrnMedication);
 
@@ -1561,7 +1528,18 @@ function QuickAdminister({ medication, onSuccess }) {
                     <option value="refused">Refused</option>
                 </select>
                 <button 
-                    onClick={handleRecord} 
+                    onClick={() => {
+                        if (!isWithinTimeWindow && !isPrnMedication) {
+                            setError('Can only record within the scheduled time window.');
+                            return;
+                        }
+                        setDosageGiven('');
+                        setDosageNotes('');
+                        setDosageValidationError('');
+                        setError('');
+                        setSuccessMessage('');
+                        setIsDosageModalOpen(true);
+                    }} 
                     disabled={isButtonDisabled} 
                     className="px-2 py-1 bg-[#25603E] text-white rounded text-xs hover:bg-[#1B402D] disabled:opacity-50 disabled:cursor-not-allowed"
                     title={
@@ -1590,6 +1568,118 @@ function QuickAdminister({ medication, onSuccess }) {
                     {upcomingScheduledDisplay && timeMessage ? ` (${upcomingScheduledDisplay})` : upcomingScheduledDisplay}
                     {nextWindowCountdown && ` • Next window in ${nextWindowCountdown}`}
                 </p>
+            )}
+            {isDosageModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}>
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
+                        <div className="flex items-center justify-between border-b px-5 py-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Confirm Administration</h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    closeDosageModal();
+                                }}
+                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="px-5 py-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Dosage Given *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={dosageGiven}
+                                    onChange={(e) => {
+                                        setDosageGiven(e.target.value);
+                                        if (dosageValidationError) {
+                                            setDosageValidationError('');
+                                        }
+                                    }}
+                                    placeholder="e.g., 1 tablet, 5 ml"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
+                                    disabled={submitting}
+                                />
+                                {(dosageValidationError || error) && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {dosageValidationError || error}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Notes (optional)
+                                </label>
+                                <textarea
+                                    value={dosageNotes}
+                                    onChange={(e) => setDosageNotes(e.target.value)}
+                                    rows={3}
+                                    placeholder="Enter any additional notes..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
+                                    disabled={submitting}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2 border-t px-5 py-4">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    closeDosageModal();
+                                }}
+                                className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    const trimmedDosage = dosageGiven.trim();
+                                    if (!trimmedDosage) {
+                                        setDosageValidationError('Dosage is required.');
+                                        return;
+                                    }
+
+                                    try {
+                                        setSubmitting(true);
+                                        setError('');
+                                        await api.post('/medication-administrations', {
+                                            medication_id: medication.id,
+                                            resident_id: medication.resident_id,
+                                            branch_id: medication.branch_id,
+                                            administered_at: new Date().toISOString().slice(0,16),
+                                            status,
+                                            dosage_given: trimmedDosage,
+                                            notes: dosageNotes.trim() || undefined,
+                                        });
+                                        queryClient.invalidateQueries(['medication-administrations']);
+                                        queryClient.invalidateQueries(['medication-administrations-today', medication.id]);
+                                        queryClient.invalidateQueries(['medication-administrations-today-check', medication.id]);
+                                        const successText = `Medication ${status.charAt(0).toUpperCase() + status.slice(1)} recorded successfully.`;
+                                        setSuccessMessage(successText);
+                                        setIsDosageModalOpen(false);
+                                        setDosageGiven('');
+                                        setDosageNotes('');
+                                        setDosageValidationError('');
+                                        checkTimeWindow();
+                                        onSuccess?.();
+                                    } catch (e) {
+                                        const msg = e?.response?.data?.message || 'Unable to record administration.';
+                                        setError(msg);
+                                    } finally {
+                                        setSubmitting(false);
+                                    }
+                                }}
+                                className="px-4 py-2 text-sm bg-[#25603E] text-white rounded-lg hover:bg-[#1B402D] disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={submitting}
+                            >
+                                {submitting ? 'Saving...' : 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
