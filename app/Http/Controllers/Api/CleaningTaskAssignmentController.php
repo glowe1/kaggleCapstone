@@ -69,11 +69,11 @@ class CleaningTaskAssignmentController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, CleaningTaskAssignment $assignment)
+    public function destroy(Request $request, CleaningTaskAssignment $cleaningTaskAssignment)
     {
-        $this->authorizeAssignments($request->user(), $assignment->task);
+        $this->authorizeAssignments($request->user(), $cleaningTaskAssignment->task);
 
-        $assignment->delete();
+        $cleaningTaskAssignment->delete();
 
         return response()->json([
             'message' => 'Assignment removed.',
