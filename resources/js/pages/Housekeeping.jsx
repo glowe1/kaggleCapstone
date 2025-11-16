@@ -69,9 +69,16 @@ export default function Housekeeping() {
         }
     };
 
+    const isToday = React.useMemo(() => {
+        const today = new Date().toISOString().slice(0, 10);
+        return selectedDate === today;
+    }, [selectedDate]);
+
     const isWithinWindow = (task) => {
         // If no window defined, allow any time
         if (!task?.window_start && !task?.window_end) return true;
+        // Only enforce window for today's checklist; other dates should be editable without realtime gating
+        if (!isToday) return true;
         try {
             const dateStr = selectedDate; // 'YYYY-MM-DD'
             const now = new Date();
@@ -93,7 +100,9 @@ export default function Housekeeping() {
     const renderTask = (task) => {
         const badgeStyle = statusStyles[task.status] ?? statusStyles.pending;
         const windowOk = isWithinWindow(task);
-        const disabled = mutation.isLoading || task.status === 'completed' || !windowOk;
+        const completedOnSelectedDate =
+            Boolean(task.completed_at) && String(task.completed_at).slice(0, 10) === selectedDate;
+        const disabled = mutation.isLoading || completedOnSelectedDate || !windowOk;
 
         return (
             <div key={task.id} className="rounded-2xl border border-gray-100 bg-white/80 p-4 shadow-sm">
