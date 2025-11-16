@@ -14,12 +14,17 @@ class HousekeepingSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->command?->info('🏠 Starting housekeeping seeder...');
+        
         $branch = Branch::first();
 
         if (!$branch) {
-            $this->command?->warn('No branches found. Skipping housekeeping seeder.');
+            $this->command?->error('❌ No branches found. Skipping housekeeping seeder.');
+            $this->command?->warn('Please create a branch first, then run this seeder again.');
             return;
         }
+
+        $this->command?->info("📍 Using branch: {$branch->name} (ID: {$branch->id})");
 
         $areas = [
             [
@@ -138,9 +143,14 @@ class HousekeepingSeeder extends Seeder
             ],
         ];
 
+        $areaCount = 0;
+        $taskCount = 0;
+
         foreach ($areas as $areaData) {
             $tasks = $areaData['tasks'] ?? [];
             unset($areaData['tasks']);
+
+            $this->command?->info("  Creating area: {$areaData['name']}");
 
             $area = CleaningArea::updateOrCreate(
                 [
@@ -152,6 +162,8 @@ class HousekeepingSeeder extends Seeder
                     'is_active' => true,
                 ])
             );
+
+            $areaCount++;
 
             foreach ($tasks as $taskData) {
                 CleaningTask::updateOrCreate(
@@ -170,9 +182,11 @@ class HousekeepingSeeder extends Seeder
                         'is_active' => true,
                     ]
                 );
+                $taskCount++;
             }
         }
 
-        $this->command?->info('Housekeeping areas and tasks seeded successfully.');
+        $this->command?->info("✅ Housekeeping seeder completed successfully!");
+        $this->command?->info("   Created/updated {$areaCount} areas and {$taskCount} tasks.");
     }
 }
