@@ -45,7 +45,8 @@ export default function StaffCharts() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
                         <p className="mt-4 text-gray-600">Loading staff charts...</p>
                     </div>
-                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -98,6 +99,8 @@ export default function StaffCharts() {
                         <p className="text-gray-600 text-xs font-medium">Pending Leave</p>
                         <p className="text-xl font-bold text-gray-900 mt-1">{data?.pending_leave || 0}</p>
                     </div>
+                </div>
+                </div>
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -181,6 +184,7 @@ export default function StaffCharts() {
                         </div>
                     )}
                 </div>
-                    </div>
+            </div>
+        </div>
     );
 }

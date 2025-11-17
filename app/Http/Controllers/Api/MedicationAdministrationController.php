@@ -247,6 +247,25 @@ class MedicationAdministrationController extends Controller
             }
         }
 
+        // Prevent duplicate administrations: check if a record with the same medication_id, 
+        // administered_at (within 1 minute), and status already exists
+        $existingAdministration = MedicationAdministration::where('medication_id', $validated['medication_id'])
+            ->where('resident_id', $validated['resident_id'])
+            ->where('status', $validated['status'])
+            ->whereBetween('administered_at', [
+                $administeredAt->copy()->subMinute(),
+                $administeredAt->copy()->addMinute()
+            ])
+            ->first();
+
+        if ($existingAdministration) {
+            // Return the existing record instead of creating a duplicate
+            return response()->json(
+                $existingAdministration->load(['medication', 'resident', 'branch', 'administeredBy']), 
+                200
+            );
+        }
+
         $administration = MedicationAdministration::create($validated);
 
         return response()->json($administration->load(['medication', 'resident', 'branch', 'administeredBy']), 201);

@@ -2009,9 +2009,19 @@ function QuickAdminister({ medication, onSuccess }) {
                             <button
                                 type="button"
                                 onClick={async () => {
+                                    // Prevent double-clicks: check if already submitting
+                                    if (submitting) {
+                                        return;
+                                    }
+                                    
+                                    // Set submitting state immediately to prevent double-clicks
+                                    setSubmitting(true);
+                                    setError('');
+                                    
                                     const trimmedDosage = dosageGiven.trim();
                                     if (!trimmedDosage) {
                                         setDosageValidationError('Dosage is required.');
+                                        setSubmitting(false);
                                         return;
                                     }
 
@@ -2033,9 +2043,10 @@ function QuickAdminister({ medication, onSuccess }) {
                                     const currentData = queryClient.getQueryData(queryKey);
                                     const currentCheckData = queryClient.getQueryData(checkQueryKey);
                                     
-                                    // Create optimistic administration record
+                                    // Create optimistic administration record with unique temp ID
+                                    const tempId = `temp-${Date.now()}-${Math.random()}`;
                                     const optimisticAdmin = {
-                                        id: `temp-${Date.now()}`,
+                                        id: tempId,
                                         medication_id: medication.id,
                                         resident_id: medication.resident_id,
                                         branch_id: medication.branch_id,
@@ -2055,6 +2066,11 @@ function QuickAdminister({ medication, onSuccess }) {
                                                 total: 1,
                                             };
                                         }
+                                        // Check if optimistic admin already exists to prevent duplicates
+                                        const exists = (old.data || []).some(a => a.id === tempId);
+                                        if (exists) {
+                                            return old;
+                                        }
                                         return {
                                             ...old,
                                             data: [...(old.data || []), optimisticAdmin],
@@ -2068,6 +2084,11 @@ function QuickAdminister({ medication, onSuccess }) {
                                                 data: [optimisticAdmin],
                                                 total: 1,
                                             };
+                                        }
+                                        // Check if optimistic admin already exists to prevent duplicates
+                                        const exists = (old.data || []).some(a => a.id === tempId);
+                                        if (exists) {
+                                            return old;
                                         }
                                         return {
                                             ...old,
@@ -2088,9 +2109,6 @@ function QuickAdminister({ medication, onSuccess }) {
                                     
                                     // Make API call in background
                                     try {
-                                        setSubmitting(true);
-                                        setError('');
-                                        
                                         const response = await api.post('/medication-administrations', {
                                             medication_id: medication.id,
                                             resident_id: medication.resident_id,
@@ -2104,21 +2122,62 @@ function QuickAdminister({ medication, onSuccess }) {
                                         // Replace optimistic update with real data
                                         const realAdmin = response.data?.data || response.data;
                                         
+                                        // Remove all temp records with the same medication and time, then add real one
                                         queryClient.setQueryData(queryKey, (old) => {
                                             if (!old) return old;
-                                            const filtered = (old.data || []).filter(a => a.id !== optimisticAdmin.id);
+                                            // Filter out all temp records and any existing real records with same medication_id and administered_at
+                                            const filtered = (old.data || []).filter(a => {
+                                                // Keep if it's a real record (numeric ID) and different from the new one
+                                                if (typeof a.id === 'number') {
+                                                    // Only keep if it's not a duplicate of the new record
+                                                    return !(a.medication_id === realAdmin.medication_id && 
+                                                             a.administered_at === realAdmin.administered_at &&
+                                                             a.status === realAdmin.status);
+                                                }
+                                                // Remove all temp records
+                                                return false;
+                                            });
+                                            // Check if real admin already exists in filtered list
+                                            const exists = filtered.some(a => 
+                                                a.id === realAdmin.id || 
+                                                (a.medication_id === realAdmin.medication_id && 
+                                                 a.administered_at === realAdmin.administered_at &&
+                                                 a.status === realAdmin.status)
+                                            );
+                                            if (!exists) {
+                                                filtered.push(realAdmin);
+                                            }
                                             return {
                                                 ...old,
-                                                data: [...filtered, realAdmin],
+                                                data: filtered,
+                                                total: filtered.length,
                                             };
                                         });
                                         
                                         queryClient.setQueryData(checkQueryKey, (old) => {
                                             if (!old) return old;
-                                            const filtered = (old.data || []).filter(a => a.id !== optimisticAdmin.id);
+                                            // Filter out all temp records and duplicates
+                                            const filtered = (old.data || []).filter(a => {
+                                                if (typeof a.id === 'number') {
+                                                    return !(a.medication_id === realAdmin.medication_id && 
+                                                             a.administered_at === realAdmin.administered_at &&
+                                                             a.status === realAdmin.status);
+                                                }
+                                                return false;
+                                            });
+                                            const exists = filtered.some(a => 
+                                                a.id === realAdmin.id || 
+                                                (a.medication_id === realAdmin.medication_id && 
+                                                 a.administered_at === realAdmin.administered_at &&
+                                                 a.status === realAdmin.status)
+                                            );
+                                            if (!exists) {
+                                                filtered.push(realAdmin);
+                                            }
                                             return {
                                                 ...old,
-                                                data: [...filtered, realAdmin],
+                                                data: filtered,
+                                                total: filtered.length,
                                             };
                                         });
                                         

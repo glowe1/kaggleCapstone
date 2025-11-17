@@ -69,7 +69,8 @@ export default function ChartReports() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
                         <p className="mt-4 text-gray-600">Loading chart reports...</p>
                     </div>
-                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -129,8 +130,11 @@ export default function ChartReports() {
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
-                                /></div>
+                                />
+                            </div>
+                        </div>
                     </div>
+                </div>
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -175,6 +179,7 @@ export default function ChartReports() {
                             </p>
                         )}
                     </div>
+                </div>
 
                 {/* Additional Stats Row */}
                 {(stats?.sleep?.avg_quality || stats?.sleep?.total_sleep_hours) && (

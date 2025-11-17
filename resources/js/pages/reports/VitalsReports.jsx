@@ -69,7 +69,8 @@ export default function VitalsReports() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
                         <p className="mt-4 text-gray-600">Loading vitals report...</p>
                     </div>
-                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -158,6 +159,7 @@ export default function VitalsReports() {
                         ))}
                                 </select>
                             </div>
+                        </div>
                     </div>
                 </div>
 
@@ -299,6 +301,7 @@ export default function VitalsReports() {
                         </div>
                     )}
                 </div>
-                    </div>
+            </div>
+        </div>
     );
 }

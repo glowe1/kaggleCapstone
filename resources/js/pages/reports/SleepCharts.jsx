@@ -73,7 +73,8 @@ export default function SleepCharts() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
                         <p className="mt-4 text-gray-600">Loading sleep charts...</p>
                     </div>
-                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -151,8 +152,11 @@ export default function SleepCharts() {
                                 {r.first_name} {r.last_name}
                             </option>
                         ))}
-                                </select></div>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
@@ -190,6 +194,7 @@ export default function SleepCharts() {
                         {data?.total_sleep_hours ? parseFloat(data.total_sleep_hours).toFixed(1) : '0.0'}h
                                 </p>
                     </div>
+                </div>
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -388,8 +393,11 @@ export default function SleepCharts() {
                             <p>No data available</p>
                         </div>
                                 </div>
-                            )}</div>
+                            )}
+                        </div>
                     </div>
+                </div>
+            </div>
         </div>
     );
 }

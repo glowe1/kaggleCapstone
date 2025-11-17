@@ -73,7 +73,8 @@ export default function AppointmentsCharts() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
                         <p className="mt-4 text-gray-600">Loading appointment charts...</p>
                     </div>
-                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -167,8 +168,11 @@ export default function AppointmentsCharts() {
                                 {r.first_name} {r.last_name}
                             </option>
                         ))}
-                                </select></div>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -188,6 +192,7 @@ export default function AppointmentsCharts() {
                         <p className="text-gray-600 text-xs font-medium">Pending</p>
                         <p className="text-xl font-bold text-gray-900 mt-1">{data?.pending || 0}</p>
                     </div>
+                </div>
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -274,9 +279,12 @@ export default function AppointmentsCharts() {
                                 />
                             ) : (
                                 <div className="h-80 flex items-center justify-center text-gray-500">
-                        <div className="text-center">
-                            <LineChartIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                            <p>No data available</p>
+                                    <div className="text-center">
+                                        <LineChartIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                                        <p>No data available</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

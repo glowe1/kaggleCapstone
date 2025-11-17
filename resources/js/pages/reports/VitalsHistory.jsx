@@ -98,7 +98,8 @@ export default function VitalsHistory() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
                         <p className="mt-4 text-gray-600">Loading vitals history...</p>
                     </div>
-                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -193,8 +194,11 @@ export default function VitalsHistory() {
                                 {r.first_name} {r.last_name}
                             </option>
                         ))}
-                                </select></div>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
                 {chartData ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
