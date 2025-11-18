@@ -29,7 +29,7 @@ export default function ChartReports() {
         return date.toISOString().slice(0, 10);
     });
     const [dateTo, setDateTo] = useState(() => getLocalDateString());
-    const filtersRef = usePreventDateInputReload();
+    const containerRef = usePreventDateInputReload();
 
     const { data: stats, isLoading, refetch } = useQuery({
         queryKey: ['chart-overview', dateFrom, dateTo],
@@ -65,7 +65,7 @@ export default function ChartReports() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <div className="text-center py-12">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
@@ -77,7 +77,7 @@ export default function ChartReports() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
@@ -108,66 +108,74 @@ export default function ChartReports() {
                     </div>
 
                     {/* Date Filters */}
-                    <div ref={filtersRef} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                         <div className="flex flex-wrap items-end gap-4">
                             <div className="flex-1 min-w-[200px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Calendar className="inline h-4 w-4 mr-1" />
-                        From Date (for Sleep Data)
+                                    <Calendar className="inline h-4 w-4 mr-1" />
+                                    From Date (for Sleep Data)
                                 </label>
                                 <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => {
-                            e.stopPropagation();
-                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                e.nativeEvent.stopImmediatePropagation();
-                            }
-                            setDateFrom(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                    e.nativeEvent.stopImmediatePropagation();
-                                }
-                                return false;
-                            }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        onInput={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={(e) => {
+                                        e.stopPropagation();
+                                        if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                            e.nativeEvent.stopImmediatePropagation();
+                                        }
+                                        setDateFrom(e.target.value);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                                e.nativeEvent.stopImmediatePropagation();
+                                            }
+                                            return false;
+                                        }
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    onInput={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
                                 />
                             </div>
                             <div className="flex-1 min-w-[200px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Calendar className="inline h-4 w-4 mr-1" />
-                        To Date (for Sleep Data)
+                                    <Calendar className="inline h-4 w-4 mr-1" />
+                                    To Date (for Sleep Data)
                                 </label>
                                 <input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => {
-                            e.stopPropagation();
-                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                e.nativeEvent.stopImmediatePropagation();
-                            }
-                            setDateTo(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                    e.nativeEvent.stopImmediatePropagation();
-                                }
-                                return false;
-                            }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        onInput={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={(e) => {
+                                        e.stopPropagation();
+                                        if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                            e.nativeEvent.stopImmediatePropagation();
+                                        }
+                                        setDateTo(e.target.value);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                                e.nativeEvent.stopImmediatePropagation();
+                                            }
+                                            return false;
+                                        }
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    onInput={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
                                 />
                             </div>
                         </div>

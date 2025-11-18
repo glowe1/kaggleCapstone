@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Line, Chart } from 'react-chartjs-2';
@@ -20,6 +20,7 @@ import {
     ArrowRight, Sparkles, MoreVertical
 } from 'lucide-react';
 import { DashboardSkeleton } from '../components/ui/SkeletonLoader';
+import MiniCalendar from '../components/ui/MiniCalendar';
 
 // Register Chart.js components
 ChartJS.register(
@@ -74,6 +75,66 @@ export default function Dashboard() {
         },
         retry: false,
     });
+
+    // Fetch daily activities for calendar (last 30 days)
+    const { data: dailyActivities } = useQuery({
+        queryKey: ['dashboard-daily-activities'],
+        queryFn: async () => {
+            try {
+                const response = await api.get('/dashboard/daily-activities', {
+                    params: {
+                        days: 30,
+                    }
+                });
+                return response.data;
+            } catch (err) {
+                console.error('Daily activities API error:', err);
+                return { data: [] };
+            }
+        },
+        retry: false,
+    });
+
+    // Process daily activities for mini calendar
+    const calendarData = useMemo(() => {
+        if (!dailyActivities?.data) return [];
+
+        return dailyActivities.data.map(day => ({
+            date: day.date,
+            indicators: [
+                ...(day.appointments_count > 0 ? [{
+                    type: 'appointments',
+                    color: 'bg-blue-500',
+                    count: day.appointments_count,
+                }] : []),
+                ...(day.medications_due > 0 ? [{
+                    type: 'medications',
+                    color: 'bg-purple-500',
+                    count: day.medications_due,
+                }] : []),
+                ...(day.vitals_recorded > 0 ? [{
+                    type: 'vitals',
+                    color: 'bg-green-500',
+                    count: day.vitals_recorded,
+                }] : []),
+            ],
+            count: (day.appointments_count || 0) + (day.medications_due || 0) + (day.vitals_recorded || 0),
+        }));
+    }, [dailyActivities]);
+
+    const handleCalendarDateSelect = (dateStr) => {
+        // Navigate to relevant page based on what's available that day
+        const dayData = calendarData.find(d => d.date === dateStr);
+        if (dayData) {
+            if (dayData.indicators.some(i => i.type === 'appointments')) {
+                navigate('/appointments');
+            } else if (dayData.indicators.some(i => i.type === 'vitals')) {
+                navigate('/vitals');
+            } else if (dayData.indicators.some(i => i.type === 'medications')) {
+                navigate('/medications');
+            }
+        }
+    };
 
     const isCaregiver = stats?.user_type === 'caregiver';
     const currentHour = new Date().getHours();

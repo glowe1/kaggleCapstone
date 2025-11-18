@@ -16,8 +16,10 @@ import {
     BarChart3
 } from 'lucide-react';
 import { getLocalDateString } from '../../utils/pacificTime';
+import { usePreventDateInputReload } from '../../hooks/usePreventDateInputReload';
 
 export default function VitalsHistory() {
+    const containerRef = usePreventDateInputReload();
     const [branchId, setBranchId] = useState(null);
     const [residentId, setResidentId] = useState(null);
     const [dateFrom, setDateFrom] = useState(() => {
@@ -92,7 +94,7 @@ export default function VitalsHistory() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <div className="text-center py-12">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#25603E]"></div>
@@ -104,7 +106,7 @@ export default function VitalsHistory() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
@@ -146,13 +148,25 @@ export default function VitalsHistory() {
                                 <input
                         type="date"
                         value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
+                        onChange={(e) => {
+                            e.stopPropagation();
+                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                e.nativeEvent.stopImmediatePropagation();
+                            }
+                            setDateFrom(e.target.value);
+                        }}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                    e.nativeEvent.stopImmediatePropagation();
+                                }
+                                return false;
                             }
                         }}
+                        onClick={(e) => e.stopPropagation()}
+                        onInput={(e) => e.stopPropagation()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
                                 />
                             </div>
@@ -164,13 +178,25 @@ export default function VitalsHistory() {
                                 <input
                         type="date"
                         value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
+                        onChange={(e) => {
+                            e.stopPropagation();
+                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                e.nativeEvent.stopImmediatePropagation();
+                            }
+                            setDateTo(e.target.value);
+                        }}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                                    e.nativeEvent.stopImmediatePropagation();
+                                }
+                                return false;
                             }
                         }}
+                        onClick={(e) => e.stopPropagation()}
+                        onInput={(e) => e.stopPropagation()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent"
                                 />
                             </div>

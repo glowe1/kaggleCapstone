@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
-import { CheckCircle, XCircle, Calendar, Plus, User, Stethoscope, MapPin, ChevronDown, Edit } from 'lucide-react';
+import { CheckCircle, XCircle, Calendar, Plus, User, Stethoscope, MapPin, ChevronDown, Edit, List, Grid } from 'lucide-react';
 import Card from '../components/Card';
 import SectionCard from '../components/SectionCard';
+import CalendarView from '../components/CalendarView';
 
 // Profile Image Component with fallback
 function ProfileImage({ resident }) {
@@ -45,6 +46,7 @@ export default function Appointments() {
     const [currentUser, setCurrentUser] = useState(null);
     const [componentError, setComponentError] = useState(null);
     const [isPreFilled, setIsPreFilled] = useState(false); // Track if form was opened with pre-filled data
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar' - default to list (calendar hidden)
     const [formData, setFormData] = useState({
         branch_id: '',
         resident_id: '',
@@ -585,7 +587,7 @@ export default function Appointments() {
 
             {/* Appointment History Display */}
             {!isCaregiver && (
-                // Non-caregiver view - Show table
+                // Non-caregiver view - Show table or calendar
                 !residentFilter ? (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -609,7 +611,101 @@ export default function Appointments() {
                     </div>
                 ) : (
                     <div>
-                        {data?.data?.length > 0 ? (
+                        {/* View Toggle */}
+                        {data?.data?.length > 0 && (
+                            <div className="mb-4 flex justify-end">
+                                <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                                            viewMode === 'list'
+                                                ? 'bg-[#25603E] text-white'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <List className="w-4 h-4" />
+                                        List View
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('calendar')}
+                                        className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                                            viewMode === 'calendar'
+                                                ? 'bg-[#25603E] text-white'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <Grid className="w-4 h-4" />
+                                        Calendar View
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {viewMode === 'calendar' && data?.data?.length > 0 ? (
+                            <CalendarView
+                                events={data.data.map(apt => {
+                                    const date = apt.appointment_date ? new Date(apt.appointment_date) : new Date();
+                                    let start = new Date(date);
+                                    let end = new Date(date);
+                                    
+                                    if (apt.appointment_time) {
+                                        const timeParts = apt.appointment_time.split(':');
+                                        if (timeParts.length >= 2) {
+                                            const hours = parseInt(timeParts[0]) || 0;
+                                            const minutes = parseInt(timeParts[1]) || 0;
+                                            start.setHours(hours, minutes, 0);
+                                            end.setHours(hours + 1, minutes, 0);
+                                        }
+                                    } else {
+                                        start.setHours(9, 0, 0);
+                                        end.setHours(10, 0, 0);
+                                    }
+
+                                    const statusColors = {
+                                        scheduled: '#25603E',
+                                        confirmed: '#10b981',
+                                        completed: '#059669',
+                                        cancelled: '#ef4444',
+                                        pending: '#f59e0b',
+                                    };
+
+                                    return {
+                                        id: apt.id,
+                                        title: `${apt.resident?.first_name || ''} ${apt.resident?.last_name || ''} - ${apt.appointmentType?.name || apt.description || 'Appointment'}`,
+                                        start,
+                                        end,
+                                        color: statusColors[apt.status] || '#25603E',
+                                        borderColor: statusColors[apt.status] || '#25603E',
+                                        textColor: '#ffffff',
+                                        resource: apt,
+                                    };
+                                })}
+                                onSelectEvent={(event) => {
+                                    if (event.resource) {
+                                        setFormData({
+                                            ...formData,
+                                            resident_id: event.resource.resident_id,
+                                            appointment_date: event.resource.appointment_date,
+                                            appointment_time: event.resource.appointment_time || '',
+                                            provider_name: event.resource.provider_name || '',
+                                            location: event.resource.location || '',
+                                            description: event.resource.description || event.resource.appointmentType?.name || '',
+                                            status: event.resource.status || 'scheduled',
+                                        });
+                                        setIsPreFilled(true);
+                                        setShowForm(true);
+                                    }
+                                }}
+                                onSelectSlot={(slotInfo) => {
+                                    setFormData({
+                                        ...formData,
+                                        appointment_date: slotInfo.start.toISOString().split('T')[0],
+                                        appointment_time: slotInfo.start.toTimeString().slice(0, 5),
+                                    });
+                                    setShowForm(true);
+                                }}
+                            />
+                        ) : data?.data?.length > 0 ? (
                             <div className="bg-white rounded-lg shadow overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">

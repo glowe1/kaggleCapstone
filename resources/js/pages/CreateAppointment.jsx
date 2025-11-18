@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Calendar, Edit, ArrowLeft, CheckCircle, Stethoscope, MapPin, ChevronDown, X } from 'lucide-react';
+import { Calendar, Edit, ArrowLeft, CheckCircle, Stethoscope, MapPin, ChevronDown, X, List, Grid } from 'lucide-react';
+import CalendarView from '../components/CalendarView';
 
 export default function CreateAppointment() {
     const { residentId } = useParams();
@@ -18,6 +19,7 @@ export default function CreateAppointment() {
     const [errors, setErrors] = useState({});
     const [completingAppointment, setCompletingAppointment] = useState(null);
     const [completionNotes, setCompletionNotes] = useState('');
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar' - default to list (calendar hidden)
 
     // Fetch resident data
     const { data: residentData, isLoading: residentLoading } = useQuery({
@@ -295,8 +297,34 @@ export default function CreateAppointment() {
 
             {/* Appointment History Grid */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-gray-900">Appointment History</h2>
+                    {appointmentsData?.data?.length > 0 && (
+                        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                                    viewMode === 'list'
+                                        ? 'bg-[#25603E] text-white'
+                                        : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                            >
+                                <List className="w-4 h-4" />
+                                List View
+                            </button>
+                            <button
+                                onClick={() => setViewMode('calendar')}
+                                className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                                    viewMode === 'calendar'
+                                        ? 'bg-[#25603E] text-white'
+                                        : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                            >
+                                <Grid className="w-4 h-4" />
+                                Calendar View
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="p-6">
                     {appointmentsLoading ? (
@@ -305,7 +333,58 @@ export default function CreateAppointment() {
                             <p className="mt-4 text-gray-600">Loading appointments...</p>
                         </div>
                     ) : appointmentsData?.data?.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        viewMode === 'calendar' ? (
+                            <CalendarView
+                                events={useMemo(() => {
+                                    if (!appointmentsData?.data) return [];
+                                    return appointmentsData.data.map(apt => {
+                                        const date = apt.appointment_date ? new Date(apt.appointment_date) : new Date();
+                                        let start = new Date(date);
+                                        let end = new Date(date);
+                                        
+                                        if (apt.appointment_time) {
+                                            const timeParts = apt.appointment_time.split(':');
+                                            if (timeParts.length >= 2) {
+                                                const hours = parseInt(timeParts[0]) || 0;
+                                                const minutes = parseInt(timeParts[1]) || 0;
+                                                start.setHours(hours, minutes, 0);
+                                                end.setHours(hours + 1, minutes, 0);
+                                            }
+                                        } else {
+                                            start.setHours(9, 0, 0);
+                                            end.setHours(10, 0, 0);
+                                        }
+
+                                        const statusColors = {
+                                            scheduled: '#25603E',
+                                            confirmed: '#10b981',
+                                            completed: '#059669',
+                                            cancelled: '#ef4444',
+                                            pending: '#f59e0b',
+                                        };
+
+                                        return {
+                                            id: apt.id,
+                                            title: `${apt.resident?.first_name || ''} ${apt.resident?.last_name || ''} - ${apt.appointment_type?.name || apt.appointmentType?.name || apt.description || 'Appointment'}`,
+                                            start,
+                                            end,
+                                            color: statusColors[apt.status] || '#25603E',
+                                            borderColor: statusColors[apt.status] || '#25603E',
+                                            textColor: '#ffffff',
+                                            resource: apt,
+                                        };
+                                    });
+                                }, [appointmentsData?.data])}
+                                onSelectEvent={(event) => {
+                                    if (event.resource) {
+                                        // Navigate to edit or show details
+                                        navigate(`/appointments?edit=${event.resource.id}`);
+                                    }
+                                }}
+                                views={['month', 'week', 'day']}
+                            />
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {appointmentsData.data.map((appointment) => {
                                 if (!appointment) return null;
                                 
@@ -410,7 +489,8 @@ export default function CreateAppointment() {
                                     </div>
                                 );
                             })}
-                        </div>
+                            </div>
+                        )
                     ) : (
                         <div className="text-center py-12">
                             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />

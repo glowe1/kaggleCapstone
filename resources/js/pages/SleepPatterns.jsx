@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { BarChart3, LineChart, Grid, Download, Edit, Moon, Calendar, User, Filter, HelpCircle, Eye, TrendingUp } from 'lucide-react';
 import { Bar, Line } from 'react-chartjs-2';
+import CalendarComponent from '../components/ui/Calendar';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -41,6 +42,7 @@ export default function SleepPatterns() {
     const [showPreview, setShowPreview] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [isCaregiver, setIsCaregiver] = useState(false);
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
     React.useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -135,7 +137,7 @@ export default function SleepPatterns() {
 
     // Fetch sleep pattern data
     const { data: patternData, isLoading, error } = useQuery({
-        queryKey: ['sleep-pattern', residentId, month, year],
+        queryKey: ['sleep-pattern', residentId, month, year, selectedCalendarDate],
         queryFn: async () => {
             try {
                 const response = await api.get('/sleep-patterns', {
@@ -162,6 +164,42 @@ export default function SleepPatterns() {
         enabled: !!residentId && !!month && !!year,
         retry: false,
     });
+
+    // Process sleep pattern data for calendar heatmap
+    const calendarData = useMemo(() => {
+        if (!patternData?.daily_data) return [];
+
+        const dateMap = new Map();
+
+        patternData.daily_data.forEach((day) => {
+            const date = new Date(year, month - 1, day.day);
+            const dateStr = date.toISOString().split('T')[0];
+
+            const sleepHours = Number(day.sleep_hours) || 0;
+            
+            // Create heatmap intensity based on sleep hours (0-24 hours)
+            // More sleep = darker purple color
+            const intensity = Math.min(sleepHours / 12, 1); // Normalize to 0-1 (12 hours = max intensity)
+
+            dateMap.set(dateStr, {
+                date: dateStr,
+                indicators: [{
+                    type: 'sleep_hours',
+                    color: 'bg-purple-500',
+                    hours: sleepHours,
+                }],
+                count: 1,
+                backgroundColor: intensity >= 0.8 ? 'bg-purple-200' : intensity >= 0.5 ? 'bg-purple-100' : 'bg-purple-50',
+                sleepHours: sleepHours,
+            });
+        });
+
+        return Array.from(dateMap.values());
+    }, [patternData, year, month]);
+
+    const handleCalendarDateSelect = (dateStr) => {
+        setSelectedCalendarDate(dateStr);
+    };
 
     const months = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -381,8 +419,28 @@ export default function SleepPatterns() {
             <SectionCard>
                 <h1 className="text-3xl font-bold text-[#25603E] mb-6">Sleep Pattern Management</h1>
                 
-                {/* Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    {/* Calendar Widget */}
+                    <div className="lg:col-span-1">
+                        <CalendarComponent
+                            selectedDate={selectedCalendarDate}
+                            onDateSelect={handleCalendarDateSelect}
+                            calendarData={calendarData}
+                            showIndicators={true}
+                        />
+                        {selectedCalendarDate && (
+                            <button
+                                onClick={() => setSelectedCalendarDate(null)}
+                                className="mt-2 w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Clear Date Filter
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Filters Section */}
+                    <div className="lg:col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Select Branch</label>
                         <div className="relative">
@@ -462,6 +520,8 @@ export default function SleepPatterns() {
                                 ))}
                             </select>
                         </div>
+                    </div>
+                </div>
                     </div>
                 </div>
 

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { ClipboardList, Plus, Search, Filter, Edit, Trash2, Calendar, User, CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import Card from '../components/Card';
+import CalendarComponent from '../components/ui/Calendar';
 
 export default function Assessments() {
     const queryClient = useQueryClient();
@@ -15,6 +16,7 @@ export default function Assessments() {
     const [showForm, setShowForm] = useState(false);
     const [editing, setEditing] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
 
     // Fetch current user
     React.useEffect(() => {
@@ -49,16 +51,31 @@ export default function Assessments() {
         queryFn: async () => (await api.get('/branches', { params: { per_page: 100 } })).data,
     });
 
+    // Fetch all assessments for calendar
+    const { data: allAssessmentsForCalendar } = useQuery({
+        queryKey: ['assessments-calendar', statusFilter, typeFilter],
+        queryFn: async () => {
+            const params = { per_page: 1000 };
+            if (statusFilter) params.status = statusFilter;
+            if (typeFilter) params.assessment_type = typeFilter;
+            const response = await api.get('/assessments', { params });
+            return response.data;
+        },
+    });
+
     // Fetch assessments
     const { data, isLoading, error } = useQuery({
-        queryKey: ['assessments', search, statusFilter, typeFilter, dateFilter],
+        queryKey: ['assessments', search, statusFilter, typeFilter, dateFilter, selectedCalendarDate],
         queryFn: async () => {
             const params = { per_page: 20 };
             if (search) params.search = search;
             if (statusFilter) params.status = statusFilter;
             if (typeFilter) params.assessment_type = typeFilter;
             
-            if (dateFilter === 'today') {
+            if (selectedCalendarDate) {
+                params.date_from = selectedCalendarDate;
+                params.date_to = selectedCalendarDate;
+            } else if (dateFilter === 'today') {
                 params.today = 'true';
             } else if (dateFilter === 'week') {
                 const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -75,8 +92,83 @@ export default function Assessments() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id) => api.delete(`/assessments/${id}`),
-        onSuccess: () => queryClient.invalidateQueries(['assessments']),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['assessments']);
+            queryClient.invalidateQueries(['assessments-calendar']);
+        },
     });
+
+    // Process assessments for calendar
+    const calendarData = useMemo(() => {
+        if (!allAssessmentsForCalendar?.data) return [];
+
+        const dateMap = new Map();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        allAssessmentsForCalendar.data.forEach((assessment) => {
+            if (!assessment.assessment_date) return;
+
+            const assessmentDate = new Date(assessment.assessment_date);
+            assessmentDate.setHours(0, 0, 0, 0);
+            const dateStr = assessmentDate.toISOString().split('T')[0];
+
+            if (!dateMap.has(dateStr)) {
+                dateMap.set(dateStr, {
+                    date: dateStr,
+                    indicators: [],
+                    count: 0,
+                });
+            }
+
+            const dayData = dateMap.get(dateStr);
+            dayData.count += 1;
+
+            // Determine status and color
+            let statusColor = 'bg-gray-400';
+            let statusType = 'draft';
+
+            if (assessment.status === 'approved' || assessment.status === 'completed') {
+                statusColor = 'bg-green-500';
+                statusType = 'completed';
+            } else if (assessment.status === 'in_progress' || assessment.status === 'pending_review') {
+                statusColor = 'bg-yellow-500';
+                statusType = 'in_progress';
+            } else if (assessment.status === 'draft') {
+                statusColor = 'bg-gray-400';
+                statusType = 'draft';
+            }
+
+            // Check if overdue (assuming due_date field exists, or use assessment_date + some period)
+            const dueDate = assessment.due_date ? new Date(assessment.due_date) : null;
+            if (dueDate && dueDate < today && assessment.status !== 'completed' && assessment.status !== 'approved') {
+                statusColor = 'bg-red-500';
+                statusType = 'overdue';
+            }
+
+            dayData.indicators.push({
+                type: statusType,
+                color: statusColor,
+                status: assessment.status,
+            });
+
+            // Set background color based on most critical status
+            if (statusType === 'overdue') {
+                dayData.backgroundColor = 'bg-red-100';
+            } else if (statusType === 'in_progress' && !dayData.backgroundColor) {
+                dayData.backgroundColor = 'bg-yellow-100';
+            } else if (statusType === 'completed' && !dayData.backgroundColor && !dayData.backgroundColor?.includes('red') && !dayData.backgroundColor?.includes('yellow')) {
+                dayData.backgroundColor = 'bg-green-100';
+            }
+        });
+
+        return Array.from(dateMap.values());
+    }, [allAssessmentsForCalendar]);
+
+    const handleCalendarDateSelect = (dateStr) => {
+        setSelectedCalendarDate(dateStr);
+        setDateFilter('all'); // Reset date filter when calendar date is selected
+    };
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -343,6 +435,7 @@ export default function Assessments() {
                         setShowForm(false);
                         setEditing(null);
                         queryClient.invalidateQueries(['assessments']);
+                        queryClient.invalidateQueries(['assessments-calendar']);
                     }}
                 />
             )}

@@ -32,7 +32,10 @@ import {
     Trash2,
     Download,
     ChevronDown,
+    List,
+    Grid,
 } from 'lucide-react';
+import CalendarView from '../components/CalendarView';
 
 const INSTRUCTION_DISPLAY_MAP = {
     'q.i.d': 'Four times a day',
@@ -145,6 +148,7 @@ export default function Medications() {
     const [editing, setEditing] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [currentUser, setCurrentUser] = useState(null);
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar' - default to list (calendar hidden)
 
     // Fetch current user
     React.useEffect(() => {
@@ -589,15 +593,112 @@ export default function Medications() {
                 <div>
                     <div className="mb-4 flex items-center justify-between">
                         <div />
-                        <button
-                            onClick={() => { setSearch(''); setResidentFilter(''); setBranchFilter(''); setActiveOnly(true); }}
-                            className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
-                        >
-                            Reset Filters
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {medicationsList.length > 0 && (
+                                <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                                            viewMode === 'list'
+                                                ? 'bg-[#25603E] text-white'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <List className="w-4 h-4" />
+                                        List View
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('calendar')}
+                                        className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                                            viewMode === 'calendar'
+                                                ? 'bg-[#25603E] text-white'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <Grid className="w-4 h-4" />
+                                        Calendar View
+                                    </button>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => { setSearch(''); setResidentFilter(''); setBranchFilter(''); setActiveOnly(true); }}
+                                className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+                            >
+                                Reset Filters
+                            </button>
+                        </div>
                     </div>
                     {medicationsList.length > 0 ? (
-                        <div className="space-y-8">
+                        viewMode === 'calendar' ? (
+                            <CalendarView
+                                events={React.useMemo(() => {
+                                    const events = [];
+                                    const now = getPacificNow();
+                                    const startDate = new Date(now);
+                                    startDate.setDate(startDate.getDate() - 7); // Show past 7 days
+                                    const endDate = new Date(now);
+                                    endDate.setDate(endDate.getDate() + 30); // Show next 30 days
+
+                                    activePeriodMedications.forEach(medication => {
+                                        if (!isMedicationPeriodActiveNow(medication)) return;
+
+                                        const times = [
+                                            medication.time_1,
+                                            medication.time_2,
+                                            medication.time_3,
+                                            medication.time_4,
+                                        ].filter(Boolean);
+
+                                        if (times.length === 0) return;
+
+                                        const residentName = [
+                                            medication.resident?.first_name,
+                                            medication.resident?.last_name,
+                                        ].filter(Boolean).join(' ') || medication.resident?.name || 'Resident';
+
+                                        // Generate events for each day in the range
+                                        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                                            const dateStr = d.toISOString().split('T')[0];
+                                            const date = parsePacificDateString(dateStr) || new Date(dateStr);
+
+                                            // Check if medication is active on this date
+                                            if (!isMedicationPeriodActiveNow(medication, date)) continue;
+
+                                            times.forEach((time, idx) => {
+                                                if (!time) return;
+                                                const [hours, minutes] = time.split(':').map(Number);
+                                                const eventStart = new Date(date);
+                                                eventStart.setHours(hours || 9, minutes || 0, 0, 0);
+                                                const eventEnd = new Date(eventStart);
+                                                eventEnd.setMinutes(eventEnd.getMinutes() + 30); // 30 min duration
+
+                                                events.push({
+                                                    id: `${medication.id}-${dateStr}-${idx}`,
+                                                    title: `${residentName} - ${medication.name || medication.drug?.name || 'Medication'}`,
+                                                    start: eventStart,
+                                                    end: eventEnd,
+                                                    color: medication.is_active ? '#25603E' : '#9ca3af',
+                                                    borderColor: medication.is_active ? '#25603E' : '#9ca3af',
+                                                    textColor: '#ffffff',
+                                                    resource: medication,
+                                                    time: time,
+                                                });
+                                            });
+                                        }
+                                    });
+
+                                    return events;
+                                }, [activePeriodMedications])}
+                                onSelectEvent={(event) => {
+                                    if (event.resource) {
+                                        setSelectedMedication(event.resource);
+                                        setShowAdminForm(true);
+                                    }
+                                }}
+                                views={['month', 'week', 'day']}
+                            />
+                        ) : (
+                            <div className="space-y-8">
                             {activePeriodMedications.length > 0 && (
                                                     <div>
                                     <div className="flex items-center justify-between mb-3">
@@ -629,18 +730,19 @@ export default function Medications() {
                                                     </div>
                                                 </div>
                                             )}
-                                                    </div>
-                        ) : (
-                            <div className="bg-white rounded-lg shadow p-12 text-center col-span-full">
-                                <Pill className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-600 text-lg font-medium">No medications found</p>
-                                <p className="text-gray-500 text-sm mt-2">
-                                    {activeOnly 
-                                        ? 'No active medications found.' 
-                                        : 'Try adjusting your search or filters.'}
-                                </p>
                             </div>
-                        )}
+                        )
+                    ) : (
+                        <div className="bg-white rounded-lg shadow p-12 text-center col-span-full">
+                            <Pill className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600 text-lg font-medium">No medications found</p>
+                            <p className="text-gray-500 text-sm mt-2">
+                                {activeOnly 
+                                    ? 'No active medications found.' 
+                                    : 'Try adjusting your search or filters.'}
+                            </p>
+                        </div>
+                    )}
 
                     {/* Pagination */}
                     {data?.data?.length > 0 && data?.meta && (

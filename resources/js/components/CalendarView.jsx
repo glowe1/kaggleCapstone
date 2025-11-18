@@ -1,0 +1,62 @@
+import React from 'react';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+const localizer = momentLocalizer(moment);
+
+export default function CalendarView({ events, onSelectEvent, onSelectSlot, defaultDate, views = ['month', 'week', 'day'], height = '600px', ...props }) {
+    // Format events for react-big-calendar
+    const formattedEvents = React.useMemo(() => {
+        if (!events || !Array.isArray(events)) return [];
+        
+        return events.map(event => {
+            try {
+                const start = event.start ? new Date(event.start) : new Date();
+                const end = event.end ? new Date(event.end) : (moment ? moment(start).add(1, 'hour').toDate() : new Date(start.getTime() + 3600000));
+                
+                return {
+                    ...event,
+                    start,
+                    end,
+                };
+            } catch (err) {
+                console.error('Error formatting event:', err, event);
+                return null;
+            }
+        }).filter(Boolean);
+    }, [events]);
+
+    return (
+        <div style={{ height, width: '100%' }} className="bg-white rounded-lg shadow-sm p-4 w-full">
+            <Calendar
+                localizer={localizer}
+                events={formattedEvents}
+                startAccessor="start"
+                endAccessor="end"
+                defaultDate={defaultDate || new Date()}
+                views={views}
+                onSelectEvent={onSelectEvent}
+                onSelectSlot={onSelectSlot}
+                selectable
+                style={{ height: '100%', width: '100%' }}
+                eventPropGetter={(event) => {
+                    const backgroundColor = event.color || '#25603E';
+                    const borderColor = event.borderColor || backgroundColor;
+                    return {
+                        style: {
+                            backgroundColor,
+                            borderColor,
+                            borderWidth: '2px',
+                            borderRadius: '4px',
+                            color: event.textColor || '#ffffff',
+                            padding: '2px 4px',
+                        },
+                    };
+                }}
+                {...props}
+            />
+        </div>
+    );
+}
+

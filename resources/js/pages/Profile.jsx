@@ -567,25 +567,25 @@ export default function Profile() {
 
                 {/* Additional Information */}
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden border-l-4 border-l-[#a0522d] hover:shadow-xl transition-shadow">
-                    <div className="p-6">
+                        <div className="p-6">
                         <h3 className="text-lg font-bold text-[#25603E] mb-4 flex items-center">
                             <FileText className="w-5 h-5 mr-2" />
                             Additional Notes
                         </h3>
                         <div className="bg-gray-50 rounded-lg p-4 min-h-[120px]">
-                            {isEditing ? (
-                                <textarea
-                                    value={editedUser?.notes || ''}
-                                    onChange={(e) => setEditedUser({...editedUser, notes: e.target.value})}
-                                    rows={5}
+                                {isEditing ? (
+                                    <textarea
+                                        value={editedUser?.notes || ''}
+                                        onChange={(e) => setEditedUser({...editedUser, notes: e.target.value})}
+                                        rows={5}
                                     placeholder="Add any additional notes or information..."
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25603E] focus:border-transparent resize-none"
-                                />
-                            ) : (
+                                    />
+                                ) : (
                                 <p className="text-gray-700 whitespace-pre-wrap">
                                     {user.notes || <span className="text-gray-400 italic">No additional notes</span>}
                                 </p>
-                            )}
+                                )}
                         </div>
                     </div>
                 </div>

@@ -354,7 +354,7 @@ const closeAssignmentModal = () => {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {tasksData.map((task) => (
+                                    {tasksData.map((task) => (
                                 <article key={task.id} className="rounded-2xl border border-gray-100 p-4 shadow-sm">
                                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                         <div>

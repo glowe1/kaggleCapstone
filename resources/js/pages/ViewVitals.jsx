@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -525,7 +525,7 @@ export default function ViewVitals() {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="p-6">
-                {/* Filters */}
+                {/* Filters Section */}
                 <div className="bg-white rounded-lg shadow p-4 mb-6">
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="flex-1 min-w-[200px]">

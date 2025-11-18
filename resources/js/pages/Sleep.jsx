@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { Moon, Plus, Search, Calendar, Clock, User, Edit, Trash2, Filter, ChevronDown } from 'lucide-react';
 import { getLocalDateString } from '../utils/pacificTime';
+import CalendarComponent from '../components/ui/Calendar';
 
 export default function Sleep() {
     const queryClient = useQueryClient();
@@ -11,6 +12,7 @@ export default function Sleep() {
     const [search, setSearch] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
 
     const { data: currentUser } = useQuery({
         queryKey: ['current-user'],
@@ -164,13 +166,35 @@ export default function Sleep() {
         return '';
     }, [isCaregiver, caregiverBranchId, residentOptions, currentUser]);
 
+    // Fetch all sleep records for calendar
+    const { data: allSleepRecordsForCalendar } = useQuery({
+        queryKey: ['sleep-records-calendar', residentFilter, isCaregiver ? caregiverBranchId || 'none' : 'all'],
+        queryFn: async () => {
+            const params = { per_page: 1000 };
+            
+            if (residentFilter) {
+                params.resident_id = residentFilter;
+            }
+
+            if (isCaregiver && caregiverBranchId) {
+                params.branch_id = caregiverBranchId;
+            }
+
+            const response = await api.get('/sleep-records', { params });
+            return response.data;
+        },
+    });
+
     // Fetch sleep records
     const { data, isLoading } = useQuery({
-        queryKey: ['sleep-records', dateFilter, residentFilter, search],
+        queryKey: ['sleep-records', dateFilter, residentFilter, search, selectedCalendarDate],
         queryFn: async () => {
             const params = { per_page: 20 };
             
-            if (dateFilter === 'today') {
+            if (selectedCalendarDate) {
+                params.date_from = selectedCalendarDate;
+                params.date_to = selectedCalendarDate;
+            } else if (dateFilter === 'today') {
                 params.today = 'true';
             } else if (dateFilter === 'week') {
                 const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -204,8 +228,90 @@ export default function Sleep() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['sleep-records']);
+            queryClient.invalidateQueries(['sleep-records-calendar']);
         },
     });
+
+    // Process sleep records for calendar
+    const calendarData = useMemo(() => {
+        if (!allSleepRecordsForCalendar?.data) return [];
+
+        const dateMap = new Map();
+
+        allSleepRecordsForCalendar.data.forEach((record) => {
+            if (!record.sleep_date) return;
+
+            const date = new Date(record.sleep_date);
+            const dateStr = date.toISOString().split('T')[0];
+
+            if (!dateMap.has(dateStr)) {
+                dateMap.set(dateStr, {
+                    date: dateStr,
+                    indicators: [],
+                    count: 0,
+                });
+            }
+
+            const dayData = dateMap.get(dateStr);
+            dayData.count += 1;
+
+            // Color-code by sleep quality
+            let qualityColor = 'bg-gray-400';
+            if (record.sleep_quality) {
+                const quality = Number(record.sleep_quality);
+                if (quality >= 8) {
+                    qualityColor = 'bg-green-500';
+                } else if (quality >= 6) {
+                    qualityColor = 'bg-yellow-500';
+                } else {
+                    qualityColor = 'bg-red-500';
+                }
+            }
+
+            dayData.indicators.push({
+                type: 'sleep_record',
+                color: qualityColor,
+                quality: record.sleep_quality,
+            });
+
+            // Set background color based on average quality if multiple records
+            if (dayData.count > 1) {
+                // Calculate average quality for the day
+                const recordsForDay = allSleepRecordsForCalendar.data.filter(r => {
+                    const rDate = new Date(r.sleep_date);
+                    return rDate.toISOString().split('T')[0] === dateStr;
+                });
+                const avgQuality = recordsForDay.reduce((sum, r) => sum + (Number(r.sleep_quality) || 0), 0) / recordsForDay.length;
+                
+                if (avgQuality >= 8) {
+                    dayData.backgroundColor = 'bg-green-100';
+                } else if (avgQuality >= 6) {
+                    dayData.backgroundColor = 'bg-yellow-100';
+                } else {
+                    dayData.backgroundColor = 'bg-red-100';
+                }
+            } else {
+                // Single record - use its quality
+                if (record.sleep_quality) {
+                    const quality = Number(record.sleep_quality);
+                    if (quality >= 8) {
+                        dayData.backgroundColor = 'bg-green-100';
+                    } else if (quality >= 6) {
+                        dayData.backgroundColor = 'bg-yellow-100';
+                    } else {
+                        dayData.backgroundColor = 'bg-red-100';
+                    }
+                }
+            }
+        });
+
+        return Array.from(dateMap.values());
+    }, [allSleepRecordsForCalendar]);
+
+    const handleCalendarDateSelect = (dateStr) => {
+        setSelectedCalendarDate(dateStr);
+        setDateFilter('all'); // Reset date filter when calendar date is selected
+    };
 
     const formatTime = (timeString) => {
         if (!timeString) return 'N/A';
@@ -470,6 +576,7 @@ export default function Sleep() {
                         setShowForm(false);
                         setEditingRecord(null);
                         queryClient.invalidateQueries(['sleep-records']);
+                        queryClient.invalidateQueries(['sleep-records-calendar']);
                     }}
                 />
             )}
