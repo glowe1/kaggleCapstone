@@ -261,6 +261,70 @@ export default function Medications() {
         return { activePeriodMedications: active, endedPeriodMedications: ended };
     }, [medicationsList]);
 
+    // Generate calendar events - must be at top level (not conditional)
+    const calendarEvents = React.useMemo(() => {
+        if (!activePeriodMedications || activePeriodMedications.length === 0 || viewMode !== 'calendar') {
+            return [];
+        }
+        
+        const events = [];
+        const now = getPacificNow();
+        const startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7); // Show past 7 days
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + 30); // Show next 30 days
+
+        activePeriodMedications.forEach(medication => {
+            if (!isMedicationPeriodActiveNow(medication)) return;
+
+            const times = [
+                medication.time_1,
+                medication.time_2,
+                medication.time_3,
+                medication.time_4,
+            ].filter(Boolean);
+
+            if (times.length === 0) return;
+
+            const residentName = [
+                medication.resident?.first_name,
+                medication.resident?.last_name,
+            ].filter(Boolean).join(' ') || medication.resident?.name || 'Resident';
+
+            // Generate events for each day in the range
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                const date = parsePacificDateString(dateStr) || new Date(dateStr);
+
+                // Check if medication is active on this date
+                if (!isMedicationPeriodActiveNow(medication, date)) continue;
+
+                times.forEach((time, idx) => {
+                    if (!time) return;
+                    const [hours, minutes] = time.split(':').map(Number);
+                    const eventStart = new Date(date);
+                    eventStart.setHours(hours || 9, minutes || 0, 0, 0);
+                    const eventEnd = new Date(eventStart);
+                    eventEnd.setMinutes(eventEnd.getMinutes() + 30); // 30 min duration
+
+                    events.push({
+                        id: `${medication.id}-${dateStr}-${idx}`,
+                        title: `${residentName} - ${medication.name || medication.drug?.name || 'Medication'}`,
+                        start: eventStart,
+                        end: eventEnd,
+                        color: medication.is_active ? '#25603E' : '#9ca3af',
+                        borderColor: medication.is_active ? '#25603E' : '#9ca3af',
+                        textColor: '#ffffff',
+                        resource: medication,
+                        time: time,
+                    });
+                });
+            }
+        });
+
+        return events;
+    }, [activePeriodMedications, viewMode]);
+
     const renderMedicationCard = (medication) => {
         const residentName = [
             medication.resident?.first_name,
@@ -482,17 +546,19 @@ export default function Medications() {
             });
             return response.data;
         },
-        enabled: !!selectedMedication,
+        enabled: !!selectedMedication && !isCaregiver,
     });
 
     // Filter options
     const { data: residentsData } = useQuery({
         queryKey: ['residents-options'],
         queryFn: async () => (await api.get('/residents', { params: { per_page: 100 } })).data,
+        enabled: !isCaregiver,
     });
     const { data: branchesData } = useQuery({
         queryKey: ['branches-options'],
         queryFn: async () => (await api.get('/branches', { params: { per_page: 100 } })).data,
+        enabled: !isCaregiver,
     });
 
     const deleteMutation = useMutation({
@@ -631,64 +697,7 @@ export default function Medications() {
                     {medicationsList.length > 0 ? (
                         viewMode === 'calendar' ? (
                             <CalendarView
-                                events={React.useMemo(() => {
-                                    const events = [];
-                                    const now = getPacificNow();
-                                    const startDate = new Date(now);
-                                    startDate.setDate(startDate.getDate() - 7); // Show past 7 days
-                                    const endDate = new Date(now);
-                                    endDate.setDate(endDate.getDate() + 30); // Show next 30 days
-
-                                    activePeriodMedications.forEach(medication => {
-                                        if (!isMedicationPeriodActiveNow(medication)) return;
-
-                                        const times = [
-                                            medication.time_1,
-                                            medication.time_2,
-                                            medication.time_3,
-                                            medication.time_4,
-                                        ].filter(Boolean);
-
-                                        if (times.length === 0) return;
-
-                                        const residentName = [
-                                            medication.resident?.first_name,
-                                            medication.resident?.last_name,
-                                        ].filter(Boolean).join(' ') || medication.resident?.name || 'Resident';
-
-                                        // Generate events for each day in the range
-                                        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                                            const dateStr = d.toISOString().split('T')[0];
-                                            const date = parsePacificDateString(dateStr) || new Date(dateStr);
-
-                                            // Check if medication is active on this date
-                                            if (!isMedicationPeriodActiveNow(medication, date)) continue;
-
-                                            times.forEach((time, idx) => {
-                                                if (!time) return;
-                                                const [hours, minutes] = time.split(':').map(Number);
-                                                const eventStart = new Date(date);
-                                                eventStart.setHours(hours || 9, minutes || 0, 0, 0);
-                                                const eventEnd = new Date(eventStart);
-                                                eventEnd.setMinutes(eventEnd.getMinutes() + 30); // 30 min duration
-
-                                                events.push({
-                                                    id: `${medication.id}-${dateStr}-${idx}`,
-                                                    title: `${residentName} - ${medication.name || medication.drug?.name || 'Medication'}`,
-                                                    start: eventStart,
-                                                    end: eventEnd,
-                                                    color: medication.is_active ? '#25603E' : '#9ca3af',
-                                                    borderColor: medication.is_active ? '#25603E' : '#9ca3af',
-                                                    textColor: '#ffffff',
-                                                    resource: medication,
-                                                    time: time,
-                                                });
-                                            });
-                                        }
-                                    });
-
-                                    return events;
-                                }, [activePeriodMedications])}
+                                events={calendarEvents}
                                 onSelectEvent={(event) => {
                                     if (event.resource) {
                                         setSelectedMedication(event.resource);
