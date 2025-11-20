@@ -28,6 +28,10 @@ class FacilitySeeder extends Seeder
                 'license_expiry' => now()->addYear(),
                 'brochure_url' => '/brochures/evergreen-brochure.pdf',
                 'brochure_color' => 'green',
+                'primary_color' => '#25603E', // Default Evergreen green
+                'secondary_color' => '#8B4513', // Default Evergreen brown
+                'accent_color' => '#F5F5DC', // Default Evergreen beige
+                'registration_status' => 'approved',
                 'is_active' => true,
             ],
             [
@@ -42,17 +46,22 @@ class FacilitySeeder extends Seeder
                 'license_expiry' => now()->addYear(),
                 'brochure_url' => '/brochures/bothell-brochure.pdf',
                 'brochure_color' => 'blue',
+                'primary_color' => '#1E3A8A', // Blue theme
+                'secondary_color' => '#1E40AF', // Lighter blue
+                'accent_color' => '#EFF6FF', // Light blue accent
+                'registration_status' => 'approved',
                 'is_active' => true,
             ],
         ];
 
         foreach ($facilities as $facilityData) {
-            Facility::firstOrCreate(
+            // Use withoutGlobalScopes to ensure we can create facilities during seeding
+            Facility::withoutGlobalScopes()->firstOrCreate(
                 ['name' => $facilityData['name']],
                 $facilityData
             );
         }
 
-        $this->command->info('✅ Created ' . Facility::count() . ' facilities');
+        $this->command->info('✅ Created ' . Facility::withoutGlobalScopes()->count() . ' facilities');
     }
 }

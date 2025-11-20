@@ -14,7 +14,8 @@ class CaregiverSeeder extends Seeder
      */
     public function run(): void
     {
-        $branches = Branch::all();
+        // Use withoutGlobalScopes to ensure we get all branches during seeding
+        $branches = Branch::withoutGlobalScopes()->all();
         
         if ($branches->isEmpty()) {
             $this->command->warn('No branches found. Please run BranchSeeder first.');
@@ -113,10 +114,20 @@ class CaregiverSeeder extends Seeder
         ];
 
         foreach ($caregivers as $caregiverData) {
+            // Get the branch to determine facility_id (without global scopes for seeding)
+            $branchId = $caregiverData['assigned_branch_id'];
+            $branch = Branch::withoutGlobalScopes()->find($branchId);
+            
+            if ($branch && $branch->facility_id) {
+                $caregiverData['facility_id'] = $branch->facility_id;
+            }
+            
             User::firstOrCreate(
                 ['email' => $caregiverData['email']],
                 $caregiverData
             );
         }
+        
+        $this->command->info('✅ Created ' . count($caregivers) . ' caregivers with facility assignments');
     }
 }

@@ -15,8 +15,9 @@ class BranchSeeder extends Seeder
     {
         $this->command->info('🏢 Creating branches...');
         
+        // Use withoutGlobalScopes to ensure we can see all facilities during seeding
         // Get or create facilities (use FacilitySeeder data for consistency)
-        $evergreenFacility = Facility::firstOrCreate(
+        $evergreenFacility = Facility::withoutGlobalScopes()->firstOrCreate(
             ['name' => 'Evergreen Oasis Care Home'],
             [
                 'location' => 'Edmonds, WA',
@@ -29,11 +30,15 @@ class BranchSeeder extends Seeder
                 'license_expiry' => now()->addYear(),
                 'brochure_url' => '/brochures/evergreen-brochure.pdf',
                 'brochure_color' => 'green',
+                'primary_color' => '#25603E',
+                'secondary_color' => '#8B4513',
+                'accent_color' => '#F5F5DC',
+                'registration_status' => 'approved',
                 'is_active' => true,
             ]
         );
 
-        $bothellFacility = Facility::firstOrCreate(
+        $bothellFacility = Facility::withoutGlobalScopes()->firstOrCreate(
             ['name' => 'Bothell Serenity Corp'],
             [
                 'location' => 'Bothell, WA',
@@ -46,6 +51,10 @@ class BranchSeeder extends Seeder
                 'license_expiry' => now()->addYear(),
                 'brochure_url' => '/brochures/bothell-brochure.pdf',
                 'brochure_color' => 'blue',
+                'primary_color' => '#1E3A8A',
+                'secondary_color' => '#1E40AF',
+                'accent_color' => '#EFF6FF',
+                'registration_status' => 'approved',
                 'is_active' => true,
             ]
         );
@@ -135,12 +144,12 @@ class BranchSeeder extends Seeder
         ];
 
         foreach ($branches as $branchData) {
-            Branch::firstOrCreate(
+            Branch::withoutGlobalScopes()->firstOrCreate(
                 ['name' => $branchData['name']],
                 $branchData
             );
         }
         
-        $this->command->info('✅ Created ' . Branch::count() . ' branches');
+        $this->command->info('✅ Created ' . Branch::withoutGlobalScopes()->count() . ' branches');
     }
 }

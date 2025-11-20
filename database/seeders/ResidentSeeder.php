@@ -13,12 +13,18 @@ class ResidentSeeder extends Seeder
      */
     public function run(): void
     {
-        $branches = Branch::active()->get();
+        // Use withoutGlobalScopes to ensure we get all branches during seeding
+        // This allows seeding to work even when there's no facility context
+        $branches = Branch::withoutGlobalScopes()->with('facility')->active()->get();
         
         if ($branches->isEmpty()) {
             $this->command->warn('No branches found. Please run BranchSeeder first.');
             return;
         }
+        
+        // Group branches by facility to ensure residents are assigned correctly
+        $branchesByFacility = $branches->groupBy('facility_id');
+        $this->command->info('📋 Found ' . $branches->count() . ' branches across ' . $branchesByFacility->count() . ' facilities. Assigning residents...');
 
         $residents = [
             [
@@ -520,37 +526,70 @@ class ResidentSeeder extends Seeder
             ],
         ];
 
-        foreach ($residents as $index => $residentData) {
-            // Assign residents to different branches
-            $branch = $branches[$index % $branches->count()];
-            $residentData['branch_id'] = $branch->id;
+        // Distribute residents across facilities first, then across branches within each facility
+        $residentsPerFacility = ceil(count($residents) / $branchesByFacility->count());
+        $facilityBranchesArray = $branchesByFacility->values()->all();
+        $facilityIndex = 0;
+        
+        foreach (array_chunk($residents, $residentsPerFacility) as $facilityResidents) {
+            if (!isset($facilityBranchesArray[$facilityIndex])) {
+                $this->command->warn("⚠️  No branches found for facility at index {$facilityIndex}. Skipping residents.");
+                $facilityIndex++;
+                continue;
+            }
             
-            // Determine gender from name or default to 'Unknown'
-            $firstName = $residentData['first_name'] ?? '';
-            $gender = $residentData['gender'] ?? $this->guessGender($firstName);
+            $facilityBranches = $facilityBranchesArray[$facilityIndex];
             
-            // Set room from room_number if room is not set
-            $room = $residentData['room'] ?? $residentData['room_number'] ?? null;
+            if ($facilityBranches->isEmpty()) {
+                $this->command->warn("⚠️  No branches found for facility at index {$facilityIndex}. Skipping residents.");
+                $facilityIndex++;
+                continue;
+            }
             
-            Resident::firstOrCreate(
-                ['name' => $residentData['name'], 'branch_id' => $branch->id],
-                array_merge($residentData, [
-                    'gender' => $gender,
-                    'room' => $room,
-                    'room_number' => $residentData['room_number'] ?? $room,
-                    'middle_names' => $residentData['middle_names'] ?? null,
-                    'diagnosis' => $residentData['diagnosis'] ?? null,
-                    'allergies' => $residentData['allergies'] ?? null,
-                    'physician_name' => $residentData['physician_name'] ?? null,
-                    'pep_or_doctor' => $residentData['pep_or_doctor'] ?? null,
-                    'cart' => $residentData['cart'] ?? null,
-                    'status' => $residentData['status'] ?? 'active',
-                    'is_active' => $residentData['is_active'] ?? true,
-                ])
-            );
+            // Convert collection to array for indexing
+            $facilityBranchesArrayForIndex = $facilityBranches->values()->all();
+            
+            foreach ($facilityResidents as $index => $residentData) {
+                // Assign residents to branches within the same facility
+                $branch = $facilityBranchesArrayForIndex[$index % count($facilityBranchesArrayForIndex)];
+                
+                // Ensure branch has facility_id (safety check)
+                if (!$branch->facility_id) {
+                    $this->command->warn("⚠️  Branch '{$branch->name}' has no facility_id. Skipping resident '{$residentData['name']}'.");
+                    continue;
+                }
+                
+                $residentData['branch_id'] = $branch->id;
+                
+                // Determine gender from name or default to 'Unknown'
+                $firstName = $residentData['first_name'] ?? '';
+                $gender = $residentData['gender'] ?? $this->guessGender($firstName);
+                
+                // Set room from room_number if room is not set
+                $room = $residentData['room'] ?? $residentData['room_number'] ?? null;
+                
+                Resident::withoutGlobalScopes()->firstOrCreate(
+                    ['name' => $residentData['name'], 'branch_id' => $branch->id],
+                    array_merge($residentData, [
+                        'gender' => $gender,
+                        'room' => $room,
+                        'room_number' => $residentData['room_number'] ?? $room,
+                        'middle_names' => $residentData['middle_names'] ?? null,
+                        'diagnosis' => $residentData['diagnosis'] ?? null,
+                        'allergies' => $residentData['allergies'] ?? null,
+                        'physician_name' => $residentData['physician_name'] ?? null,
+                        'pep_or_doctor' => $residentData['pep_or_doctor'] ?? null,
+                        'cart' => $residentData['cart'] ?? null,
+                        'status' => $residentData['status'] ?? 'active',
+                        'is_active' => $residentData['is_active'] ?? true,
+                    ])
+                );
+            }
+            
+            $facilityIndex++;
         }
         
-        $this->command->info('✅ Created ' . Resident::count() . ' residents');
+        $this->command->info('✅ Created ' . Resident::withoutGlobalScopes()->count() . ' residents');
     }
     
     /**

@@ -169,7 +169,7 @@ class UnifiedProductionSeeder extends Seeder
 
     private function createFacilityAndBranch(): void
     {
-        // Create facility
+        // Create facility with multi-tenant fields
         $facility = Facility::firstOrCreate(
             ['name' => 'Edmond Serenity AFH'],
             [
@@ -180,6 +180,10 @@ class UnifiedProductionSeeder extends Seeder
                 'website' => 'https://edmondserenity.com',
                 'license_number' => 'AFH-2024-001',
                 'license_expiry' => now()->addYear(),
+                'primary_color' => '#25603E',
+                'secondary_color' => '#8B4513',
+                'accent_color' => '#F5F5DC',
+                'registration_status' => 'approved',
                 'is_active' => true,
             ]
         );
@@ -209,24 +213,43 @@ class UnifiedProductionSeeder extends Seeder
             return;
         }
 
-        // Create or update admin user
+        // Get the facility and branch
+        $facility = Facility::where('name', 'Edmond Serenity AFH')->first();
+        $branch = Branch::where('name', 'Main Branch')->first();
+
+        if (!$facility || !$branch) {
+            $this->command->error('Facility or branch not found!');
+            return;
+        }
+
+        // Create or update admin user with facility and branch assignment
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@edmondserenity.com'],
             [
                 'name' => 'Admin User',
                 'email' => 'admin@edmondserenity.com',
                 'password' => Hash::make('password'),
-                'role' => 'admin',
+                'role' => 'administrator',
+                'facility_id' => $facility->id,
+                'assigned_branch_id' => $branch->id,
                 'is_active' => true,
             ]
         );
+
+        // Update existing user if it already exists but doesn't have facility/branch
+        if ($adminUser->wasRecentlyCreated === false) {
+            $adminUser->update([
+                'facility_id' => $facility->id,
+                'assigned_branch_id' => $branch->id,
+            ]);
+        }
 
         // Ensure admin user has the administrator role
         if (!$adminUser->hasRole('administrator')) {
             $adminUser->assignRole('administrator');
         }
 
-        $this->command->info("✅ Created admin user with administrator role");
+        $this->command->info("✅ Created admin user with administrator role, facility, and branch assignment");
     }
 
     private function createVitalRanges(): void
