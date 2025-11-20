@@ -96,10 +96,10 @@ class Facility extends Model
     public function getBrandingAttribute()
     {
         return [
-            'logo' => $this->logo_url,
-            'primary_color' => $this->primary_color ?? '#667eea',
-            'secondary_color' => $this->secondary_color ?? '#764ba2',
-            'accent_color' => $this->accent_color ?? '#f093fb',
+            'logo' => $this->logo_url ?? asset('images/logonew.png'),
+            'primary_color' => $this->primary_color ?? '#1E3A5F',
+            'secondary_color' => $this->secondary_color ?? '#86EFAC',
+            'accent_color' => $this->accent_color ?? '#FFFFFF',
             'name' => $this->name,
         ];
     }

@@ -120,7 +120,7 @@ function App() {
 
                 {/* Administration */}
                 <Route path="administration/residents" element={<Residents />} />
-                <Route path="administration/facilities" element={<Facilities />} />
+                {/* Facilities route removed - only accessible via /super-admin/facilities */}
                 <Route path="administration/branches" element={<Branches />} />
                 <Route path="administration/vital-ranges" element={<VitalRanges />} />
                 <Route path="administration/leave-requests" element={<LeaveRequests />} />

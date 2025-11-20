@@ -102,7 +102,7 @@ const navigation = [
         path: '/administration', 
         children: [
             { name: 'Residents', path: '/administration/residents' },
-            { name: 'Facilities', path: '/administration/facilities' },
+            // Facilities removed - only super admins can access
             { name: 'Branches', path: '/administration/branches' },
             { name: 'Vital Ranges', path: '/administration/vital-ranges' },
             { name: 'Leave Requests', path: '/administration/leave-requests' },

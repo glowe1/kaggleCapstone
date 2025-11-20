@@ -6,12 +6,13 @@ import { useToastContext } from '../contexts/ToastContext';
 
 export default function Facilities() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   
   // Check if user is super admin
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading: userLoading } = useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
       try {
@@ -24,6 +25,29 @@ export default function Facilities() {
   });
   
   const isSuperAdmin = currentUser?.role === 'super_admin';
+  
+  // Redirect non-super admins to dashboard
+  React.useEffect(() => {
+    if (!userLoading && currentUser && !isSuperAdmin) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [currentUser, isSuperAdmin, userLoading, navigate]);
+  
+  // Don't render anything if not super admin
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)]"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isSuperAdmin) {
+    return null; // Will redirect via useEffect
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['facilities', search],
