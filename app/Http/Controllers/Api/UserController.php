@@ -14,7 +14,7 @@ class UserController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = User::with(['assignedBranch', 'roles']);
+        $query = User::with(['assignedBranch', 'roles', 'facility']);
 
         // Filter by status
         if ($request->has('status')) {
@@ -62,7 +62,7 @@ class UserController extends BaseApiController
 
     public function show($id): JsonResponse
     {
-        $user = User::with(['assignedBranch', 'roles', 'roles.permissions'])
+        $user = User::with(['assignedBranch', 'roles', 'roles.permissions', 'facility'])
             ->findOrFail($id);
 
         return response()->json($user);
@@ -135,7 +135,7 @@ class UserController extends BaseApiController
         // Refresh the model to get accessors (like profile_image_url)
         $user->refresh();
 
-        return response()->json($user->load(['assignedBranch', 'roles']), 201);
+        return response()->json($user->load(['assignedBranch', 'roles', 'facility']), 201);
     }
 
     public function update(Request $request, $id): JsonResponse
@@ -304,7 +304,7 @@ class UserController extends BaseApiController
         // Refresh the model to get updated accessors (like profile_image_url)
         $user->refresh();
 
-        return response()->json($user->load(['assignedBranch', 'roles']));
+        return response()->json($user->load(['assignedBranch', 'roles', 'facility']));
     }
 
     public function destroy($id): JsonResponse

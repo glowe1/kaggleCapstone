@@ -209,9 +209,37 @@ class UserResource extends Resource
                             ->searchable()
                             ->required()
                             ->placeholder('Choose role'),
+                        Forms\Components\Select::make('facility_id')
+                            ->label('Facility')
+                            ->relationship('facility', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->placeholder('Select facility')
+                            ->visible(fn () => auth()->user()->role === 'super_admin')
+                            ->live(),
                         Forms\Components\Select::make('assigned_branch_id')
                             ->label('Assigned Branch')
-                            ->relationship('assignedBranch', 'name')
+                            ->relationship('assignedBranch', 'name', function (Builder $query, Forms\Get $get) {
+                                $user = auth()->user();
+                                if (!$user) return $query;
+
+                                // If super admin and facility selected, filter by that facility
+                                if ($user->role === 'super_admin') {
+                                    $facilityId = $get('facility_id');
+                                    if ($facilityId) {
+                                        return $query->where('facility_id', $facilityId);
+                                    }
+                                    return $query;
+                                }
+                                
+                                // If regular user, filter by their facility
+                                if ($user->facility_id) {
+                                    return $query->where('facility_id', $user->facility_id);
+                                }
+                                
+                                return $query;
+                            })
                             ->searchable()
                             ->preload()
                             ->placeholder('Select branch assignment'),
@@ -258,6 +286,13 @@ class UserResource extends Resource
                                 ->sortable()
                                 ->weight('bold')
                                 ->size('lg'),
+                            Tables\Columns\TextColumn::make('facility.name')
+                                ->label('Facility')
+                                ->sortable()
+                                ->searchable()
+                                ->badge()
+                                ->color('gray')
+                                ->visible(fn () => auth()->user()->role === 'super_admin'),
                             Tables\Columns\TextColumn::make('role')
                                 ->label('Role')
                                 ->searchable()
@@ -318,6 +353,12 @@ class UserResource extends Resource
                     ->placeholder('All staff')
                     ->trueLabel('Active staff')
                     ->falseLabel('Inactive staff'),
+                Tables\Filters\SelectFilter::make('facility_id')
+                    ->label('Facility')
+                    ->relationship('facility', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn () => auth()->user()->role === 'super_admin'),
                 Tables\Filters\SelectFilter::make('position')
                     ->label('Position')
                     ->options(User::getPositionOptions()),
@@ -364,8 +405,14 @@ class UserResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->with(['assignedBranch'])
+        $query = parent::getEloquentQuery()
+            ->with(['assignedBranch']);
+
+        if (auth()->check() && auth()->user()->role !== 'super_admin' && auth()->user()->facility_id) {
+            $query->where('facility_id', auth()->user()->facility_id);
+        }
+
+        return $query
             ->when(
                 request('tableSearch'),
                 fn (Builder $query, $search): Builder => $query->where(function (Builder $query) use ($search) {

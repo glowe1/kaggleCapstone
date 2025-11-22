@@ -118,8 +118,8 @@ export default function FacilityEdit() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
-                    ? 'text-[var(--theme-primary)] border-b-2 border-[var(--theme-primary)] font-semibold'
-                    : 'text-gray-600 hover:text-[var(--theme-primary)]'
+                  ? 'text-[var(--theme-primary)] border-b-2 border-[var(--theme-primary)] font-semibold'
+                  : 'text-gray-600 hover:text-[var(--theme-primary)]'
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -800,6 +800,7 @@ function AccountsTab({ facilityId }) {
   };
 
   const users = data?.data || [];
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -809,10 +810,7 @@ function AccountsTab({ facilityId }) {
           <p className="text-sm text-gray-600">Manage users associated with this facility.</p>
         </div>
         <button
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
+          onClick={() => navigate('/administration/users/create')}
           className="px-4 py-2 bg-[var(--theme-primary)] text-white rounded-lg hover:bg-[var(--theme-primary-hover)] flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
@@ -852,12 +850,7 @@ function AccountsTab({ facilityId }) {
                 </div>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => {
-                      api.get(`/users/${user.id}`).then((res) => {
-                        setEditing(res.data);
-                        setShowForm(true);
-                      });
-                    }}
+                    onClick={() => navigate(`/administration/users/${user.id}/edit`)}
                     className="p-1.5 text-[var(--theme-primary)] hover:bg-gray-100 rounded"
                     title="Edit"
                   >
@@ -900,36 +893,14 @@ function AccountsTab({ facilityId }) {
         </div>
       )}
 
-      {/* User Form Modal - Reuse from Users.jsx pattern */}
-      {showForm && (
-        <UserFormModal
-          record={editing}
-          facilityId={facilityId}
-          branches={branchesData?.data || []}
-          roles={rolesData?.data || []}
-          onClose={() => {
-            setShowForm(false);
-            setEditing(null);
-          }}
-          onSuccess={() => {
-            setShowForm(false);
-            setEditing(null);
-            queryClient.invalidateQueries(['facility-users', facilityId]);
-          }}
-        />
-      )}
-
       {/* View Profile Modal */}
       {viewingProfile && (
         <UserProfileModal
           user={viewingProfile}
           onClose={() => setViewingProfile(null)}
           onEdit={() => {
-            api.get(`/users/${viewingProfile.id}`).then((res) => {
-              setEditing(res.data);
-              setViewingProfile(null);
-              setShowForm(true);
-            });
+            setViewingProfile(null);
+            navigate(`/administration/users/${viewingProfile.id}/edit`);
           }}
         />
       )}
@@ -956,6 +927,9 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
+    if (dateString instanceof Date) {
+      return dateString.toISOString().split('T')[0];
+    }
     if (typeof dateString !== 'string') return '';
     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) return dateString;
     const date = new Date(dateString);
@@ -1033,10 +1007,10 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex-shrink-0 p-6 border-b">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-black">
               {record ? 'Edit User' : 'Add User'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
+            <button onClick={onClose} className="text-gray-500 hover:text-black text-2xl">
               ×
             </button>
           </div>
@@ -1058,37 +1032,37 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">First Name *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">First Name *</label>
                 <input
                   type="text"
                   value={form.first_name}
                   onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Last Name *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Last Name *</label>
                 <input
                   type="text"
                   value={form.last_name}
                   onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Email *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Email *</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-bold text-gray-900 mb-1">
                   Password {record ? '(leave blank to keep current)' : '*'}
                 </label>
                 <input
@@ -1097,37 +1071,37 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required={!record}
                   minLength={8}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Phone *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Phone *</label>
                 <input
                   type="tel"
                   value={form.phone_number}
                   onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
                   required={!record}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Date of Birth *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Date of Birth *</label>
                 <input
                   type="date"
                   value={form.date_of_birth}
                   onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
                   required={!record}
                   max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Sex *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Sex *</label>
                 <select
                   value={form.sex}
                   onChange={(e) => setForm({ ...form, sex: e.target.value })}
                   required={!record}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 >
                   <option value="">Select</option>
                   <option value="male">Male</option>
@@ -1136,23 +1110,23 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Date Employed *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Date Employed *</label>
                 <input
                   type="date"
                   value={form.date_employed}
                   onChange={(e) => setForm({ ...form, date_employed: e.target.value })}
                   required={!record}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Role *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Role *</label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 >
                   <option value="">Select Role</option>
                   {roles.map((role) => (
@@ -1163,11 +1137,11 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Branch</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Branch</label>
                 <select
                   value={form.assigned_branch_id}
                   onChange={(e) => setForm({ ...form, assigned_branch_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] bg-white text-gray-900"
                 >
                   <option value="">Select Branch</option>
                   {branches.map((branch) => (
@@ -1186,7 +1160,7 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
                     onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                     className="w-4 h-4 text-[var(--theme-primary)] border-gray-300 rounded"
                   />
-                  <label htmlFor="is_active" className="ml-2 text-sm font-medium text-gray-700">
+                  <label htmlFor="is_active" className="ml-2 text-sm font-bold text-gray-900">
                     Active User
                   </label>
                 </div>
@@ -1198,7 +1172,7 @@ function UserFormModal({ record, facilityId, branches, roles, onClose, onSuccess
         <div className="flex-shrink-0 p-6 border-t bg-gray-50 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-white"
+            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-white text-gray-700"
           >
             Cancel
           </button>
@@ -1277,8 +1251,8 @@ function UserProfileModal({ user, onClose, onEdit }) {
                 )}
                 <div className="mt-2">
                   <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${displayUser.is_active
-                      ? 'bg-green-500 text-white'
-                      : 'bg-red-500 text-white'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-red-500 text-white'
                     }`}>
                     {displayUser.is_active ? 'Active' : 'Inactive'}
                   </span>

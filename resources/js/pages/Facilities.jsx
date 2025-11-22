@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { useToastContext } from '../contexts/ToastContext';
 import {
-  FacilityList,
-  FacilityDetailView
+  FacilityList
 } from '../components/facility';
 
 export default function Facilities() {
@@ -14,8 +13,6 @@ export default function Facilities() {
   const { showToast } = useToastContext();
 
   const [search, setSearch] = useState('');
-  const [showDetail, setShowDetail] = useState(false);
-  const [selectedFacility, setSelectedFacility] = useState(null);
 
   // Check if user is super admin - MUST be called before any conditional returns
   const { data: currentUser, isLoading: userLoading } = useQuery({
@@ -88,19 +85,13 @@ export default function Facilities() {
   };
 
   const handleView = (facility) => {
-    setSelectedFacility(facility);
-    setShowDetail(true);
+    navigate(`/super-admin/facilities/${facility.id}`);
   };
 
   const handleDelete = (facility) => {
     if (window.confirm(`Are you sure you want to delete ${facility.name}? This action cannot be undone.`)) {
       deleteMutation.mutate(facility.id);
     }
-  };
-
-  const handleCloseDetail = () => {
-    setShowDetail(false);
-    setSelectedFacility(null);
   };
 
   return (
@@ -115,14 +106,6 @@ export default function Facilities() {
         searchTerm={search}
         onSearchChange={setSearch}
       />
-
-      {showDetail && selectedFacility && (
-        <FacilityDetailView
-          facility={selectedFacility}
-          onEdit={handleEdit}
-          onClose={handleCloseDetail}
-        />
-      )}
     </div>
   );
 }

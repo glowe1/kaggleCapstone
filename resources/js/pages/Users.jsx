@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Users, Plus, Edit, Trash2, Search, Filter, Upload, X, Eye, Mail, Phone, Calendar, Briefcase, MapPin, Award, Shield, Clock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Search, Filter, Upload, X, Eye, Mail, Phone, Calendar, Briefcase, MapPin, Award, Shield, Clock, User as UserIcon, AlertCircle, Building2 } from 'lucide-react';
 
 export default function UsersPage() {
     const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
     const [branchFilter, setBranchFilter] = useState('');
+    const [facilityFilter, setFacilityFilter] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
     const [showForm, setShowForm] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -14,7 +15,7 @@ export default function UsersPage() {
     const [currentPage, setCurrentPage] = useState(1);
 
     const { data, isLoading } = useQuery({
-        queryKey: ['users', search, branchFilter, activeFilter, currentPage],
+        queryKey: ['users', search, branchFilter, facilityFilter, activeFilter, currentPage],
         queryFn: async () => {
             const params = {
                 per_page: 20,
@@ -22,6 +23,7 @@ export default function UsersPage() {
             };
             if (search) params.search = search;
             if (branchFilter) params.branch_id = branchFilter;
+            if (facilityFilter) params.facility_id = facilityFilter;
             if (activeFilter === 'active') {
                 params.status = 'active';
             } else if (activeFilter === 'inactive') {
@@ -40,6 +42,23 @@ export default function UsersPage() {
     const { data: rolesData } = useQuery({
         queryKey: ['roles-options'],
         queryFn: async () => (await api.get('/roles', { params: { per_page: 100 } })).data,
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['current-user'],
+        queryFn: async () => (await api.get('/user')).data,
+    });
+
+    const isSuperAdmin = React.useMemo(() => {
+        if (!currentUser) return false;
+        const role = String(currentUser.role || '').toLowerCase().trim();
+        return role === 'super_admin' || role === 'superadmin';
+    }, [currentUser]);
+
+    const { data: facilitiesData } = useQuery({
+        queryKey: ['facilities-options'],
+        queryFn: async () => (await api.get('/facilities', { params: { per_page: 100 } })).data,
+        enabled: isSuperAdmin,
     });
 
     const deleteMutation = useMutation({
@@ -78,7 +97,7 @@ export default function UsersPage() {
     // Reset to page 1 when filters change
     React.useEffect(() => {
         setCurrentPage(1);
-    }, [search, branchFilter, activeFilter]);
+    }, [search, branchFilter, facilityFilter, activeFilter]);
 
     const usersList = data?.data || [];
     const isUserActive = (user) => {
@@ -132,11 +151,17 @@ export default function UsersPage() {
                                 )}
                             </div>
                             <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                            {isSuperAdmin && user.facility && (
+                                <p className="text-xs text-gray-400 mt-1 truncate flex items-center">
+                                    <Building2 className="w-3 h-3 mr-1" />
+                                    {user.facility.name}
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="flex space-x-2 ml-2">
                         <button
-                            onClick={() => handleEditFromProfile(user)}
+                            onClick={() => navigate(`/administration/users/${user.id}/edit`)}
                             className="p-2.5 text-[var(--theme-primary)] hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-[var(--theme-primary)]"
                             title="Edit User"
                         >
@@ -203,10 +228,7 @@ export default function UsersPage() {
                         <p className="text-gray-600">Search and manage users in the system.</p>
                     </div>
                     <button
-                        onClick={() => {
-                            setEditing(null);
-                            setShowForm(true);
-                        }}
+                        onClick={() => navigate('/administration/users/create')}
                         className="w-full sm:w-auto px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors flex items-center justify-center space-x-2 text-sm md:text-base"
                     >
                         <Plus className="w-4 h-4" />
@@ -214,7 +236,7 @@ export default function UsersPage() {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Search Bar */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -226,6 +248,23 @@ export default function UsersPage() {
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
                         />
                     </div>
+
+                    {/* Facility Filter (Super Admin only) */}
+                    {isSuperAdmin && (
+                        <div className="relative">
+                            <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <select
+                                value={facilityFilter}
+                                onChange={(e) => setFacilityFilter(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent appearance-none bg-white"
+                            >
+                                <option value="">All Facilities</option>
+                                {facilitiesData?.data?.map(facility => (
+                                    <option key={facility.id} value={facility.id}>{facility.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Branch Filter */}
                     <div className="relative">
@@ -334,6 +373,8 @@ export default function UsersPage() {
                     record={editing}
                     branches={branchesData?.data || []}
                     roles={rolesData?.data || []}
+                    facilities={facilitiesData?.data || []}
+                    isSuperAdmin={isSuperAdmin}
                     onClose={() => {
                         setShowForm(false);
                         setEditing(null);
@@ -360,12 +401,15 @@ export default function UsersPage() {
 }
 
 // User Form Component
-function UserForm({ record, branches, roles, onClose, onSuccess }) {
+function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, onSuccess }) {
     const queryClient = useQueryClient();
 
     // Format date helper function
     const formatDateForInput = (dateString) => {
         if (!dateString) return '';
+        if (dateString instanceof Date) {
+            return dateString.toISOString().split('T')[0];
+        }
         if (typeof dateString !== 'string') return '';
         // If it's already in YYYY-MM-DD format, return it
         if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) return dateString;
@@ -396,6 +440,7 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
         supervisor_name: record?.supervisor_name || '',
         provider_name: record?.provider_name || '',
         role: getRoleValue(record),
+        facility_id: record?.facility_id || '',
         assigned_branch_id: record?.assigned_branch_id || '',
         is_active: record?.is_active ?? true,
         notes: record?.notes || '',
@@ -442,6 +487,7 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                     supervisor_name: record.supervisor_name || '',
                     provider_name: record.provider_name || '',
                     role: roleValue,
+                    facility_id: record.facility_id || '',
                     assigned_branch_id: record.assigned_branch_id || '',
                     is_active: record.is_active ?? true,
                     notes: record.notes || '',
@@ -467,6 +513,7 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                 supervisor_name: '',
                 provider_name: '',
                 role: '',
+                facility_id: '',
                 assigned_branch_id: '',
                 is_active: true,
                 notes: '',
@@ -593,6 +640,9 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                 if (formData.assigned_branch_id) {
                     formDataToSend.append('assigned_branch_id', formData.assigned_branch_id);
                 }
+                if (formData.facility_id) {
+                    formDataToSend.append('facility_id', formData.facility_id);
+                }
                 formDataToSend.append('is_active', formData.is_active ? '1' : '0');
                 formDataToSend.append('notes', formData.notes || '');
 
@@ -656,6 +706,7 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                     supervisor_name: formData.supervisor_name || null,
                     provider_name: formData.provider_name || null,
                     role: formData.role,
+                    facility_id: formData.facility_id || null,
                     assigned_branch_id: formData.assigned_branch_id || null,
                     is_active: formData.is_active,
                     notes: formData.notes || null,
@@ -1070,6 +1121,32 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                                     </p>
                                 </div>
 
+                                {isSuperAdmin && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                                            Facility *
+                                        </label>
+                                        <select
+                                            value={formData.facility_id}
+                                            onChange={(e) => {
+                                                setFormData({
+                                                    ...formData,
+                                                    facility_id: e.target.value,
+                                                    assigned_branch_id: '' // Reset branch when facility changes
+                                                });
+                                            }}
+                                            required
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
+                                        >
+                                            <option value="">Select facility</option>
+                                            {facilities.map(facility => (
+                                                <option key={facility.id} value={facility.id}>{facility.name}</option>
+                                            ))}
+                                        </select>
+                                        {errors.facility_id && <p className="text-xs text-red-600 mt-1">{errors.facility_id[0]}</p>}
+                                    </div>
+                                )}
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-900 mb-2">
                                         Assigned Branch
@@ -1080,9 +1157,12 @@ function UserForm({ record, branches, roles, onClose, onSuccess }) {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
                                     >
                                         <option value="">Select branch assignment</option>
-                                        {branches.map(branch => (
-                                            <option key={branch.id} value={branch.id}>{branch.name}</option>
-                                        ))}
+                                        {branches
+                                            .filter(branch => !isSuperAdmin || !formData.facility_id || branch.facility_id == formData.facility_id)
+                                            .map(branch => (
+                                                <option key={branch.id} value={branch.id}>{branch.name}</option>
+                                            ))
+                                        }
                                     </select>
                                 </div>
 
@@ -1292,6 +1372,15 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                                         <p className="font-semibold text-gray-900 capitalize">{user.role.replace('_', ' ')}</p>
                                     </div>
                                 )}
+                                {user.facility && (
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-1 flex items-center">
+                                            <Building2 className="w-4 h-4 mr-1" />
+                                            Facility
+                                        </p>
+                                        <p className="font-semibold text-gray-900">{user.facility.name}</p>
+                                    </div>
+                                )}
                                 {user.assigned_branch && (
                                     <div>
                                         <p className="text-sm text-gray-600 mb-1 flex items-center">
@@ -1346,8 +1435,8 @@ function UserProfileViewer({ user, onClose, onEdit, onToggleActive }) {
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Status</p>
                                     <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${user.is_active
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800'
                                         }`}>
                                         {user.is_active ? 'Active' : 'Inactive'}
                                     </span>

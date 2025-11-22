@@ -25,12 +25,15 @@ import SleepPatterns from './pages/SleepPatterns';
 import ViewVitals from './pages/ViewVitals';
 import Facilities from './pages/Facilities';
 import FacilityCreate from './pages/FacilityCreate';
+import FacilityView from './pages/FacilityView';
 import FacilityEdit from './pages/FacilityEdit';
 import Branches from './pages/Branches';
 import VitalRanges from './pages/VitalRanges';
 import LeaveRequests from './pages/LeaveRequests';
 import Roles from './pages/Roles';
 import Users from './pages/Users';
+import UserCreate from './pages/UserCreate';
+import UserEdit from './pages/UserEdit';
 import EmployeeDocuments from './pages/EmployeeDocuments';
 import Drugs from './pages/Drugs';
 import Profile from './pages/Profile';
@@ -122,6 +125,7 @@ function App() {
                 <Route path="super-admin/facility-registrations" element={<FacilityRegistrations />} />
                 <Route path="super-admin/facilities" element={<Facilities />} />
                 <Route path="super-admin/facilities/create" element={<FacilityCreate />} />
+                <Route path="super-admin/facilities/:id" element={<FacilityView />} />
                 <Route path="super-admin/facilities/:id/edit" element={<FacilityEdit />} />
                 <Route path="super-admin/permissions" element={<Permissions />} />
 
@@ -134,6 +138,8 @@ function App() {
                 <Route path="administration/roles" element={<Roles />} />
                 <Route path="administration/facility-permissions" element={<Permissions />} />
                 <Route path="administration/users" element={<Users />} />
+                <Route path="administration/users/create" element={<UserCreate />} />
+                <Route path="administration/users/:id/edit" element={<UserEdit />} />
                 <Route path="administration/drugs" element={<Drugs />} />
                 <Route path="administration/employee-documents" element={<EmployeeDocuments />} />
                 <Route path="administration/activity-logs" element={<ActivityLogs />} />
