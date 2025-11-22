@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     ArrowLeft,
     Calendar,
@@ -11,6 +11,9 @@ import {
     AlertCircle,
     Moon,
     FileText,
+    Edit,
+    Save,
+    X,
 } from 'lucide-react';
 import api from '../../services/api';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
@@ -112,7 +115,14 @@ function EmptyState({ icon: Icon = AlertCircle, title, description }) {
 export default function ResidentDetailPage() {
     const navigate = useNavigate();
     const { residentId } = useParams();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = React.useState('profile');
+    const [editingCarePlan, setEditingCarePlan] = React.useState(false);
+    const [carePlanData, setCarePlanData] = React.useState({
+        care_plan: '',
+        special_instructions: '',
+        notes: '',
+    });
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['resident-detail', residentId],
@@ -129,6 +139,56 @@ export default function ResidentDetailPage() {
         if (!resident) return '';
         return [resident.first_name, resident.middle_names, resident.last_name].filter(Boolean).join(' ');
     }, [resident]);
+
+    // Initialize care plan data when resident loads
+    React.useEffect(() => {
+        if (resident) {
+            setCarePlanData({
+                care_plan: resident.care_plan || '',
+                special_instructions: resident.special_instructions || '',
+                notes: resident.notes || '',
+            });
+        }
+    }, [resident]);
+
+    // Update care plan mutation
+    const updateCarePlanMutation = useMutation({
+        mutationFn: async (data) => {
+            try {
+                const response = await api.put(`/residents/${residentId}`, data);
+                return response.data?.data || response.data;
+            } catch (error) {
+                console.error('API Error:', error.response?.data || error.message);
+                throw error;
+            }
+        },
+        onSuccess: (updatedResident) => {
+            queryClient.setQueryData(['resident-detail', residentId], { data: updatedResident });
+            queryClient.invalidateQueries(['resident-detail', residentId]);
+            queryClient.invalidateQueries(['my-residents']);
+            setEditingCarePlan(false);
+        },
+        onError: (error) => {
+            console.error('Failed to update care plan:', error);
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update care plan. Please try again.';
+            alert(errorMessage);
+        },
+    });
+
+    const handleSaveCarePlan = () => {
+        updateCarePlanMutation.mutate(carePlanData);
+    };
+
+    const handleCancelEdit = () => {
+        if (resident) {
+            setCarePlanData({
+                care_plan: resident.care_plan || '',
+                special_instructions: resident.special_instructions || '',
+                notes: resident.notes || '',
+            });
+        }
+        setEditingCarePlan(false);
+    };
 
     const statusBadge = React.useMemo(() => {
         const isActive = resident?.is_active === true || resident?.is_active === 1 || resident?.is_active === '1';
@@ -393,26 +453,91 @@ export default function ResidentDetailPage() {
 
                 {activeTab === 'care' && (
                     <div className="space-y-4">
-                        <h2 className="text-lg font-semibold text-gray-900">Care Plan & Notes</h2>
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-gray-900">Care Plan & Notes</h2>
+                            {!editingCarePlan && (
+                                <button
+                                    onClick={() => setEditingCarePlan(true)}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-hover)] transition-colors"
+                                >
+                                    <Edit className="h-4 w-4" />
+                                    Edit
+                                </button>
+                            )}
+                        </div>
                         <div className="space-y-4 text-sm text-gray-600">
                             <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
-                                <h3 className="text-sm font-semibold text-emerald-900">Care Plan</h3>
-                                <p className="mt-2 whitespace-pre-wrap">
-                                    {resident.care_plan || 'No care plan has been documented for this resident yet.'}
-                                </p>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-sm font-semibold text-emerald-900">Care Plan</h3>
+                                </div>
+                                {editingCarePlan ? (
+                                    <textarea
+                                        value={carePlanData.care_plan}
+                                        onChange={(e) => setCarePlanData({ ...carePlanData, care_plan: e.target.value })}
+                                        rows={6}
+                                        placeholder="Enter care plan details..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent text-gray-900"
+                                    />
+                                ) : (
+                                    <p className="mt-2 whitespace-pre-wrap">
+                                        {resident.care_plan || 'No care plan has been documented for this resident yet.'}
+                                    </p>
+                                )}
                             </div>
                             <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-4">
-                                <h3 className="text-sm font-semibold text-gray-900">Special Instructions</h3>
-                                <p className="mt-2 whitespace-pre-wrap">
-                                    {resident.special_instructions || 'No special instructions recorded.'}
-                                </p>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-sm font-semibold text-gray-900">Special Instructions</h3>
+                                </div>
+                                {editingCarePlan ? (
+                                    <textarea
+                                        value={carePlanData.special_instructions}
+                                        onChange={(e) => setCarePlanData({ ...carePlanData, special_instructions: e.target.value })}
+                                        rows={4}
+                                        placeholder="Enter special instructions..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent text-gray-900"
+                                    />
+                                ) : (
+                                    <p className="mt-2 whitespace-pre-wrap">
+                                        {resident.special_instructions || 'No special instructions recorded.'}
+                                    </p>
+                                )}
                             </div>
                             <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-inner">
-                                <h3 className="text-sm font-semibold text-gray-900">Additional Notes</h3>
-                                <p className="mt-2 whitespace-pre-wrap">
-                                    {resident.notes || 'There are no additional notes for this resident.'}
-                                </p>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-sm font-semibold text-gray-900">Additional Notes</h3>
+                                </div>
+                                {editingCarePlan ? (
+                                    <textarea
+                                        value={carePlanData.notes}
+                                        onChange={(e) => setCarePlanData({ ...carePlanData, notes: e.target.value })}
+                                        rows={4}
+                                        placeholder="Enter additional notes..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent text-gray-900"
+                                    />
+                                ) : (
+                                    <p className="mt-2 whitespace-pre-wrap">
+                                        {resident.notes || 'There are no additional notes for this resident.'}
+                                    </p>
+                                )}
                             </div>
+                            {editingCarePlan && (
+                                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                                    <button
+                                        onClick={handleCancelEdit}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveCarePlan}
+                                        disabled={updateCarePlanMutation.isPending}
+                                        className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                                    >
+                                        <Save className="h-4 w-4" />
+                                        {updateCarePlanMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

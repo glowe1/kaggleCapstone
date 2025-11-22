@@ -196,7 +196,33 @@ class ResidentController extends BaseApiController
 
     public function update(UpdateResidentRequest $request, $id): JsonResponse
     {
-        $resident = Resident::findOrFail($id);
+        // Find resident without global scope to check permissions manually
+        $resident = Resident::withoutGlobalScope(\App\Models\Scopes\FacilityScope::class)->findOrFail($id);
+        $user = $request->user();
+
+        // Check caregiver access
+        if ($this->isCaregiver($user)) {
+            $caregiverBranchId = (int) ($user->assigned_branch_id ?? 0);
+            if ($caregiverBranchId === 0 || (int) $resident->branch_id !== $caregiverBranchId) {
+                return $this->error('You do not have permission to update this resident.', 403);
+            }
+        }
+
+        // Check facility access for non-super admins
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        if ($currentUser && $currentUser->role !== 'super_admin') {
+            $resident->load('branch');
+            if ($currentUser->facility_id) {
+                // Verify the resident's branch belongs to the user's facility
+                if (!$resident->branch || $resident->branch->facility_id !== $currentUser->facility_id) {
+                    return $this->error('You do not have permission to update this resident.', 403);
+                }
+            } else {
+                // User has no facility assigned
+                return $this->error('You do not have permission to update this resident.', 403);
+            }
+        }
+
         $validated = $request->validated();
 
         // Handle profile image upload
@@ -252,7 +278,25 @@ class ResidentController extends BaseApiController
             $validated['name'] = implode(' ', $parts);
         }
 
-        $resident->update($validated);
+        // Handle text fields - convert empty strings to null
+        foreach (['care_plan', 'special_instructions', 'notes'] as $field) {
+            if (isset($validated[$field]) && $validated[$field] === '') {
+                $validated[$field] = null;
+            }
+        }
+
+        try {
+            $resident->update($validated);
+            $resident->refresh();
+        } catch (\Exception $e) {
+            \Log::error('Failed to update resident', [
+                'resident_id' => $id,
+                'validated' => $validated,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return $this->error('Failed to update resident: ' . $e->getMessage(), 500);
+        }
 
         return $this->success(
             new ResidentResource($resident->load(['branch'])),
