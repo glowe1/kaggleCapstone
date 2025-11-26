@@ -101,12 +101,16 @@ class PermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create([
-                'name' => $permission['name'],
-                'guard_name' => 'web',
-                'group' => $permission['group'],
-                'description' => $permission['description'],
-            ]);
+            Permission::updateOrCreate(
+                [
+                    'name' => $permission['name'],
+                    'guard_name' => 'web',
+                ],
+                [
+                    'group' => $permission['group'],
+                    'description' => $permission['description'],
+                ]
+            );
         }
 
         $this->command->info('Permissions created successfully.');
