@@ -52,27 +52,53 @@ class FacilityPermissionController extends BaseApiController
             }
 
             // Get role permissions for administrator and caregiver
-            $administratorRole = Role::where('name', 'administrator')->orWhere('name', 'admin')->first();
+            $administratorRole = Role::where(function($query) {
+                $query->where('name', 'administrator')->orWhere('name', 'admin');
+            })->first();
             $caregiverRole = Role::where('name', 'caregiver')->first();
 
             $rolePermissions = [];
             
+            // Check if permissions exist in database
+            $permissionCount = Permission::count();
+            if ($permissionCount === 0) {
+                \Log::warning('No permissions found in database. Permissions need to be seeded.');
+            }
+            
             if ($administratorRole) {
                 try {
                     $rolePermissions['administrator'] = $this->getRolePermissionsData($facility, $administratorRole);
+                    \Log::info('Administrator role permissions loaded', [
+                        'role_id' => $administratorRole->id,
+                        'permissions_count' => count($rolePermissions['administrator']['global_permissions'] ?? [])
+                    ]);
                 } catch (\Exception $e) {
-                    \Log::error('Error getting administrator permissions: ' . $e->getMessage());
+                    \Log::error('Error getting administrator permissions: ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString(),
+                        'role_id' => $administratorRole->id
+                    ]);
                     // Continue without administrator permissions
                 }
+            } else {
+                \Log::warning('Administrator role not found in database');
             }
             
             if ($caregiverRole) {
                 try {
                     $rolePermissions['caregiver'] = $this->getRolePermissionsData($facility, $caregiverRole);
+                    \Log::info('Caregiver role permissions loaded', [
+                        'role_id' => $caregiverRole->id,
+                        'permissions_count' => count($rolePermissions['caregiver']['global_permissions'] ?? [])
+                    ]);
                 } catch (\Exception $e) {
-                    \Log::error('Error getting caregiver permissions: ' . $e->getMessage());
+                    \Log::error('Error getting caregiver permissions: ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString(),
+                        'role_id' => $caregiverRole->id
+                    ]);
                     // Continue without caregiver permissions
                 }
+            } else {
+                \Log::warning('Caregiver role not found in database');
             }
 
             return $this->success([
