@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import {
     ArrowLeft, Save, User, Mail, Phone, Calendar, Briefcase,
-    Shield, MapPin, Award, Clock, Building2, Upload, X
+    Shield, MapPin, Award, Clock, Building2, Upload, X, Eye, EyeOff
 } from 'lucide-react';
 import { useToastContext } from '../contexts/ToastContext';
 
@@ -388,6 +388,24 @@ function EmploymentTab({ roles, branches, facilities, isSuperAdmin }) {
 // Security Tab
 function SecurityTab({ isEditing }) {
     const { formData, updateForm } = React.useContext(FormContext);
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+    const [passwordError, setPasswordError] = React.useState('');
+
+    // Validate password match
+    React.useEffect(() => {
+        if (formData.password_confirmation && formData.password) {
+            if (formData.password !== formData.password_confirmation) {
+                setPasswordError('Passwords do not match');
+            } else {
+                setPasswordError('');
+            }
+        } else if (formData.password_confirmation && !formData.password) {
+            setPasswordError('');
+        } else {
+            setPasswordError('');
+        }
+    }, [formData.password, formData.password_confirmation]);
 
     return (
         <div className="space-y-6">
@@ -396,15 +414,65 @@ function SecurityTab({ isEditing }) {
                     <label className="block text-sm font-medium text-gray-900 mb-1">
                         Password {isEditing ? '(Leave blank to keep current)' : '*'}
                     </label>
-                    <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => updateForm({ password: e.target.value })}
-                        required={!isEditing}
-                        minLength={8}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]"
-                    />
+                    <div className="relative">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.password || ''}
+                            onChange={(e) => updateForm({ password: e.target.value })}
+                            required={!isEditing}
+                            minLength={8}
+                            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            tabIndex={-1}
+                        >
+                            {showPassword ? (
+                                <EyeOff className="w-5 h-5" />
+                            ) : (
+                                <Eye className="w-5 h-5" />
+                            )}
+                        </button>
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">
+                        Confirm Password {!isEditing ? '*' : ''}
+                    </label>
+                    <div className="relative">
+                        <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            value={formData.password_confirmation || ''}
+                            onChange={(e) => updateForm({ password_confirmation: e.target.value })}
+                            required={!isEditing && formData.password}
+                            minLength={8}
+                            className={`w-full px-4 py-2 pr-10 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] ${
+                                passwordError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
+                            }`}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            tabIndex={-1}
+                        >
+                            {showConfirmPassword ? (
+                                <EyeOff className="w-5 h-5" />
+                            ) : (
+                                <Eye className="w-5 h-5" />
+                            )}
+                        </button>
+                    </div>
+                    {passwordError && (
+                        <p className="text-xs text-red-600 mt-1">{passwordError}</p>
+                    )}
+                    {!passwordError && formData.password_confirmation && (
+                        <p className="text-xs text-green-600 mt-1">Passwords match</p>
+                    )}
                 </div>
 
                 <div className="md:col-span-2">
@@ -508,6 +576,23 @@ function UserCreateContent({
         setIsSubmitting(true);
 
         try {
+            // Validate password confirmation
+            if (!formData.password) {
+                setErrors({ password: ['Password is required'] });
+                setIsSubmitting(false);
+                return;
+            }
+            if (!formData.password_confirmation) {
+                setErrors({ password_confirmation: ['Please confirm your password'] });
+                setIsSubmitting(false);
+                return;
+            }
+            if (formData.password !== formData.password_confirmation) {
+                setErrors({ password_confirmation: ['Passwords do not match'] });
+                setIsSubmitting(false);
+                return;
+            }
+
             const name = `${formData.first_name} ${formData.last_name}`.trim() || formData.email;
             let response;
 
@@ -547,6 +632,8 @@ function UserCreateContent({
                 });
             } else {
                 const payload = { ...formData, name };
+                // Remove password_confirmation as it's only for validation
+                delete payload.password_confirmation;
                 response = await api.post('/users', payload);
             }
 
