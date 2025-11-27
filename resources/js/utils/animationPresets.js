@@ -5,13 +5,13 @@ import anime from 'animejs';
  * All animations respect prefers-reduced-motion
  */
 
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 /**
  * Check if user prefers reduced motion
+ * Uses lazy evaluation to avoid issues during build/SSR
  */
 export function shouldAnimate() {
-    return !prefersReducedMotion;
+    if (typeof window === 'undefined') return true;
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /**

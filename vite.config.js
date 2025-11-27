@@ -17,4 +17,9 @@ export default defineConfig({
             host: 'localhost',
         },
     },
+    build: {
+        commonjsOptions: {
+            include: [/animejs/, /node_modules/],
+        },
+    },
 });
