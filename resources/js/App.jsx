@@ -1,75 +1,85 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Residents from './pages/Residents';
-import MyResidentsPage from './pages/caregiver/MyResidentsPage';
-import ResidentDetailPage from './pages/caregiver/ResidentDetailPage';
-import Appointments from './pages/Appointments';
-import CreateAppointment from './pages/CreateAppointment';
-import Vitals from './pages/Vitals';
-import Medications from './pages/Medications';
-import MedicationHistory from './pages/MedicationHistory';
-import CaregiverMedicationsResidents from './pages/caregiver/CaregiverMedicationsResidents';
-import ResidentMedicationsPage from './pages/caregiver/ResidentMedicationsPage';
-import Reports from './pages/Reports';
-import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import ModuleProtectedRoute from './components/ModuleProtectedRoute';
 
-// New pages to create
-import Assessments from './pages/Assessments';
-import AssessmentDetail from './pages/AssessmentDetail';
-import AssessmentReview from './pages/AssessmentReview';
-import Sleep from './pages/Sleep';
-import SleepPatterns from './pages/SleepPatterns';
-import ViewVitals from './pages/ViewVitals';
-import Facilities from './pages/Facilities';
-import FacilityCreate from './pages/FacilityCreate';
-import FacilityView from './pages/FacilityView';
-import FacilityEdit from './pages/FacilityEdit';
-import Branches from './pages/Branches';
-import VitalRanges from './pages/VitalRanges';
-import LeaveRequests from './pages/LeaveRequests';
-import Roles from './pages/Roles';
-import Users from './pages/Users';
-import UserCreate from './pages/UserCreate';
-import UserEdit from './pages/UserEdit';
-import EmployeeDocuments from './pages/EmployeeDocuments';
-import Drugs from './pages/Drugs';
-import Profile from './pages/Profile';
-import ActivityLogs from './pages/ActivityLogs';
-import DeactivatedRecords from './pages/DeactivatedRecords';
-import Housekeeping from './pages/Housekeeping';
-import HousekeepingSchedule from './pages/HousekeepingSchedule';
-import HousekeepingDashboard from './pages/HousekeepingDashboard';
-import MedicationDeliveries from './pages/MedicationDeliveries';
-import GroceryStatus from './pages/GroceryStatus';
-import FireDrills from './pages/FireDrills';
-import PharmacySuppliers from './pages/PharmacySuppliers';
-import PharmacyInventory from './pages/PharmacyInventory';
-import PharmacyOrders from './pages/PharmacyOrders';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import SuperAdminSettings from './pages/SuperAdminSettings';
-import FacilityRegistrations from './pages/FacilityRegistrations';
-import Permissions from './pages/Permissions';
-import ExpenseCategories from './pages/ExpenseCategories';
-import Expenses from './pages/Expenses';
-import BillingInvoices from './pages/BillingInvoices';
-import ExpenseReports from './pages/reports/ExpenseReports';
-import Incidents from './pages/Incidents';
+// Loading component for Suspense
+const PageLoader = () => (
+    <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+    </div>
+);
 
-// Report sub-pages
-import ChartReports from './pages/reports/ChartReports';
-import ResidentCharts from './pages/reports/ResidentCharts';
-import VitalsCharts from './pages/reports/VitalsCharts';
-import VitalsReports from './pages/reports/VitalsReports';
-import AssessmentCharts from './pages/reports/AssessmentCharts';
-import AppointmentsCharts from './pages/reports/AppointmentsCharts';
-import VitalsHistory from './pages/reports/VitalsHistory';
-import SleepCharts from './pages/reports/SleepCharts';
-import StaffCharts from './pages/reports/StaffCharts';
+// Critical components - load immediately (Login, Layout)
+import Login from './pages/Login';
+
+// Lazy load all page components for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Residents = lazy(() => import('./pages/Residents'));
+const MyResidentsPage = lazy(() => import('./pages/caregiver/MyResidentsPage'));
+const ResidentDetailPage = lazy(() => import('./pages/caregiver/ResidentDetailPage'));
+const Appointments = lazy(() => import('./pages/Appointments'));
+const CreateAppointment = lazy(() => import('./pages/CreateAppointment'));
+const Vitals = lazy(() => import('./pages/Vitals'));
+const Medications = lazy(() => import('./pages/Medications'));
+const MedicationHistory = lazy(() => import('./pages/MedicationHistory'));
+const CaregiverMedicationsResidents = lazy(() => import('./pages/caregiver/CaregiverMedicationsResidents'));
+const ResidentMedicationsPage = lazy(() => import('./pages/caregiver/ResidentMedicationsPage'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Assessments = lazy(() => import('./pages/Assessments'));
+const AssessmentDetail = lazy(() => import('./pages/AssessmentDetail'));
+const AssessmentReview = lazy(() => import('./pages/AssessmentReview'));
+const Sleep = lazy(() => import('./pages/Sleep'));
+const SleepPatterns = lazy(() => import('./pages/SleepPatterns'));
+const ViewVitals = lazy(() => import('./pages/ViewVitals'));
+const Facilities = lazy(() => import('./pages/Facilities'));
+const FacilityCreate = lazy(() => import('./pages/FacilityCreate'));
+const FacilityView = lazy(() => import('./pages/FacilityView'));
+const FacilityEdit = lazy(() => import('./pages/FacilityEdit'));
+const Branches = lazy(() => import('./pages/Branches'));
+const VitalRanges = lazy(() => import('./pages/VitalRanges'));
+const LeaveRequests = lazy(() => import('./pages/LeaveRequests'));
+const Roles = lazy(() => import('./pages/Roles'));
+const Users = lazy(() => import('./pages/Users'));
+const UserCreate = lazy(() => import('./pages/UserCreate'));
+const UserEdit = lazy(() => import('./pages/UserEdit'));
+const EmployeeDocuments = lazy(() => import('./pages/EmployeeDocuments'));
+const Drugs = lazy(() => import('./pages/Drugs'));
+const Profile = lazy(() => import('./pages/Profile'));
+const ActivityLogs = lazy(() => import('./pages/ActivityLogs'));
+const DeactivatedRecords = lazy(() => import('./pages/DeactivatedRecords'));
+const Housekeeping = lazy(() => import('./pages/Housekeeping'));
+const HousekeepingSchedule = lazy(() => import('./pages/HousekeepingSchedule'));
+const HousekeepingDashboard = lazy(() => import('./pages/HousekeepingDashboard'));
+const MedicationDeliveries = lazy(() => import('./pages/MedicationDeliveries'));
+const GroceryStatus = lazy(() => import('./pages/GroceryStatus'));
+const FireDrills = lazy(() => import('./pages/FireDrills'));
+const PharmacySuppliers = lazy(() => import('./pages/PharmacySuppliers'));
+const PharmacyInventory = lazy(() => import('./pages/PharmacyInventory'));
+const PharmacyOrders = lazy(() => import('./pages/PharmacyOrders'));
+const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
+const SuperAdminSettings = lazy(() => import('./pages/SuperAdminSettings'));
+const FacilityRegistrations = lazy(() => import('./pages/FacilityRegistrations'));
+const Permissions = lazy(() => import('./pages/Permissions'));
+const ExpenseCategories = lazy(() => import('./pages/ExpenseCategories'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const BillingInvoices = lazy(() => import('./pages/BillingInvoices'));
+const ExpenseReports = lazy(() => import('./pages/reports/ExpenseReports'));
+const Incidents = lazy(() => import('./pages/Incidents'));
+const ChartReports = lazy(() => import('./pages/reports/ChartReports'));
+const ResidentCharts = lazy(() => import('./pages/reports/ResidentCharts'));
+const VitalsCharts = lazy(() => import('./pages/reports/VitalsCharts'));
+const VitalsReports = lazy(() => import('./pages/reports/VitalsReports'));
+const AssessmentCharts = lazy(() => import('./pages/reports/AssessmentCharts'));
+const AppointmentsCharts = lazy(() => import('./pages/reports/AppointmentsCharts'));
+const VitalsHistory = lazy(() => import('./pages/reports/VitalsHistory'));
+const SleepCharts = lazy(() => import('./pages/reports/SleepCharts'));
+const StaffCharts = lazy(() => import('./pages/reports/StaffCharts'));
 
 function App() {
     // Make toast available globally for backward compatibility
@@ -94,76 +104,76 @@ function App() {
                 <Route index element={<Navigate to="dashboard" replace />} />
 
                 {/* Main Pages */}
-                <Route path="profile" element={<Profile />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="assessments" element={<ModuleProtectedRoute module="assessments"><Assessments /></ModuleProtectedRoute>} />
-                <Route path="assessments/:id" element={<ModuleProtectedRoute module="assessments"><AssessmentDetail /></ModuleProtectedRoute>} />
-                <Route path="assessments/:id/review" element={<ModuleProtectedRoute module="assessments"><AssessmentReview /></ModuleProtectedRoute>} />
-                <Route path="appointments" element={<Appointments />} />
-                <Route path="appointments/create/:residentId" element={<CreateAppointment />} />
-                <Route path="vitals" element={<Vitals />} />
-                <Route path="view-vitals" element={<ViewVitals />} />
-                <Route path="medications" element={<Medications />} />
-                <Route path="medications/residents" element={<CaregiverMedicationsResidents />} />
-                <Route path="medications/residents/:residentId" element={<ResidentMedicationsPage />} />
-                <Route path="medication-history" element={<MedicationHistory />} />
-                <Route path="medication-deliveries" element={<MedicationDeliveries />} />
-                <Route path="grocery-status" element={<GroceryStatus />} />
-                <Route path="fire-drills" element={<FireDrills />} />
-                <Route path="incidents" element={<ModuleProtectedRoute module="incidents"><Incidents /></ModuleProtectedRoute>} />
-                <Route path="pharmacy/suppliers" element={<PharmacySuppliers />} />
-                <Route path="pharmacy/inventory" element={<PharmacyInventory />} />
-                <Route path="pharmacy/orders" element={<PharmacyOrders />} />
-                <Route path="billing/expense-categories" element={<ExpenseCategories />} />
-                <Route path="billing/expenses" element={<Expenses />} />
-                <Route path="billing/invoices" element={<BillingInvoices />} />
-                <Route path="billing/reports" element={<ExpenseReports />} />
-                <Route path="housekeeping" element={<Housekeeping />} />
-                <Route path="housekeeping/dashboard" element={<HousekeepingDashboard />} />
-                <Route path="housekeeping/schedule" element={<HousekeepingSchedule />} />
-                <Route path="sleep" element={<Sleep />} />
-                <Route path="sleep-patterns" element={<SleepPatterns />} />
-                <Route path="leave-requests" element={<LeaveRequests />} />
-                <Route path="my-residents" element={<MyResidentsPage />} />
-                <Route path="my-residents/:residentId" element={<ResidentDetailPage />} />
+                <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
+                <Route path="dashboard" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+                <Route path="assessments" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><Assessments /></ModuleProtectedRoute></Suspense>} />
+                <Route path="assessments/:id" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><AssessmentDetail /></ModuleProtectedRoute></Suspense>} />
+                <Route path="assessments/:id/review" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><AssessmentReview /></ModuleProtectedRoute></Suspense>} />
+                <Route path="appointments" element={<Suspense fallback={<PageLoader />}><Appointments /></Suspense>} />
+                <Route path="appointments/create/:residentId" element={<Suspense fallback={<PageLoader />}><CreateAppointment /></Suspense>} />
+                <Route path="vitals" element={<Suspense fallback={<PageLoader />}><Vitals /></Suspense>} />
+                <Route path="view-vitals" element={<Suspense fallback={<PageLoader />}><ViewVitals /></Suspense>} />
+                <Route path="medications" element={<Suspense fallback={<PageLoader />}><Medications /></Suspense>} />
+                <Route path="medications/residents" element={<Suspense fallback={<PageLoader />}><CaregiverMedicationsResidents /></Suspense>} />
+                <Route path="medications/residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentMedicationsPage /></Suspense>} />
+                <Route path="medication-history" element={<Suspense fallback={<PageLoader />}><MedicationHistory /></Suspense>} />
+                <Route path="medication-deliveries" element={<Suspense fallback={<PageLoader />}><MedicationDeliveries /></Suspense>} />
+                <Route path="grocery-status" element={<Suspense fallback={<PageLoader />}><GroceryStatus /></Suspense>} />
+                <Route path="fire-drills" element={<Suspense fallback={<PageLoader />}><FireDrills /></Suspense>} />
+                <Route path="incidents" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="incidents"><Incidents /></ModuleProtectedRoute></Suspense>} />
+                <Route path="pharmacy/suppliers" element={<Suspense fallback={<PageLoader />}><PharmacySuppliers /></Suspense>} />
+                <Route path="pharmacy/inventory" element={<Suspense fallback={<PageLoader />}><PharmacyInventory /></Suspense>} />
+                <Route path="pharmacy/orders" element={<Suspense fallback={<PageLoader />}><PharmacyOrders /></Suspense>} />
+                <Route path="billing/expense-categories" element={<Suspense fallback={<PageLoader />}><ExpenseCategories /></Suspense>} />
+                <Route path="billing/expenses" element={<Suspense fallback={<PageLoader />}><Expenses /></Suspense>} />
+                <Route path="billing/invoices" element={<Suspense fallback={<PageLoader />}><BillingInvoices /></Suspense>} />
+                <Route path="billing/reports" element={<Suspense fallback={<PageLoader />}><ExpenseReports /></Suspense>} />
+                <Route path="housekeeping" element={<Suspense fallback={<PageLoader />}><Housekeeping /></Suspense>} />
+                <Route path="housekeeping/dashboard" element={<Suspense fallback={<PageLoader />}><HousekeepingDashboard /></Suspense>} />
+                <Route path="housekeeping/schedule" element={<Suspense fallback={<PageLoader />}><HousekeepingSchedule /></Suspense>} />
+                <Route path="sleep" element={<Suspense fallback={<PageLoader />}><Sleep /></Suspense>} />
+                <Route path="sleep-patterns" element={<Suspense fallback={<PageLoader />}><SleepPatterns /></Suspense>} />
+                <Route path="leave-requests" element={<Suspense fallback={<PageLoader />}><LeaveRequests /></Suspense>} />
+                <Route path="my-residents" element={<Suspense fallback={<PageLoader />}><MyResidentsPage /></Suspense>} />
+                <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentDetailPage /></Suspense>} />
 
                 {/* Reports */}
-                <Route path="reports" element={<Reports />} />
-                <Route path="reports/charts" element={<ChartReports />} />
-                <Route path="reports/resident-charts" element={<ResidentCharts />} />
-                <Route path="reports/vitals-charts" element={<VitalsCharts />} />
-                <Route path="reports/vitals-reports" element={<VitalsReports />} />
-                <Route path="reports/assessment-charts" element={<AssessmentCharts />} />
-                <Route path="reports/appointments-charts" element={<AppointmentsCharts />} />
-                <Route path="reports/vitals-history" element={<VitalsHistory />} />
-                <Route path="reports/sleep-charts" element={<SleepCharts />} />
-                <Route path="reports/staff-charts" element={<StaffCharts />} />
+                <Route path="reports" element={<Suspense fallback={<PageLoader />}><Reports /></Suspense>} />
+                <Route path="reports/charts" element={<Suspense fallback={<PageLoader />}><ChartReports /></Suspense>} />
+                <Route path="reports/resident-charts" element={<Suspense fallback={<PageLoader />}><ResidentCharts /></Suspense>} />
+                <Route path="reports/vitals-charts" element={<Suspense fallback={<PageLoader />}><VitalsCharts /></Suspense>} />
+                <Route path="reports/vitals-reports" element={<Suspense fallback={<PageLoader />}><VitalsReports /></Suspense>} />
+                <Route path="reports/assessment-charts" element={<Suspense fallback={<PageLoader />}><AssessmentCharts /></Suspense>} />
+                <Route path="reports/appointments-charts" element={<Suspense fallback={<PageLoader />}><AppointmentsCharts /></Suspense>} />
+                <Route path="reports/vitals-history" element={<Suspense fallback={<PageLoader />}><VitalsHistory /></Suspense>} />
+                <Route path="reports/sleep-charts" element={<Suspense fallback={<PageLoader />}><SleepCharts /></Suspense>} />
+                <Route path="reports/staff-charts" element={<Suspense fallback={<PageLoader />}><StaffCharts /></Suspense>} />
 
                 {/* Super Admin */}
-                <Route path="super-admin/dashboard" element={<SuperAdminDashboard />} />
-                <Route path="super-admin/settings" element={<SuperAdminSettings />} />
-                <Route path="super-admin/facility-registrations" element={<FacilityRegistrations />} />
-                <Route path="super-admin/facilities" element={<Facilities />} />
-                <Route path="super-admin/facilities/create" element={<FacilityCreate />} />
-                <Route path="super-admin/facilities/:id" element={<FacilityView />} />
-                <Route path="super-admin/facilities/:id/edit" element={<FacilityEdit />} />
-                <Route path="super-admin/permissions" element={<Permissions />} />
+                <Route path="super-admin/dashboard" element={<Suspense fallback={<PageLoader />}><SuperAdminDashboard /></Suspense>} />
+                <Route path="super-admin/settings" element={<Suspense fallback={<PageLoader />}><SuperAdminSettings /></Suspense>} />
+                <Route path="super-admin/facility-registrations" element={<Suspense fallback={<PageLoader />}><FacilityRegistrations /></Suspense>} />
+                <Route path="super-admin/facilities" element={<Suspense fallback={<PageLoader />}><Facilities /></Suspense>} />
+                <Route path="super-admin/facilities/create" element={<Suspense fallback={<PageLoader />}><FacilityCreate /></Suspense>} />
+                <Route path="super-admin/facilities/:id" element={<Suspense fallback={<PageLoader />}><FacilityView /></Suspense>} />
+                <Route path="super-admin/facilities/:id/edit" element={<Suspense fallback={<PageLoader />}><FacilityEdit /></Suspense>} />
+                <Route path="super-admin/permissions" element={<Suspense fallback={<PageLoader />}><Permissions /></Suspense>} />
 
                 {/* Administration */}
-                <Route path="administration/residents" element={<Residents />} />
+                <Route path="administration/residents" element={<Suspense fallback={<PageLoader />}><Residents /></Suspense>} />
                 {/* Facilities route removed - only accessible via /super-admin/facilities */}
-                <Route path="administration/branches" element={<Branches />} />
-                <Route path="administration/vital-ranges" element={<VitalRanges />} />
-                <Route path="administration/leave-requests" element={<LeaveRequests />} />
-                <Route path="administration/roles" element={<Roles />} />
-                <Route path="administration/facility-permissions" element={<Permissions />} />
-                <Route path="administration/users" element={<Users />} />
-                <Route path="administration/users/create" element={<UserCreate />} />
-                <Route path="administration/users/:id/edit" element={<UserEdit />} />
-                <Route path="administration/drugs" element={<Drugs />} />
-                <Route path="administration/employee-documents" element={<EmployeeDocuments />} />
-                <Route path="administration/activity-logs" element={<ActivityLogs />} />
-                <Route path="administration/deactivated" element={<DeactivatedRecords />} />
+                <Route path="administration/branches" element={<Suspense fallback={<PageLoader />}><Branches /></Suspense>} />
+                <Route path="administration/vital-ranges" element={<Suspense fallback={<PageLoader />}><VitalRanges /></Suspense>} />
+                <Route path="administration/leave-requests" element={<Suspense fallback={<PageLoader />}><LeaveRequests /></Suspense>} />
+                <Route path="administration/roles" element={<Suspense fallback={<PageLoader />}><Roles /></Suspense>} />
+                <Route path="administration/facility-permissions" element={<Suspense fallback={<PageLoader />}><Permissions /></Suspense>} />
+                <Route path="administration/users" element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
+                <Route path="administration/users/create" element={<Suspense fallback={<PageLoader />}><UserCreate /></Suspense>} />
+                <Route path="administration/users/:id/edit" element={<Suspense fallback={<PageLoader />}><UserEdit /></Suspense>} />
+                <Route path="administration/drugs" element={<Suspense fallback={<PageLoader />}><Drugs /></Suspense>} />
+                <Route path="administration/employee-documents" element={<Suspense fallback={<PageLoader />}><EmployeeDocuments /></Suspense>} />
+                <Route path="administration/activity-logs" element={<Suspense fallback={<PageLoader />}><ActivityLogs /></Suspense>} />
+                <Route path="administration/deactivated" element={<Suspense fallback={<PageLoader />}><DeactivatedRecords /></Suspense>} />
 
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Route>

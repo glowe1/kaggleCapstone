@@ -210,75 +210,149 @@ export default function ChartReports() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Residents</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats?.residents?.total_residents || 0}</p>
-                        {stats?.residents?.by_branch && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                {stats.residents.by_branch.length} {stats.residents.by_branch.length === 1 ? 'branch' : 'branches'}
-                            </p>
-                        )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Residents</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats?.residents?.total_residents || 0}</p>
+                                    {stats?.residents?.by_branch && (
+                                        <p className="text-sm text-gray-500 mt-2 flex items-center">
+                                            <Users className="w-4 h-4 mr-1.5" />
+                                            {stats.residents.by_branch.length} {stats.residents.by_branch.length === 1 ? 'branch' : 'branches'}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="bg-blue-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Users className="w-6 h-6 text-blue-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Vitals Records</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats?.vitals?.total_vitals || 0}</p>
-                        {stats?.vitals?.today_vitals !== undefined && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                {stats.vitals.today_vitals} today
-                            </p>
-                        )}
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 to-red-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Vitals Records</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(stats?.vitals?.total_vitals || 0).toLocaleString()}</p>
+                                    {stats?.vitals?.today_vitals !== undefined && (
+                                        <p className="text-sm text-gray-500 mt-2 flex items-center">
+                                            <Clock className="w-4 h-4 mr-1.5" />
+                                            {stats.vitals.today_vitals} today
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="bg-red-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Activity className="w-6 h-6 text-red-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Appointments</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats?.appointments?.total_appointments || 0}</p>
-                        {stats?.appointments?.upcoming !== undefined && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                {stats.appointments.upcoming} upcoming
-                            </p>
-                        )}
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Appointments</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats?.appointments?.total_appointments || 0}</p>
+                                    {stats?.appointments?.upcoming !== undefined && (
+                                        <p className="text-sm text-gray-500 mt-2 flex items-center">
+                                            <Calendar className="w-4 h-4 mr-1.5" />
+                                            {stats.appointments.upcoming} upcoming
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="bg-green-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Calendar className="w-6 h-6 text-green-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Avg Sleep Hours</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">
-                            {stats?.sleep?.avg_sleep_hours ? parseFloat(stats.sleep.avg_sleep_hours).toFixed(1) : '0.0'}h
-                        </p>
-                        {stats?.sleep?.total_records !== undefined && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                {stats.sleep.total_records} records
-                            </p>
-                        )}
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 to-amber-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Avg Sleep Hours</p>
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {stats?.sleep?.avg_sleep_hours ? parseFloat(stats.sleep.avg_sleep_hours).toFixed(1) : '0.0'}h
+                                    </p>
+                                    {stats?.sleep?.total_records !== undefined && (
+                                        <p className="text-sm text-gray-500 mt-2 flex items-center">
+                                            <FileText className="w-4 h-4 mr-1.5" />
+                                            {stats.sleep.total_records} records
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="bg-amber-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Moon className="w-6 h-6 text-amber-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Additional Stats Row */}
                 {(stats?.sleep?.avg_quality || stats?.sleep?.total_sleep_hours) && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
                         {stats?.sleep?.avg_quality && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                                <p className="text-gray-600 text-xs font-medium">Avg Sleep Quality</p>
-                                <p className="text-xl font-bold text-gray-900 mt-1">
-                                    {parseFloat(stats.sleep.avg_quality).toFixed(1)}/10
-                                </p>
+                            <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+                                <div className="p-6">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Avg Sleep Quality</p>
+                                            <p className="text-3xl font-bold text-gray-900">
+                                                {parseFloat(stats.sleep.avg_quality).toFixed(1)}/10
+                                            </p>
+                                        </div>
+                                        <div className="bg-purple-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                            <CheckCircle2 className="w-6 h-6 text-purple-600" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                         {stats?.sleep?.total_sleep_hours && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                                <p className="text-gray-600 text-xs font-medium">Total Sleep Hours</p>
-                                <p className="text-xl font-bold text-gray-900 mt-1">
-                                    {parseFloat(stats.sleep.total_sleep_hours).toFixed(1)}h
-                                </p>
+                            <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-indigo-600"></div>
+                                <div className="p-6">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Sleep Hours</p>
+                                            <p className="text-3xl font-bold text-gray-900">
+                                                {parseFloat(stats.sleep.total_sleep_hours).toFixed(1)}h
+                                            </p>
+                                        </div>
+                                        <div className="bg-indigo-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                            <Clock className="w-6 h-6 text-indigo-600" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                         {stats?.sleep?.min_sleep_hours && stats?.sleep?.max_sleep_hours && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                                <p className="text-gray-600 text-xs font-medium">Sleep Range</p>
-                                <p className="text-xl font-bold text-gray-900 mt-1">
-                                    {parseFloat(stats.sleep.min_sleep_hours).toFixed(1)}h - {parseFloat(stats.sleep.max_sleep_hours).toFixed(1)}h
-                                </p>
+                            <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 to-teal-600"></div>
+                                <div className="p-6">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Sleep Range</p>
+                                            <p className="text-3xl font-bold text-gray-900">
+                                                {parseFloat(stats.sleep.min_sleep_hours).toFixed(1)}h - {parseFloat(stats.sleep.max_sleep_hours).toFixed(1)}h
+                                            </p>
+                                        </div>
+                                        <div className="bg-teal-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                            <TrendingUp className="w-6 h-6 text-teal-600" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

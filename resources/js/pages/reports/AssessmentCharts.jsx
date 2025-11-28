@@ -222,22 +222,62 @@ export default function AssessmentCharts() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Assessments</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.total_assessments || 0}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Assessments</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.total_assessments || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-purple-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <FileText className="w-6 h-6 text-purple-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Completed</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.completed_assessments || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Completed</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.completed_assessments || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-green-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Pending</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.pending_assessments || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Pending</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.pending_assessments || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-yellow-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Clock className="w-6 h-6 text-yellow-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">This Month</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.this_month || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-indigo-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">This Month</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.this_month || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-indigo-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <TrendingUp className="w-6 h-6 text-indigo-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -198,26 +198,76 @@ export default function VitalsReports() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Records</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Records</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.total.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-blue-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <FileText className="w-6 h-6 text-blue-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">With BP</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats.withBP}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 to-red-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">With BP</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.withBP.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-red-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Heart className="w-6 h-6 text-red-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">With Temperature</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats.withTemp}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 to-orange-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">With Temperature</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.withTemp.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-orange-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Activity className="w-6 h-6 text-orange-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">With Pulse</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats.withPulse}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">With Pulse</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.withPulse.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-green-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Activity className="w-6 h-6 text-green-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">With O2 Sat</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{stats.withO2}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 to-cyan-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">With O2 Sat</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.withO2.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-cyan-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Droplet className="w-6 h-6 text-cyan-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

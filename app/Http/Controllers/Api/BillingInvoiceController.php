@@ -83,14 +83,26 @@ class BillingInvoiceController extends BaseApiController
 
         DB::beginTransaction();
         try {
+            // Calculate subtotal first
+            $subtotal = 0;
+            foreach ($validated['items'] as $itemData) {
+                $subtotal += $itemData['quantity'] * $itemData['unit_price'];
+            }
+
+            $taxAmount = $validated['tax_amount'] ?? 0;
+            $discountAmount = $validated['discount_amount'] ?? 0;
+            $totalAmount = $subtotal + $taxAmount - $discountAmount;
+
             $invoiceData = [
                 'facility_id' => auth()->user()->facility_id,
                 'branch_id' => $validated['branch_id'] ?? null,
                 'resident_id' => $validated['resident_id'],
                 'invoice_date' => $validated['invoice_date'],
                 'due_date' => $validated['due_date'],
-                'tax_amount' => $validated['tax_amount'] ?? 0,
-                'discount_amount' => $validated['discount_amount'] ?? 0,
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'discount_amount' => $discountAmount,
+                'total_amount' => $totalAmount,
                 'notes' => $validated['notes'] ?? null,
                 'created_by' => auth()->id(),
                 'status' => 'draft',
@@ -107,10 +119,8 @@ class BillingInvoiceController extends BaseApiController
             $invoice = BillingInvoice::create($invoiceData);
 
             // Create invoice items
-            $subtotal = 0;
             foreach ($validated['items'] as $itemData) {
                 $total = $itemData['quantity'] * $itemData['unit_price'];
-                $subtotal += $total;
 
                 InvoiceItem::create([
                     'billing_invoice_id' => $invoice->id,
@@ -121,11 +131,6 @@ class BillingInvoiceController extends BaseApiController
                     'expense_category_id' => $itemData['expense_category_id'] ?? null,
                 ]);
             }
-
-            // Calculate and update totals
-            $invoice->subtotal = $subtotal;
-            $invoice->total_amount = $subtotal + $invoice->tax_amount - $invoice->discount_amount;
-            $invoice->save();
 
             DB::commit();
 

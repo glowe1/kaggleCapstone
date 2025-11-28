@@ -86,14 +86,34 @@ export default function ResidentCharts() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Residents</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.total_residents || 0}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Residents</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.total_residents || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-emerald-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Users className="w-6 h-6 text-emerald-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Active Residents</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.active_residents || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Active Residents</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.active_residents || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-green-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <UserCheck className="w-6 h-6 text-green-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

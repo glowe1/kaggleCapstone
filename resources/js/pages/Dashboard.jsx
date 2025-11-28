@@ -316,9 +316,9 @@ export default function Dashboard() {
             title: 'Total Residents',
             value: Number(stats?.total_residents ?? 0),
             icon: Users,
-            gradient: 'from-blue-500 to-indigo-600',
-            iconBg: 'bg-blue-50',
-            iconColor: 'text-blue-600',
+            gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            iconBg: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             link: '/administration/residents',
             description: 'Active residents',
             trend: 'positive',
@@ -327,9 +327,9 @@ export default function Dashboard() {
             title: "Today's Appointments",
             value: Number(stats?.today_appointments ?? 0),
             icon: Calendar,
-            gradient: 'from-emerald-500 to-green-600',
-            iconBg: 'bg-emerald-50',
-            iconColor: 'text-emerald-600',
+            gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            iconBg: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             link: '/appointments',
             description: 'Scheduled today',
             trend: 'positive',
@@ -338,9 +338,9 @@ export default function Dashboard() {
             title: 'Today Vitals',
             value: Number(stats?.today_vitals ?? 0),
             icon: Activity,
-            gradient: 'from-purple-500 to-violet-600',
-            iconBg: 'bg-purple-50',
-            iconColor: 'text-purple-600',
+            gradient: 'from-[var(--theme-secondary)] to-[var(--theme-secondary-light)]',
+            iconBg: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-secondary)]',
             link: '/vitals',
             description: 'Recorded today',
             trend: 'positive',
@@ -349,9 +349,9 @@ export default function Dashboard() {
             title: 'Total Staff',
             value: Number(stats?.total_staff ?? 0),
             icon: UserCheck,
-            gradient: 'from-amber-500 to-orange-600',
-            iconBg: 'bg-amber-50',
-            iconColor: 'text-amber-600',
+            gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            iconBg: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             link: '/administration/users',
             description: 'Active staff',
             trend: 'positive',
@@ -360,9 +360,9 @@ export default function Dashboard() {
             title: 'Active Medications',
             value: Number(stats?.active_medications ?? 0),
             icon: Pill,
-            gradient: 'from-pink-500 to-rose-600',
-            iconBg: 'bg-pink-50',
-            iconColor: 'text-pink-600',
+            gradient: 'from-[var(--theme-secondary)] to-[var(--theme-secondary-light)]',
+            iconBg: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-secondary)]',
             link: '/medications',
             description: 'Current prescriptions',
             trend: 'positive',
@@ -371,9 +371,9 @@ export default function Dashboard() {
             title: 'Pending Assessments',
             value: Number(stats?.pending_assessments ?? 0),
             icon: ClipboardList,
-            gradient: 'from-red-500 to-red-600',
-            iconBg: 'bg-red-50',
-            iconColor: 'text-red-600',
+            gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
+            iconBg: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             link: '/assessments',
             description: 'Awaiting completion',
             trend: (stats?.pending_assessments ?? 0) > 0 ? 'warning' : 'positive',
@@ -381,7 +381,9 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#F5F5DC] to-[#E6E6D4]">
+        <div className="min-h-screen" style={{
+            background: `linear-gradient(to bottom right, var(--theme-accent, #F9FAFB), var(--theme-accent-light, #F5F5DC))`
+        }}>
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
                 {error && (
@@ -402,7 +404,10 @@ export default function Dashboard() {
                 {!isLoading && (
                     <>
                         {/* Modern Welcome Card with Quick Stats */}
-                        <div className="mb-6 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 rounded-2xl shadow-xl border border-sky-400/20 overflow-hidden">
+                        <div className="mb-6 rounded-2xl shadow-xl border overflow-hidden" style={{
+                            background: `linear-gradient(to bottom right, var(--theme-primary), var(--theme-primary-light), var(--theme-primary-dark))`,
+                            borderColor: 'var(--theme-primary-bg)',
+                        }}>
                             <div className="p-4 sm:p-6">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div className="flex-1 min-w-0">
@@ -410,11 +415,11 @@ export default function Dashboard() {
                                             <h1 className="text-xl sm:text-2xl font-bold text-white">
                                                 {greeting}, {currentUser?.first_name || currentUser?.name || 'User'} 👋
                                             </h1>
-                                            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                                            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm border border-white/30">
                                                 {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                             </span>
                                         </div>
-                                        <p className="text-sky-100 text-sm sm:text-base mb-3">
+                                        <p className="text-white/90 text-sm sm:text-base mb-3">
                                             {isCaregiver ? 'Welcome to your Care Dashboard' : 'Managing care with compassion and excellence'}
                                         </p>
                                         
@@ -422,15 +427,15 @@ export default function Dashboard() {
                                         {!isCaregiver && (
                                             <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
                                                 <div className="bg-white/10 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-2 border border-white/20">
-                                                    <div className="text-xs text-sky-100 mb-0.5">Residents</div>
+                                                    <div className="text-xs text-white/90 mb-0.5">Residents</div>
                                                     <div className="text-lg sm:text-xl font-bold text-white">{stats?.total_residents || 0}</div>
                                                 </div>
                                                 <div className="bg-white/10 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-2 border border-white/20">
-                                                    <div className="text-xs text-sky-100 mb-0.5">Today</div>
+                                                    <div className="text-xs text-white/90 mb-0.5">Today</div>
                                                     <div className="text-lg sm:text-xl font-bold text-white">{stats?.today_appointments || 0}</div>
                                                 </div>
                                                 <div className="bg-white/10 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-2 border border-white/20">
-                                                    <div className="text-xs text-sky-100 mb-0.5">Pending</div>
+                                                    <div className="text-xs text-white/90 mb-0.5">Pending</div>
                                                     <div className="text-lg sm:text-xl font-bold text-white">{stats?.pending_assessments || 0}</div>
                                                 </div>
                                             </div>
@@ -439,9 +444,9 @@ export default function Dashboard() {
                                     
                                     <div className="hidden md:flex flex-col items-end space-y-2">
                                         <div className="text-right">
-                                            <p className="text-sky-100 text-xs font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</p>
+                                            <p className="text-white/90 text-xs font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</p>
                                             <p className="text-white text-lg font-semibold">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                                            <p className="text-sky-200 text-sm">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p className="text-white/80 text-sm">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                         <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
                                             <Sparkles className="w-7 h-7 text-white" />
@@ -450,56 +455,6 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </div>
-
-                        {/* Quick Actions for Admins */}
-                        {!isCaregiver && (
-                            <div className="mb-6 bg-white rounded-xl shadow-md border border-gray-100 p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <Zap className="w-5 h-5 text-[var(--theme-primary)]" />
-                                        <h3 className="text-sm font-semibold text-gray-900">Quick Actions</h3>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    <button
-                                        onClick={() => navigate('/administration/residents/create')}
-                                        className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200 rounded-lg hover:shadow-md hover:border-sky-300 transition-all active:scale-95 touch-manipulation"
-                                    >
-                                        <div className="w-10 h-10 bg-sky-500 rounded-lg flex items-center justify-center">
-                                            <Users className="w-5 h-5 text-white" />
-                                        </div>
-                                        <span className="text-xs font-medium text-gray-900">Add Resident</span>
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/appointments/create')}
-                                        className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-lg hover:shadow-md hover:border-emerald-300 transition-all active:scale-95 touch-manipulation"
-                                    >
-                                        <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
-                                            <Calendar className="w-5 h-5 text-white" />
-                                        </div>
-                                        <span className="text-xs font-medium text-gray-900">Appointment</span>
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/medications/create')}
-                                        className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg hover:shadow-md hover:border-purple-300 transition-all active:scale-95 touch-manipulation"
-                                    >
-                                        <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                                            <Pill className="w-5 h-5 text-white" />
-                                        </div>
-                                        <span className="text-xs font-medium text-gray-900">Medication</span>
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/vitals/create')}
-                                        className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg hover:shadow-md hover:border-amber-300 transition-all active:scale-95 touch-manipulation"
-                                    >
-                                        <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
-                                            <Activity className="w-5 h-5 text-white" />
-                                        </div>
-                                        <span className="text-xs font-medium text-gray-900">Vitals</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
 
                         {/* Stat Cards Grid */}
                         <ScrollReveal animationType="fade" threshold={0.1}>
@@ -528,219 +483,15 @@ export default function Dashboard() {
                             </div>
                         )}
 
-                        {/* Two Column Layout */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            {/* Upcoming Appointments */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-bold text-[var(--theme-primary)]">Upcoming Appointments</h2>
-                                        <button
-                                            onClick={() => navigate('/appointments')}
-                                            className="text-sm text-[var(--theme-primary)] hover:text-[var(--theme-primary-hover)] font-medium transition-colors"
-                                        >
-                                            View all →
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="p-4">
-                                    {stats?.upcoming_appointments_list?.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {stats.upcoming_appointments_list.map((apt, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                                    <div className="flex items-center space-x-3 flex-1">
-                                                        <Calendar className="w-5 h-5 text-[var(--theme-primary)] flex-shrink-0" />
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-[var(--theme-primary)] truncate">
-                                                                {apt.resident_name}
-                                                            </p>
-                                                            <p className="text-xs text-gray-600 truncate">
-                                                                {apt.time} - {apt.description}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                                                        apt.status === 'confirmed' || apt.status === 'scheduled' 
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : apt.status === 'pending'
-                                                            ? 'bg-amber-100 text-amber-700'
-                                                            : 'bg-gray-100 text-gray-700'
-                                                    }`}>
-                                                        {apt.status.replace('_', ' ')}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                                            <p className="text-sm text-gray-500">No upcoming appointments</p>
-                                        </div>
-                                    )}
-                                </div>
+                        {/* Resident Vitals Trend Chart - Only for Caregivers */}
+                        {isCaregiver && stats?.resident_list && stats.resident_list.length > 0 && (
+                            <div className="mb-6">
+                                <ResidentVitalsTrendSection 
+                                    residents={stats.resident_list}
+                                    defaultTrend={stats.resident_vitals_trend}
+                                />
                             </div>
-
-                            {/* My Residents */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-bold text-[var(--theme-primary)]">My Residents</h2>
-                                        <button
-                                            onClick={() => navigate('/administration/residents')}
-                                            className="text-sm text-[var(--theme-primary)] hover:text-[var(--theme-primary-hover)] font-medium transition-colors"
-                                        >
-                                            View all →
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="p-4">
-                                    {stats?.resident_list?.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {stats.resident_list.map((resident, idx) => (
-                                                <div key={idx} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                                                    <div className="w-10 h-10 bg-[var(--theme-primary)] rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-[var(--theme-text-on-primary)] text-sm font-bold">
-                                                            {resident.name.split(' ').map(n => n[0]).join('')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-semibold text-[var(--theme-primary)] truncate">
-                                                            {resident.name}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500">
-                                                            Room: {resident.room}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                                            <p className="text-sm text-gray-500">No residents assigned</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Lower Section Grid */}
-                        <div className={`grid grid-cols-1 ${isCaregiver ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-6`}>
-                            {/* Resident Vitals Trend Chart - Only for Caregivers */}
-                            {isCaregiver && stats?.resident_list && stats.resident_list.length > 0 && (
-                                <div className="lg:col-span-2">
-                                    <ResidentVitalsTrendSection 
-                                        residents={stats.resident_list}
-                                        defaultTrend={stats.resident_vitals_trend}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Admin-specific widgets */}
-                            {!isCaregiver && (
-                                <>
-                                    {/* Active Residents Widget */}
-                                    <div className="lg:col-span-2">
-                                        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                                                <div className="flex items-center justify-between">
-                                                    <h2 className="text-base sm:text-lg font-bold text-[var(--theme-primary)]">Active Residents</h2>
-                                                    <button
-                                                        onClick={() => navigate('/administration/residents')}
-                                                        className="text-xs sm:text-sm text-[var(--theme-primary)] hover:text-[var(--theme-primary-hover)] font-medium transition-colors"
-                                                    >
-                                                        View all →
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="p-4">
-                                                {stats?.resident_list?.length > 0 ? (
-                                                    <div className="space-y-2">
-                                                        {stats.resident_list.slice(0, 8).map((resident, idx) => (
-                                                            <div key={idx} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                                                                 onClick={() => navigate(`/administration/residents/${resident.id}`)}>
-                                                                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--theme-primary)] rounded-full flex items-center justify-center flex-shrink-0">
-                                                                        <span className="text-[var(--theme-text-on-primary)] text-xs sm:text-sm font-bold">
-                                                                            {resident.name.split(' ').map(n => n[0]).join('')}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="text-xs sm:text-sm font-semibold text-[var(--theme-primary)] truncate">
-                                                                            {resident.name}
-                                                                        </p>
-                                                                        <p className="text-xs text-gray-500">
-                                                                            {resident.room ? `Room: ${resident.room}` : 'No room assigned'}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                                <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-center py-8">
-                                                        <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                                                        <p className="text-sm text-gray-500">No active residents</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Medication Reminders */}
-                            <div>
-                                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                                    <div className="px-6 py-4 border-b border-gray-200">
-                                        <div className="flex items-center justify-between">
-                                            <h2 className="text-lg font-bold text-[var(--theme-primary)]">Medication Reminders</h2>
-                                            <span className="text-xs text-gray-500">Next 24 Hours</span>
-                                        </div>
-                                    </div>
-                                    <div className="p-4">
-                                        {stats?.medication_reminders?.length > 0 ? (
-                                            <div className="space-y-3">
-                                                {stats.medication_reminders.map((reminder, idx) => (
-                                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                                        <div className="flex items-center space-x-3 flex-1">
-                                                            <div className="w-10 h-10 bg-[var(--theme-primary)] rounded-full flex items-center justify-center flex-shrink-0">
-                                                                <span className="text-[var(--theme-text-on-primary)] text-sm font-bold">
-                                                                    {reminder.resident_name.split(' ').map(n => n[0]).join('')}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-semibold text-[var(--theme-primary)] truncate">
-                                                                    {reminder.resident_name}
-                                                                </p>
-                                                                <p className="text-xs text-gray-600 truncate">
-                                                                    {reminder.medication_name}
-                                                                </p>
-                                                                <p className="text-xs text-gray-500">
-                                                                    Due: {reminder.due_time}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => navigate('/medications')}
-                                                            className="ml-2 px-4 py-1.5 bg-[var(--theme-secondary)] hover:bg-[var(--theme-secondary-hover)] text-[var(--theme-text-on-secondary)] text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-                                                        >
-                                                            Log
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-8">
-                                                <Pill className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                                                <p className="text-sm text-gray-500">No upcoming medications</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Upcoming Fire Drills Widget */}
                         {upcomingFireDrills?.data && upcomingFireDrills.data.length > 0 && (
@@ -1036,9 +787,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: ClipboardList,
             path: '/assessments',
             count: stats?.pending_assessments || 0,
-            color: 'from-blue-500 to-indigo-600',
-            bgColor: 'bg-blue-50',
-            iconColor: 'text-blue-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Pending assessments',
         },
         {
@@ -1046,9 +797,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: Calendar,
             path: '/appointments',
             count: stats?.today_appointments || 0,
-            color: 'from-emerald-500 to-green-600',
-            bgColor: 'bg-emerald-50',
-            iconColor: 'text-emerald-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: "Today's appointments",
         },
         {
@@ -1056,9 +807,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: Activity,
             path: '/vitals',
             count: stats?.today_vitals || 0,
-            color: 'from-purple-500 to-violet-600',
-            bgColor: 'bg-purple-50',
-            iconColor: 'text-purple-600',
+            color: 'from-[var(--theme-secondary)] to-[var(--theme-secondary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-secondary)]',
             description: 'Recorded today',
         },
         {
@@ -1066,9 +817,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: Pill,
             path: '/medications',
             count: stats?.active_medications || 0,
-            color: 'from-pink-500 to-rose-600',
-            bgColor: 'bg-pink-50',
-            iconColor: 'text-pink-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Active medications',
         },
         {
@@ -1076,9 +827,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: Moon,
             path: '/sleep',
             count: moduleStats?.sleep || 0,
-            color: 'from-indigo-500 to-blue-600',
-            bgColor: 'bg-indigo-50',
-            iconColor: 'text-indigo-600',
+            color: 'from-[var(--theme-secondary)] to-[var(--theme-secondary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-secondary)]',
             description: 'Sleep records',
         },
         {
@@ -1086,9 +837,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: SparklesIcon,
             path: '/housekeeping',
             count: moduleStats?.housekeeping || 0,
-            color: 'from-amber-500 to-orange-600',
-            bgColor: 'bg-amber-50',
-            iconColor: 'text-amber-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Tasks & schedules',
         },
         {
@@ -1096,9 +847,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: ShoppingCart,
             path: '/grocery-status',
             count: moduleStats?.grocery || 0,
-            color: 'from-teal-500 to-cyan-600',
-            bgColor: 'bg-teal-50',
-            iconColor: 'text-teal-600',
+            color: 'from-[var(--theme-secondary)] to-[var(--theme-secondary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-secondary)]',
             description: 'Grocery items',
         },
         {
@@ -1106,9 +857,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: Flame,
             path: '/fire-drills',
             count: 0, // Will be populated from upcomingFireDrills
-            color: 'from-red-500 to-red-600',
-            bgColor: 'bg-red-50',
-            iconColor: 'text-red-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Scheduled drills',
         },
         {
@@ -1116,9 +867,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: AlertTriangle,
             path: '/incidents',
             count: moduleStats?.incidents || 0,
-            color: 'from-orange-500 to-red-600',
-            bgColor: 'bg-orange-50',
-            iconColor: 'text-orange-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Incident reports',
         },
         {
@@ -1126,9 +877,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: Building2,
             path: '/pharmacy/inventory',
             count: moduleStats?.pharmacy || 0,
-            color: 'from-violet-500 to-purple-600',
-            bgColor: 'bg-violet-50',
-            iconColor: 'text-violet-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Inventory items',
         },
         {
@@ -1136,9 +887,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: DollarSign,
             path: '/billing/expenses',
             count: moduleStats?.billing || 0,
-            color: 'from-green-500 to-emerald-600',
-            bgColor: 'bg-green-50',
-            iconColor: 'text-green-600',
+            color: 'from-[var(--theme-secondary)] to-[var(--theme-secondary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-secondary)]',
             description: 'Expenses & invoices',
         },
         {
@@ -1146,9 +897,9 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
             icon: FileText,
             path: '/reports',
             count: 0,
-            color: 'from-slate-500 to-gray-600',
-            bgColor: 'bg-slate-50',
-            iconColor: 'text-slate-600',
+            color: 'from-[var(--theme-primary)] to-[var(--theme-primary-light)]',
+            bgColor: 'bg-[var(--theme-primary-bg-light)]',
+            iconColor: 'text-[var(--theme-primary)]',
             description: 'Analytics & reports',
         },
     ];
@@ -1200,37 +951,47 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
 // Trends Chart Widget for Admins
 function TrendsChartWidget({ data }) {
     const { primary, secondary } = useTheme();
-    const primaryRgb = hexToRgb(primary || '#25603E');
-    const tooltipBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.9)` : 'rgba(37, 96, 62, 0.9)';
-
+    
     if (!data || !data.labels || data.labels.length === 0) {
         return null;
     }
 
+    // Get theme colors for chart from CSS variables
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary').trim() || primary || '#1E3A5F';
+    const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-secondary').trim() || secondary || '#86EFAC';
+    const primaryLight = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary-light').trim() || '#2E5A8F';
+    
+    // Convert hex to rgb for chart.js (using imported function)
+    const primaryRgb = hexToRgb(primaryColor);
+    const secondaryRgb = hexToRgb(secondaryColor);
+    const primaryLightRgb = hexToRgb(primaryLight);
+    
+    const tooltipBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.9)` : 'rgba(37, 96, 62, 0.9)';
+    
     const chartData = {
         labels: data.labels || [],
         datasets: [
             {
                 label: 'Residents',
                 data: data.residents || [],
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: `rgb(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b})`,
+                backgroundColor: `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.1)`,
                 tension: 0.4,
                 fill: true,
             },
             {
                 label: 'Appointments',
                 data: data.appointments || [],
-                borderColor: 'rgb(16, 185, 129)',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderColor: `rgb(${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b})`,
+                backgroundColor: `rgba(${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b}, 0.1)`,
                 tension: 0.4,
                 fill: true,
             },
             {
                 label: 'Medications',
                 data: data.medications || [],
-                borderColor: 'rgb(245, 158, 11)',
-                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderColor: `rgb(${primaryLightRgb.r}, ${primaryLightRgb.g}, ${primaryLightRgb.b})`,
+                backgroundColor: `rgba(${primaryLightRgb.r}, ${primaryLightRgb.g}, ${primaryLightRgb.b}, 0.1)`,
                 tension: 0.4,
                 fill: true,
             },

@@ -7,30 +7,21 @@ import {
     Activity, 
     Heart, 
     TrendingUp, 
-    Calendar, 
     RefreshCcw,
     Download,
     Filter,
     Thermometer,
     Droplet,
     BarChart3,
-    LineChart as LineChartIcon
+    LineChart as LineChartIcon,
+    Calendar
 } from 'lucide-react';
-import { getLocalDateString } from '../../utils/pacificTime';
-import { usePreventDateInputReload } from '../../hooks/usePreventDateInputReload';
 
 export default function VitalsCharts() {
     const [branchId, setBranchId] = useState(null);
     const [residentId, setResidentId] = useState(null);
-    const [dateFrom, setDateFrom] = useState(() => {
-        const date = new Date();
-        date.setDate(date.getDate() - 30);
-        return date.toISOString().slice(0, 10);
-    });
-    const [dateTo, setDateTo] = useState(() => getLocalDateString());
     const [residents, setResidents] = useState([]);
     const [branches, setBranches] = useState([]);
-    const filtersRef = usePreventDateInputReload();
 
     React.useEffect(() => {
         api.get('/residents', { params: { per_page: 100, status: 'active' } })
@@ -42,9 +33,9 @@ export default function VitalsCharts() {
     }, []);
 
     const { data, isLoading, refetch } = useQuery({
-        queryKey: ['charts-vitals', branchId, residentId, dateFrom, dateTo],
+        queryKey: ['charts-vitals', branchId, residentId],
         queryFn: async () => {
-            const params = { date_from: dateFrom, date_to: dateTo };
+            const params = {};
             if (branchId) params.branch_id = branchId;
             if (residentId) params.resident_id = residentId;
             return (await api.get('/charts/vitals', { params })).data;
@@ -63,7 +54,7 @@ export default function VitalsCharts() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `vitals-charts-${dateFrom}-to-${dateTo}.csv`;
+        a.download = `vitals-charts.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
     };
@@ -113,68 +104,8 @@ export default function VitalsCharts() {
                     </div>
 
                     {/* Filters */}
-                    <div ref={filtersRef} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                         <div className="flex flex-wrap items-end gap-4">
-                            <div className="flex-1 min-w-[200px]">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Calendar className="inline h-4 w-4 mr-1" />
-                        From Date
-                                </label>
-                                <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => {
-                            e.stopPropagation();
-                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                e.nativeEvent.stopImmediatePropagation();
-                            }
-                            setDateFrom(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                    e.nativeEvent.stopImmediatePropagation();
-                                }
-                                return false;
-                            }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        onInput={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                                />
-                            </div>
-                            <div className="flex-1 min-w-[200px]">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Calendar className="inline h-4 w-4 mr-1" />
-                        To Date
-                                </label>
-                                <input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => {
-                            e.stopPropagation();
-                            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                e.nativeEvent.stopImmediatePropagation();
-                            }
-                            setDateTo(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
-                                    e.nativeEvent.stopImmediatePropagation();
-                                }
-                                return false;
-                            }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        onInput={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                                />
-                            </div>
                             <div className="flex-1 min-w-[200px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Filter className="inline h-4 w-4 mr-1" />
@@ -214,22 +145,62 @@ export default function VitalsCharts() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Vitals</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.total_vitals || 0}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 to-red-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Vitals</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.total_vitals || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-red-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Activity className="w-6 h-6 text-red-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Today</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.today_vitals || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Today</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.today_vitals || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-blue-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Calendar className="w-6 h-6 text-blue-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">This Week</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.week_vitals || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">This Week</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.week_vitals || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-green-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <TrendingUp className="w-6 h-6 text-green-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">This Month</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.month_vitals || 0}</p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">This Month</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.month_vitals || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-purple-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <BarChart3 className="w-6 h-6 text-purple-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

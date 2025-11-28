@@ -20,18 +20,37 @@ class ExpenseReportController extends BaseApiController
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->endOfMonth()->toDateString());
 
-        $query = Expense::whereBetween('expense_date', [$startDate, $endDate]);
-        $this->applyBranchFilter($query, $request);
+        // Get expenses
+        $expenseQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
+        $this->applyBranchFilter($expenseQuery, $request);
+        $expenses = $expenseQuery->get();
+
+        // Get invoices
+        $invoiceQuery = BillingInvoice::whereBetween('invoice_date', [$startDate, $endDate]);
+        $this->applyBranchFilter($invoiceQuery, $request);
+        $invoices = $invoiceQuery->get();
+
+        // Calculate totals from expenses
+        $expenseTotal = $expenses->sum('amount');
+        $expensePaid = $expenses->where('payment_status', 'paid')->sum('amount');
+        $expensePending = $expenses->where('payment_status', 'pending')->sum('amount');
+        $expenseOverdue = $expenses->where('payment_status', 'overdue')->sum('amount');
+
+        // Calculate totals from invoices
+        $invoiceTotal = $invoices->sum('total_amount');
+        $invoicePaid = $invoices->where('status', 'paid')->sum('total_amount');
+        $invoicePending = $invoices->whereIn('status', ['draft', 'sent'])->sum('total_amount');
+        $invoiceOverdue = $invoices->where('status', 'overdue')->sum('total_amount');
 
         $summary = [
-            'total_expenses' => $query->sum('amount'),
-            'total_paid' => (clone $query)->where('payment_status', 'paid')->sum('amount'),
-            'total_pending' => (clone $query)->where('payment_status', 'pending')->sum('amount'),
-            'total_overdue' => (clone $query)->where('payment_status', 'overdue')->sum('amount'),
-            'expense_count' => $query->count(),
-            'paid_count' => (clone $query)->where('payment_status', 'paid')->count(),
-            'pending_count' => (clone $query)->where('payment_status', 'pending')->count(),
-            'overdue_count' => (clone $query)->where('payment_status', 'overdue')->count(),
+            'total_expenses' => $expenseTotal + $invoiceTotal,
+            'total_paid' => $expensePaid + $invoicePaid,
+            'total_pending' => $expensePending + $invoicePending,
+            'total_overdue' => $expenseOverdue + $invoiceOverdue,
+            'expense_count' => $expenses->count() + $invoices->count(),
+            'paid_count' => $expenses->where('payment_status', 'paid')->count() + $invoices->where('status', 'paid')->count(),
+            'pending_count' => $expenses->where('payment_status', 'pending')->count() + $invoices->whereIn('status', ['draft', 'sent'])->count(),
+            'overdue_count' => $expenses->where('payment_status', 'overdue')->count() + $invoices->where('status', 'overdue')->count(),
         ];
 
         return $this->success($summary);
@@ -46,14 +65,34 @@ class ExpenseReportController extends BaseApiController
         $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', now()->endOfMonth()->toDateString());
 
-        $query = Expense::whereBetween('expense_date', [$startDate, $endDate])
+        // Get expenses by category
+        $expenseQuery = Expense::whereBetween('expense_date', [$startDate, $endDate])
             ->with('category');
-        $this->applyBranchFilter($query, $request);
+        $this->applyBranchFilter($expenseQuery, $request);
+        $expenses = $expenseQuery->get();
 
-        $byCategory = $query->get()
-            ->groupBy('expense_category_id')
+        // Get invoices and their items (which have expense categories)
+        $invoiceQuery = BillingInvoice::whereBetween('invoice_date', [$startDate, $endDate])
+            ->with(['items.category']);
+        $this->applyBranchFilter($invoiceQuery, $request);
+        $invoices = $invoiceQuery->get();
+
+        // Group expenses by category
+        $expensesByCategory = $expenses->groupBy('expense_category_id')
             ->map(function ($expenses) {
-                $category = $expenses->first()->category;
+                $firstExpense = $expenses->first();
+                $category = $firstExpense->category;
+                
+                if (!$category) {
+                    return [
+                        'category_id' => null,
+                        'category_name' => 'Uncategorized',
+                        'category_type' => null,
+                        'total_amount' => $expenses->sum('amount'),
+                        'count' => $expenses->count(),
+                    ];
+                }
+                
                 return [
                     'category_id' => $category->id,
                     'category_name' => $category->name,
@@ -61,7 +100,53 @@ class ExpenseReportController extends BaseApiController
                     'total_amount' => $expenses->sum('amount'),
                     'count' => $expenses->count(),
                 ];
+            });
+
+        // Group invoice items by category
+        $invoiceItemsByCategory = collect();
+        foreach ($invoices as $invoice) {
+            foreach ($invoice->items as $item) {
+                $categoryId = $item->expense_category_id;
+                $key = $categoryId === null ? 'null' : (string)$categoryId;
+                
+                if (!$invoiceItemsByCategory->has($key)) {
+                    $invoiceItemsByCategory[$key] = [
+                        'category_id' => $categoryId,
+                        'category_name' => $item->category ? $item->category->name : 'Uncategorized',
+                        'category_type' => $item->category ? $item->category->type : null,
+                        'total_amount' => 0,
+                        'count' => 0,
+                    ];
+                }
+                $invoiceItemsByCategory[$key]['total_amount'] += $item->total;
+                $invoiceItemsByCategory[$key]['count'] += 1;
+            }
+        }
+
+        // Convert both collections to use consistent keys
+        $expensesKeyed = $expensesByCategory->mapWithKeys(function ($item, $categoryId) {
+            $key = $categoryId === null ? 'null' : (string)$categoryId;
+            return [$key => $item];
+        });
+
+        // Merge and aggregate
+        $allCategories = $expensesKeyed->merge($invoiceItemsByCategory);
+        
+        $byCategory = $allCategories->groupBy(function ($item) {
+            return $item['category_id'] ?? 'null';
+        })
+            ->map(function ($items) {
+                $first = $items->first();
+                return [
+                    'category_id' => $first['category_id'],
+                    'category_name' => $first['category_name'],
+                    'category_type' => $first['category_type'],
+                    'total_amount' => $items->sum('total_amount'),
+                    'count' => $items->sum('count'),
+                ];
             })
+            ->values()
+            ->sortByDesc('total_amount')
             ->values();
 
         return $this->success($byCategory);

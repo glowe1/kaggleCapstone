@@ -14,7 +14,11 @@ import {
     RefreshCcw,
     BarChart3,
     LineChart as LineChartIcon,
-    PieChart
+    PieChart,
+    Star,
+    Minus,
+    Plus,
+    Timer
 } from 'lucide-react';
 import { getLocalDateString } from '../../utils/pacificTime';
 import { usePreventDateInputReload } from '../../hooks/usePreventDateInputReload';
@@ -197,40 +201,100 @@ export default function SleepCharts() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Records</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">{data?.total_records || 0}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 mb-8">
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Records</p>
+                                    <p className="text-3xl font-bold text-gray-900">{(data?.total_records || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-blue-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <BarChart3 className="w-6 h-6 text-blue-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Avg Sleep Hours</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">
-                        {data?.avg_sleep_hours ? parseFloat(data.avg_sleep_hours).toFixed(1) : '0.0'}h
-                                </p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-indigo-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Avg Sleep Hours</p>
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {data?.avg_sleep_hours ? parseFloat(data.avg_sleep_hours).toFixed(1) : '0.0'}h
+                                    </p>
+                                </div>
+                                <div className="bg-indigo-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Moon className="w-6 h-6 text-indigo-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Avg Quality</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">
-                        {data?.avg_quality ? parseFloat(data.avg_quality).toFixed(1) : '0.0'}/10
-                                </p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Avg Quality</p>
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {data?.avg_quality ? parseFloat(data.avg_quality).toFixed(1) : '0.0'}/10
+                                    </p>
+                                </div>
+                                <div className="bg-yellow-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Star className="w-6 h-6 text-yellow-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Min Hours</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">
-                        {data?.min_sleep_hours ? parseFloat(data.min_sleep_hours).toFixed(1) : '0.0'}h
-                                </p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 to-red-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Min Hours</p>
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {data?.min_sleep_hours ? parseFloat(data.min_sleep_hours).toFixed(1) : '0.0'}h
+                                    </p>
+                                </div>
+                                <div className="bg-red-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Minus className="w-6 h-6 text-red-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Max Hours</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">
-                        {data?.max_sleep_hours ? parseFloat(data.max_sleep_hours).toFixed(1) : '0.0'}h
-                                </p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Max Hours</p>
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {data?.max_sleep_hours ? parseFloat(data.max_sleep_hours).toFixed(1) : '0.0'}h
+                                    </p>
+                                </div>
+                                <div className="bg-green-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Plus className="w-6 h-6 text-green-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
-                        <p className="text-gray-600 text-xs font-medium">Total Hours</p>
-                        <p className="text-xl font-bold text-gray-900 mt-1">
-                        {data?.total_sleep_hours ? parseFloat(data.total_sleep_hours).toFixed(1) : '0.0'}h
-                                </p>
+                    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+                        <div className="p-6">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Hours</p>
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {data?.total_sleep_hours ? parseFloat(data.total_sleep_hours).toFixed(1) : '0.0'}h
+                                    </p>
+                                </div>
+                                <div className="bg-purple-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <Timer className="w-6 h-6 text-purple-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

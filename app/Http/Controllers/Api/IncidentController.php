@@ -154,15 +154,33 @@ class IncidentController extends BaseApiController
         // Set reported_by
         $validated['reported_by'] = auth()->id();
 
-        // Handle attachments separately
-        $attachments = $request->file('attachments', []);
-
         // Create incident
         $incident = Incident::create($validated);
 
         // Handle file uploads
-        if (!empty($attachments)) {
-            foreach ($attachments as $index => $file) {
+        // The frontend sends attachments as attachments[0][file], attachments[1][file], etc.
+        // Laravel will parse this into a nested array structure
+        $allFiles = $request->allFiles();
+        
+        if (isset($allFiles['attachments']) && is_array($allFiles['attachments'])) {
+            foreach ($allFiles['attachments'] as $index => $attachmentItem) {
+                // attachmentItem could be either:
+                // 1. An UploadedFile directly (if sent as attachments[0])
+                // 2. An array with 'file' key (if sent as attachments[0][file])
+                $file = null;
+                $fileType = 'photo';
+                
+                if ($attachmentItem instanceof \Illuminate\Http\UploadedFile) {
+                    // Direct file upload
+                    $file = $attachmentItem;
+                    $fileType = $request->input("attachments.{$index}.file_type", 'photo');
+                } elseif (is_array($attachmentItem) && isset($attachmentItem['file']) && $attachmentItem['file'] instanceof \Illuminate\Http\UploadedFile) {
+                    // Nested structure: attachments[0][file]
+                    $file = $attachmentItem['file'];
+                    $fileType = $attachmentItem['file_type'] ?? $request->input("attachments.{$index}.file_type", 'photo');
+                }
+                
+                // Process the file if we have a valid UploadedFile
                 if ($file && $file->isValid()) {
                     $storedPath = $file->store('incident-attachments', 'public');
                     
@@ -170,11 +188,13 @@ class IncidentController extends BaseApiController
                         'incident_id' => $incident->id,
                         'file_path' => $storedPath,
                         'file_name' => $file->getClientOriginalName(),
-                        'file_type' => $request->input("attachments.{$index}.file_type", 'photo'),
+                        'file_type' => $fileType,
                         'file_size' => $file->getSize(),
                         'mime_type' => $file->getMimeType(),
                         'uploaded_by' => auth()->id(),
-                        'description' => $request->input("attachments.{$index}.description"),
+                        'description' => is_array($attachmentItem) && isset($attachmentItem['description']) 
+                            ? $attachmentItem['description'] 
+                            : $request->input("attachments.{$index}.description"),
                     ]);
                 }
             }
