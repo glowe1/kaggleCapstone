@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Building2, Plus, Search, Edit, Trash2, MapPin, Phone, Mail, Building } from 'lucide-react';
+import { Building2, Plus, Search, Edit, Trash2, MapPin, Phone, Mail, Building, Navigation } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
+import { getUserLocation } from '../utils/location';
 
 export default function Branches() {
   const queryClient = useQueryClient();
@@ -213,6 +214,7 @@ function BranchForm({ record, facilities, currentUser, isSuperAdmin, isFacilityA
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   // Update facility_id when initialFacilityId changes (when currentUser loads)
   React.useEffect(() => {
@@ -310,37 +312,72 @@ function BranchForm({ record, facilities, currentUser, isSuperAdmin, isFacilityA
                 <label className="block text-sm font-medium text-gray-700">
                   Location Coordinates
                 </label>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!form.address) {
-                      alert('Please enter an address first');
-                      return;
-                    }
-                    setGeocoding(true);
-                    try {
-                      const response = await api.post('/geocode', { address: form.address });
-                      if (response.data.success) {
-                        setForm({
-                          ...form,
-                          latitude: response.data.latitude,
-                          longitude: response.data.longitude,
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setGettingLocation(true);
+                      try {
+                        const location = await getUserLocation({
+                          timeout: 10000,
+                          maximumAge: 0, // Always get fresh location
+                          enableHighAccuracy: true,
                         });
-                      } else {
-                        alert('Unable to geocode address. Please enter coordinates manually.');
+                        if (location) {
+                          setForm({
+                            ...form,
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                          });
+                        } else {
+                          alert('Unable to get your current location. Please allow location access or enter coordinates manually.');
+                        }
+                      } catch (err) {
+                        alert('Failed to get current location. Please enter coordinates manually.');
+                      } finally {
+                        setGettingLocation(false);
                       }
-                    } catch (err) {
-                      alert('Geocoding failed. Please enter coordinates manually.');
-                    } finally {
-                      setGeocoding(false);
-                    }
-                  }}
-                  disabled={geocoding || !form.address}
-                  className="text-sm px-3 py-1 bg-[var(--theme-primary)] text-white rounded hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span>{geocoding ? 'Geocoding...' : 'Geocode from Address'}</span>
-                </button>
+                    }}
+                    disabled={gettingLocation}
+                    className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                    title="Use your current GPS location"
+                  >
+                    <Navigation className="w-4 h-4" />
+                    <span>{gettingLocation ? 'Getting Location...' : 'Use Current Location'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!form.address) {
+                        alert('Please enter an address first');
+                        return;
+                      }
+                      setGeocoding(true);
+                      try {
+                        const response = await api.post('/geocode', { address: form.address });
+                        if (response.data.success) {
+                          setForm({
+                            ...form,
+                            latitude: response.data.latitude,
+                            longitude: response.data.longitude,
+                          });
+                        } else {
+                          alert('Unable to geocode address. Please enter coordinates manually.');
+                        }
+                      } catch (err) {
+                        alert('Geocoding failed. Please enter coordinates manually.');
+                      } finally {
+                        setGeocoding(false);
+                      }
+                    }}
+                    disabled={geocoding || !form.address}
+                    className="text-sm px-3 py-1 bg-[var(--theme-primary)] text-white rounded hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                    title="Geocode from address field"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    <span>{geocoding ? 'Geocoding...' : 'Geocode from Address'}</span>
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-gray-500 mb-3">Coordinates are used for location-based login restrictions (50 meters).</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

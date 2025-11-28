@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Building2, Palette, Image as ImageIcon, Users, Globe, Key,
-    CheckCircle, XCircle, AlertCircle, MapPin
+    CheckCircle, XCircle, AlertCircle, MapPin, Navigation
 } from 'lucide-react';
 import api from '../../services/api';
+import { getUserLocation } from '../../utils/location';
 
 /**
  * Available modules for facilities
@@ -75,6 +76,7 @@ export default function FacilityFormModal({
     const [logoPreview, setLogoPreview] = useState(facility?.logo_url || null);
     const [activeTab, setActiveTab] = useState('basic');
     const [geocoding, setGeocoding] = useState(false);
+    const [gettingLocation, setGettingLocation] = useState(false);
 
     // Scroll to top when modal opens
     useEffect(() => {
@@ -276,6 +278,8 @@ export default function FacilityFormModal({
                                 errors={errors}
                                 geocoding={geocoding}
                                 setGeocoding={setGeocoding}
+                                gettingLocation={gettingLocation}
+                                setGettingLocation={setGettingLocation}
                             />
                         )}
 
@@ -433,7 +437,7 @@ function BasicInfoTab({ formData, onChange, errors, isSuperAdmin }) {
     );
 }
 
-function ContactInfoTab({ formData, onChange, errors, geocoding, setGeocoding }) {
+function ContactInfoTab({ formData, onChange, errors, geocoding, setGeocoding, gettingLocation, setGettingLocation }) {
     const handleGeocode = async () => {
         if (!formData.address) {
             alert('Please enter an address first');
@@ -452,6 +456,27 @@ function ContactInfoTab({ formData, onChange, errors, geocoding, setGeocoding })
             alert('Geocoding failed. Please enter coordinates manually.');
         } finally {
             setGeocoding(false);
+        }
+    };
+
+    const handleUseCurrentLocation = async () => {
+        setGettingLocation(true);
+        try {
+            const location = await getUserLocation({
+                timeout: 10000,
+                maximumAge: 0, // Always get fresh location
+                enableHighAccuracy: true,
+            });
+            if (location) {
+                onChange('latitude', location.latitude);
+                onChange('longitude', location.longitude);
+            } else {
+                alert('Unable to get your current location. Please allow location access or enter coordinates manually.');
+            }
+        } catch (err) {
+            alert('Failed to get current location. Please enter coordinates manually.');
+        } finally {
+            setGettingLocation(false);
         }
     };
 
@@ -532,15 +557,28 @@ function ContactInfoTab({ formData, onChange, errors, geocoding, setGeocoding })
                     <label className="block text-sm font-medium text-gray-900">
                         Location Coordinates
                     </label>
-                    <button
-                        type="button"
-                        onClick={handleGeocode}
-                        disabled={geocoding || !formData.address}
-                        className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-                    >
-                        <MapPin className="w-4 h-4" />
-                        <span>{geocoding ? 'Geocoding...' : 'Geocode from Address'}</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            type="button"
+                            onClick={handleUseCurrentLocation}
+                            disabled={gettingLocation}
+                            className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                            title="Use your current GPS location"
+                        >
+                            <Navigation className="w-4 h-4" />
+                            <span>{gettingLocation ? 'Getting Location...' : 'Use Current Location'}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleGeocode}
+                            disabled={geocoding || !formData.address}
+                            className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                            title="Geocode from address field"
+                        >
+                            <MapPin className="w-4 h-4" />
+                            <span>{geocoding ? 'Geocoding...' : 'Geocode from Address'}</span>
+                        </button>
+                    </div>
                 </div>
                 <p className="text-xs text-gray-500 mb-3">Coordinates are used for location-based login restrictions (50 meters).</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
