@@ -37,7 +37,7 @@ export default function ResidentSignOutsView() {
     });
 
     // Fetch resident sign-outs with filters
-    const { data: signOutsData, isLoading } = useQuery({
+    const { data: signOutsData, isLoading, error } = useQuery({
         queryKey: ['residents-sign-outs-all', page, selectedResident, selectedBranch, statusFilter, dateFrom, dateTo, search],
         queryFn: async () => {
             const params = {
@@ -53,12 +53,17 @@ export default function ResidentSignOutsView() {
             if (search) params.search = search;
             
             const response = await api.get('/residents/sign-outs/history', { params });
-            return response.data;
+            // Handle paginated response
+            return {
+                data: response.data?.data || response.data || [],
+                meta: response.data?.meta || null,
+            };
         },
+        retry: 1,
     });
 
     const signOuts = signOutsData?.data || [];
-    const pagination = signOutsData || {};
+    const pagination = signOutsData?.meta || { total: 0, from: 0, to: 0, last_page: 1, current_page: 1 };
 
     const clearFilters = () => {
         setSelectedResident('');
@@ -349,11 +354,24 @@ export default function ResidentSignOutsView() {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                         <p className="text-gray-600 mt-4">Loading sign-outs...</p>
                     </div>
+                ) : error ? (
+                    <div className="text-center py-12">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <p className="text-lg font-semibold text-gray-900 mb-2">Error Loading Sign-Outs</p>
+                        <p className="text-sm text-gray-600 mb-4">
+                            {error.response?.data?.message || error.message || 'An error occurred while loading sign-out records.'}
+                        </p>
+                        {error.response?.status === 403 && (
+                            <p className="text-sm text-gray-500">
+                                Admin access is required to view resident sign-out history.
+                            </p>
+                        )}
+                    </div>
                 ) : signOuts.length === 0 ? (
                     <EmptyState
                         icon={Users}
                         title="No Sign-Outs Found"
-                        description="No resident sign-out records match your filters."
+                        description="No resident sign-out records match your filters. Try adjusting your filters or check if there are any sign-out records in the system."
                     />
                 ) : (
                     <>

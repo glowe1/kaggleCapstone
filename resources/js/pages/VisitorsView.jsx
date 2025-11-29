@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
-import { UserPlus, User, Calendar, Search, Filter, Download, MapPin, Clock } from 'lucide-react';
+import { UserPlus, User, Calendar, Search, Filter, Download, MapPin, Clock, AlertCircle } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/ui/EmptyState';
 import { format } from 'date-fns';
@@ -25,7 +25,7 @@ export default function VisitorsView() {
     });
 
     // Fetch visitors with filters
-    const { data: visitorsData, isLoading } = useQuery({
+    const { data: visitorsData, isLoading, error } = useQuery({
         queryKey: ['visitors-all', page, selectedBranch, statusFilter, dateFrom, dateTo, search],
         queryFn: async () => {
             const params = {
@@ -40,12 +40,17 @@ export default function VisitorsView() {
             if (search) params.search = search;
             
             const response = await api.get('/visitors', { params });
-            return response.data;
+            // Handle paginated response
+            return {
+                data: response.data?.data || response.data || [],
+                meta: response.data?.meta || null,
+            };
         },
+        retry: 1,
     });
 
     const visitors = visitorsData?.data || [];
-    const pagination = visitorsData || {};
+    const pagination = visitorsData?.meta || { total: 0, from: 0, to: 0, last_page: 1, current_page: 1 };
 
     const clearFilters = () => {
         setSelectedBranch('');
@@ -302,11 +307,19 @@ export default function VisitorsView() {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                         <p className="text-gray-600 mt-4">Loading visitors...</p>
                     </div>
+                ) : error ? (
+                    <div className="text-center py-12">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <p className="text-lg font-semibold text-gray-900 mb-2">Error Loading Visitors</p>
+                        <p className="text-sm text-gray-600">
+                            {error.response?.data?.message || error.message || 'An error occurred while loading visitor records.'}
+                        </p>
+                    </div>
                 ) : visitors.length === 0 ? (
                     <EmptyState
                         icon={UserPlus}
                         title="No Visitors Found"
-                        description="No visitor records match your filters."
+                        description="No visitor records match your filters. Try adjusting your filters or check if there are any visitor records in the system."
                     />
                 ) : (
                     <>
