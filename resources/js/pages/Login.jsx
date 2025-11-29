@@ -115,8 +115,6 @@ export default function Login() {
                 className="md:w-1/2 relative overflow-hidden flex items-center justify-center text-white p-8 md:p-12" 
                 style={{ background: `linear-gradient(135deg, var(--theme-primary-dark, #152D4A), var(--theme-primary, #1E3A5F), var(--theme-primary-light, #2E5A5F))` }}
             >
-                {/* Subtle light texture instead of strong white overlay */}
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_rgba(255,255,255,0))]"></div>
                 <div className="relative z-10 max-w-xl space-y-8 text-center md:text-left">
                     <div className="flex flex-col md:flex-row md:items-center md:space-x-4 items-center space-y-4 md:space-y-0">
                         <div className="h-20 w-20 rounded-full shadow-xl ring-2 ring-white/50 overflow-hidden">
