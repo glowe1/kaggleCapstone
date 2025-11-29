@@ -381,9 +381,7 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="min-h-screen" style={{
-            background: `linear-gradient(to bottom right, var(--theme-accent, #F9FAFB), var(--theme-accent-light, #F5F5DC))`
-        }}>
+        <div className="min-h-screen bg-white">
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
                 {error && (
