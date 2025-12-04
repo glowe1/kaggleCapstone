@@ -183,9 +183,9 @@ class FacilityController extends BaseApiController
             'address' => 'nullable|string|max:1000',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
-            'primary_color' => 'nullable|string|max:7',
-            'secondary_color' => 'nullable|string|max:7',
-            'accent_color' => 'nullable|string|max:7',
+            'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'accent_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'is_active' => 'nullable|boolean',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -221,6 +221,17 @@ class FacilityController extends BaseApiController
                 $validated['subdomain'] = null; // Set to null if empty string
             }
         }
+        
+        // Ensure color values are included if provided (even if empty, to allow clearing)
+        if ($request->has('primary_color')) {
+            $validated['primary_color'] = $request->input('primary_color') ?: null;
+        }
+        if ($request->has('secondary_color')) {
+            $validated['secondary_color'] = $request->input('secondary_color') ?: null;
+        }
+        if ($request->has('accent_color')) {
+            $validated['accent_color'] = $request->input('accent_color') ?: null;
+        }
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
@@ -233,6 +244,7 @@ class FacilityController extends BaseApiController
             $validated['logo'] = $logoPath;
         }
 
+        // Update facility with validated data (including colors)
         $facility->update($validated);
         
         // Reload facility to get logo_url accessor
