@@ -90,6 +90,7 @@ export default function FacilityEdit() {
     { id: 'modules', label: 'Module Access', icon: Settings },
     { id: 'accounts', label: 'Accounts', icon: Users },
     { id: 'permissions', label: 'Permissions', icon: Shield },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
@@ -140,6 +141,7 @@ export default function FacilityEdit() {
         {activeTab === 'modules' && <ModulesTab facilityId={id} />}
         {activeTab === 'accounts' && <AccountsTab facilityId={id} />}
         {activeTab === 'permissions' && <PermissionsTab facilityId={id} facilityName={facility.name} />}
+        {activeTab === 'settings' && <SettingsTab facilityId={id} facilityName={facility.name} />}
       </div>
     </div>
   );
@@ -468,6 +470,55 @@ function OverviewTab({ facility }) {
           </div>
         )}
       </form>
+    </div>
+  );
+}
+
+function SettingsTab({ facilityId, facilityName }) {
+  const navigate = useNavigate();
+
+  const handleOpenSettings = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('super_admin_selected_facility_id', String(facilityId));
+      }
+    } catch (_) {
+      // Ignore storage errors and still navigate
+    }
+    navigate('/super-admin/settings');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Facility Settings</h3>
+          <p className="text-sm text-gray-600">
+            Configure email, security, notifications, database and server options specifically
+            for <span className="font-medium">{facilityName}</span>.
+          </p>
+        </div>
+        <button
+          onClick={handleOpenSettings}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-primary-hover)]"
+        >
+          <Settings className="w-4 h-4" />
+          <span>Open Settings Center</span>
+        </button>
+      </div>
+
+      <div className="mt-4 p-4 rounded-xl border border-dashed border-gray-200 bg-gray-50">
+        <p className="text-sm text-gray-700 mb-1">
+          Use the Settings Center to manage:
+        </p>
+        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+          <li>Email servers and from-addresses for this facility</li>
+          <li>Password policies, session timeouts and login security</li>
+          <li>Notification channels and which events send alerts</li>
+          <li>Database performance options and logging thresholds</li>
+          <li>Server maintenance mode, queues and log retention</li>
+        </ul>
+      </div>
     </div>
   );
 }

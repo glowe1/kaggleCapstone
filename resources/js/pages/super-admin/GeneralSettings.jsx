@@ -16,7 +16,13 @@ export default function GeneralSettings() {
     },
   });
 
-  const facilityId = currentUser?.facility_id;
+  const facilityId = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('super_admin_selected_facility_id');
+      if (stored) return stored;
+    }
+    return currentUser?.facility_id;
+  }, [currentUser]);
 
   const { data: settings, isLoading } = useQuery({
     enabled: !!facilityId,
