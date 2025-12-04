@@ -570,8 +570,22 @@ function BrandingTab({ facility }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['facility', facility.id]);
       queryClient.invalidateQueries(['facilities']);
-      showToast('Branding updated successfully', 'success');
+      // Invalidate user query to refresh facility_branding in ThemeWrapper
+      queryClient.invalidateQueries(['current-user']);
+      queryClient.invalidateQueries(['me']);
+      queryClient.invalidateQueries(['user']);
+      showToast('Branding updated successfully. Refreshing to apply changes...', 'success');
       setForm({ ...form, logo: null }); // Reset logo file
+      
+      // Reload page after a short delay to apply new branding immediately
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+      // Force a page reload after a short delay to apply new branding
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error) => {
       const errorData = error.response?.data;
