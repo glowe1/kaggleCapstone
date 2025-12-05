@@ -48,3 +48,4 @@ class EnablePharmacyModule extends Command
 
 
 
+

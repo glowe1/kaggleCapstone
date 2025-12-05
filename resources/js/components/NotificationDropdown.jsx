@@ -67,7 +67,7 @@ export default function NotificationDropdown() {
         // Navigate based on notification type and metadata
         const metadata = notification.metadata || {};
         
-        // Helper function to normalize URLs (remove /app/ prefix since BrowserRouter has basename="/app")
+        // Helper function to normalize URLs
         const normalizeUrl = (url) => {
             if (!url) return '/dashboard';
             
@@ -82,7 +82,7 @@ export default function NotificationDropdown() {
                 return '/grocery-status';
             }
             
-            // Remove /app/ prefix if present (since React Router already adds it via basename)
+            // Remove /app/ prefix if present (for backward compatibility)
             if (url.startsWith('/app/')) {
                 return url.substring(5); // Remove '/app'
             }
@@ -101,7 +101,7 @@ export default function NotificationDropdown() {
             return;
         }
         
-        // Build navigation URL based on notification type (without /app/ prefix)
+        // Build navigation URL based on notification type
         let navUrl = '/dashboard';
         
         switch (notification.type) {

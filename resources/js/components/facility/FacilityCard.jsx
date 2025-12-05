@@ -124,7 +124,7 @@ export default function FacilityCard({ facility, onEdit, onDelete, onView, showA
                             {onView && (
                                 <button
                                     onClick={() => onView(facility)}
-                                    className="p-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors border border-blue-300"
+                                    className="p-2 bg-[var(--theme-primary-light)] text-[var(--theme-primary)] hover:bg-[var(--theme-primary-lighter)] rounded-lg transition-colors border border-[var(--theme-border)]"
                                     title="View Details"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -170,7 +170,7 @@ export default function FacilityCard({ facility, onEdit, onDelete, onView, showA
                     {phone && (
                         <div className="flex items-center text-sm">
                             <Phone className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
-                            <a href={`tel:${phone}`} className="text-gray-700 hover:text-blue-600 transition-colors">
+                            <a href={`tel:${phone}`} className="text-gray-700 hover:text-[var(--theme-primary)] transition-colors">
                                 {phone}
                             </a>
                         </div>
@@ -178,7 +178,7 @@ export default function FacilityCard({ facility, onEdit, onDelete, onView, showA
                     {email && (
                         <div className="flex items-center text-sm">
                             <Mail className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
-                            <a href={`mailto:${email}`} className="text-gray-700 hover:text-blue-600 transition-colors truncate">
+                            <a href={`mailto:${email}`} className="text-gray-700 hover:text-[var(--theme-primary)] transition-colors truncate">
                                 {email}
                             </a>
                         </div>

@@ -17,6 +17,42 @@ class PharmacySupplierController extends BaseApiController
         }
         $query = PharmacySupplier::with(['createdBy'])->withCount('orders');
         
+        // Apply facility filtering for non-super admins
+        $user = $request->user();
+        if ($user && $user->role !== 'super_admin') {
+            $facility = null;
+            try {
+                $facility = app()->bound('facility') ? app('facility') : null;
+            } catch (\Exception $e) {
+                $facility = null;
+            }
+            
+            if (!$facility && $user->facility_id) {
+                $facility = \App\Models\Facility::find($user->facility_id);
+            }
+            
+            if ($facility) {
+                // Filter suppliers by those created by users in the facility OR
+                // suppliers that have orders for branches in the facility
+                $query->where(function ($q) use ($facility) {
+                    $q->whereHas('createdBy', function ($q) use ($facility) {
+                        $q->where('facility_id', $facility->id);
+                    })->orWhereHas('orders.branch', function ($q) use ($facility) {
+                        $q->where('facility_id', $facility->id);
+                    });
+                });
+            } else {
+                // User has no facility, return empty results
+                return response()->json([
+                    'data' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $request->get('per_page', 50),
+                    'total' => 0
+                ]);
+            }
+        }
+        
         if ($request->has('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
         }
@@ -72,6 +108,34 @@ class PharmacySupplierController extends BaseApiController
             ->withCount('orders')
             ->findOrFail($id);
         
+        // Verify facility access for non-super admins
+        $user = auth()->user();
+        if ($user && $user->role !== 'super_admin') {
+            $facility = null;
+            try {
+                $facility = app()->bound('facility') ? app('facility') : null;
+            } catch (\Exception $e) {
+                $facility = null;
+            }
+            
+            if (!$facility && $user->facility_id) {
+                $facility = \App\Models\Facility::find($user->facility_id);
+            }
+            
+            if ($facility) {
+                $hasAccess = ($supplier->createdBy && $supplier->createdBy->facility_id === $facility->id) ||
+                             $supplier->orders()->whereHas('branch', function ($q) use ($facility) {
+                                 $q->where('facility_id', $facility->id);
+                             })->exists();
+                
+                if (!$hasAccess) {
+                    return response()->json(['message' => 'Supplier not found'], 404);
+                }
+            } else {
+                return response()->json(['message' => 'Supplier not found'], 404);
+            }
+        }
+        
         return response()->json($supplier);
     }
     
@@ -82,6 +146,34 @@ class PharmacySupplierController extends BaseApiController
         }
 
         $supplier = PharmacySupplier::findOrFail($id);
+        
+        // Verify facility access for non-super admins
+        $user = auth()->user();
+        if ($user && $user->role !== 'super_admin') {
+            $facility = null;
+            try {
+                $facility = app()->bound('facility') ? app('facility') : null;
+            } catch (\Exception $e) {
+                $facility = null;
+            }
+            
+            if (!$facility && $user->facility_id) {
+                $facility = \App\Models\Facility::find($user->facility_id);
+            }
+            
+            if ($facility) {
+                $hasAccess = ($supplier->createdBy && $supplier->createdBy->facility_id === $facility->id) ||
+                             $supplier->orders()->whereHas('branch', function ($q) use ($facility) {
+                                 $q->where('facility_id', $facility->id);
+                             })->exists();
+                
+                if (!$hasAccess) {
+                    return response()->json(['message' => 'Supplier not found'], 404);
+                }
+            } else {
+                return response()->json(['message' => 'Supplier not found'], 404);
+            }
+        }
         
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -105,6 +197,34 @@ class PharmacySupplierController extends BaseApiController
         }
 
         $supplier = PharmacySupplier::findOrFail($id);
+        
+        // Verify facility access for non-super admins
+        $user = auth()->user();
+        if ($user && $user->role !== 'super_admin') {
+            $facility = null;
+            try {
+                $facility = app()->bound('facility') ? app('facility') : null;
+            } catch (\Exception $e) {
+                $facility = null;
+            }
+            
+            if (!$facility && $user->facility_id) {
+                $facility = \App\Models\Facility::find($user->facility_id);
+            }
+            
+            if ($facility) {
+                $hasAccess = ($supplier->createdBy && $supplier->createdBy->facility_id === $facility->id) ||
+                             $supplier->orders()->whereHas('branch', function ($q) use ($facility) {
+                                 $q->where('facility_id', $facility->id);
+                             })->exists();
+                
+                if (!$hasAccess) {
+                    return response()->json(['message' => 'Supplier not found'], 404);
+                }
+            } else {
+                return response()->json(['message' => 'Supplier not found'], 404);
+            }
+        }
         
         // Check if supplier has orders
         if ($supplier->orders()->count() > 0) {

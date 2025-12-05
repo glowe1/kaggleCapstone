@@ -149,6 +149,18 @@ class PharmacyInventoryController extends BaseApiController
 
         $inventory = PharmacyInventory::findOrFail($id);
         
+        // Verify facility access for non-super admins
+        $currentUser = Auth::user();
+        if ($currentUser && $currentUser->role !== 'super_admin') {
+            if ($currentUser->facility_id) {
+                if (!$inventory->branch || $inventory->branch->facility_id !== $currentUser->facility_id) {
+                    return response()->json(['message' => 'Pharmacy inventory item not found'], 404);
+                }
+            } else {
+                return response()->json(['message' => 'Pharmacy inventory item not found'], 404);
+            }
+        }
+        
         $validated = $request->validate([
             'quantity' => 'sometimes|integer|min:0',
             'minimum_stock_level' => 'sometimes|integer|min:0',
@@ -172,6 +184,19 @@ class PharmacyInventoryController extends BaseApiController
         }
 
         $inventory = PharmacyInventory::findOrFail($id);
+        
+        // Verify facility access for non-super admins
+        $currentUser = Auth::user();
+        if ($currentUser && $currentUser->role !== 'super_admin') {
+            if ($currentUser->facility_id) {
+                if (!$inventory->branch || $inventory->branch->facility_id !== $currentUser->facility_id) {
+                    return response()->json(['message' => 'Pharmacy inventory item not found'], 404);
+                }
+            } else {
+                return response()->json(['message' => 'Pharmacy inventory item not found'], 404);
+            }
+        }
+        
         $inventory->delete();
         
         return response()->json(['message' => 'Inventory item deleted successfully']);

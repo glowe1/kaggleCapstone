@@ -19,6 +19,9 @@ class PharmacyOrderController extends BaseApiController
         $query = PharmacyOrder::with(['branch', 'supplier', 'orderedBy', 'receivedBy', 'items.drug'])
             ->withCount('items');
         
+        // Apply facility filtering (FacilityScope handles this, but we ensure it's applied)
+        $this->applyFacilityFilter($query);
+        
         $user = $request->user();
         $isCaregiver = $user && in_array($user->role, ['caregiver', 'care_giver', 'nurse']);
         
@@ -84,8 +87,8 @@ class PharmacyOrderController extends BaseApiController
             'internal_notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.drug_id' => 'required|exists:drugs,id',
-            'items.*.quantity_ordered' => 'required|integer|min:1',
-            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.quantity_ordered' => 'nullable|integer|min:0',
+            'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0|max:100',
             'items.*.notes' => 'nullable|string',
         ]);
@@ -120,6 +123,11 @@ class PharmacyOrderController extends BaseApiController
             ->withCount('items')
             ->findOrFail($id);
         
+        // Verify facility access for non-super admins
+        if (!$this->checkFacilityAccess($order)) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+        
         return response()->json($order);
     }
     
@@ -130,6 +138,11 @@ class PharmacyOrderController extends BaseApiController
         }
 
         $order = PharmacyOrder::findOrFail($id);
+        
+        // Verify facility access for non-super admins
+        if (!$this->checkFacilityAccess($order)) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
         
         $validated = $request->validate([
             'branch_id' => 'sometimes|exists:branches,id',
@@ -168,6 +181,11 @@ class PharmacyOrderController extends BaseApiController
 
         $order = PharmacyOrder::findOrFail($id);
         
+        // Verify facility access for non-super admins
+        if (!$this->checkFacilityAccess($order)) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+        
         if (!in_array($order->status, ['draft', 'cancelled'])) {
             return response()->json([
                 'message' => 'Can only delete draft or cancelled orders.',
@@ -186,6 +204,11 @@ class PharmacyOrderController extends BaseApiController
         }
 
         $order = PharmacyOrder::with('items')->findOrFail($id);
+        
+        // Verify facility access for non-super admins
+        if (!$this->checkFacilityAccess($order)) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
         
         $validated = $request->validate([
             'items' => 'required|array',

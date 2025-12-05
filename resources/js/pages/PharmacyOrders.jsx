@@ -111,7 +111,7 @@ export default function PharmacyOrders() {
     const handleAddItem = () => {
         setFormData({
             ...formData,
-            items: [...formData.items, { drug_id: '', quantity_ordered: 1, unit_cost: 0, discount: 0, notes: '' }],
+            items: [...formData.items, { drug_id: '', quantity_ordered: null, unit_cost: null, discount: 0, notes: '' }],
         });
     };
 
@@ -141,15 +141,20 @@ export default function PharmacyOrders() {
             return;
         }
 
-        // Validate all items have required fields
+        // Validate all items have required fields (only drug_id is required)
         for (let i = 0; i < formData.items.length; i++) {
             const item = formData.items[i];
-            if (!item.drug_id || !item.quantity_ordered || item.quantity_ordered < 1) {
-                alert(`Please complete item ${i + 1}: select a drug and enter a quantity.`);
+            if (!item.drug_id) {
+                alert(`Please select a drug for item ${i + 1}.`);
                 return;
             }
-            if (!item.unit_cost || item.unit_cost < 0) {
-                alert(`Please enter a valid unit cost for item ${i + 1}.`);
+            // Quantity and unit_cost are optional, but if provided, they must be valid
+            if (item.quantity_ordered !== null && item.quantity_ordered !== undefined && item.quantity_ordered < 0) {
+                alert(`Please enter a valid quantity for item ${i + 1} (must be 0 or greater).`);
+                return;
+            }
+            if (item.unit_cost !== null && item.unit_cost !== undefined && item.unit_cost < 0) {
+                alert(`Please enter a valid unit cost for item ${i + 1} (must be 0 or greater).`);
                 return;
             }
         }
@@ -358,29 +363,27 @@ export default function PharmacyOrders() {
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Quantity *
+                                                        Quantity
                                                     </label>
                                                     <input
                                                         type="number"
-                                                        required
-                                                        min="1"
-                                                        value={item.quantity_ordered}
-                                                        onChange={(e) => handleItemChange(index, 'quantity_ordered', parseInt(e.target.value) || 1)}
+                                                        min="0"
+                                                        value={item.quantity_ordered || ''}
+                                                        onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value ? parseInt(e.target.value) : null)}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
                                                     />
                                                 </div>
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Unit Cost *
+                                                        Unit Cost
                                                     </label>
                                                     <input
                                                         type="number"
-                                                        required
                                                         step="0.01"
                                                         min="0"
-                                                        value={item.unit_cost}
-                                                        onChange={(e) => handleItemChange(index, 'unit_cost', parseFloat(e.target.value) || 0)}
+                                                        value={item.unit_cost || ''}
+                                                        onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value ? parseFloat(e.target.value) : null)}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
                                                     />
                                                 </div>

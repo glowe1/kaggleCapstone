@@ -7,10 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\Loggable;
+use App\Models\Scopes\FacilityScope;
 
 class PharmacyOrder extends Model
 {
     use SoftDeletes, Loggable;
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new FacilityScope);
+    }
 
     protected $fillable = [
         'order_number',
@@ -144,6 +150,7 @@ class PharmacyOrder extends Model
         return sprintf('%s-%s-%06d', $prefix, $year, $newNumber);
     }
 }
+
 
 
 

@@ -62,9 +62,8 @@ class ItemsRelationManager extends RelationManager
             Forms\Components\TextInput::make('quantity_ordered')
                 ->label('Quantity Ordered')
                 ->numeric()
-                ->required()
-                ->default(1)
-                ->minValue(1)
+                ->default(null)
+                ->minValue(0)
                 ->live()
                 ->afterStateUpdated(function ($state, callable $get, callable $set) {
                     // Recalculate line total
@@ -79,7 +78,6 @@ class ItemsRelationManager extends RelationManager
             Forms\Components\TextInput::make('unit_cost')
                 ->label('Unit Cost ($)')
                 ->numeric()
-                ->required()
                 ->step(0.01)
                 ->minValue(0)
                 ->prefix('$')

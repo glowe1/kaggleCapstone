@@ -7,10 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\Loggable;
+use App\Models\Scopes\FacilityScope;
 
 class PharmacyInventory extends Model
 {
     use SoftDeletes, Loggable;
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new FacilityScope);
+    }
 
     protected $table = 'pharmacy_inventory';
 
@@ -102,6 +108,7 @@ class PharmacyInventory extends Model
         };
     }
 }
+
 
 
 

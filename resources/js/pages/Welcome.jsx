@@ -225,31 +225,31 @@ export default function Welcome() {
                 <span className="block">Comprehensive</span>
                 <span className="block bg-gradient-to-r from-cyan-200 via-white to-cyan-200 bg-clip-text text-transparent">
                   Care Facility
-                </span>
+              </span>
                 <span className="block text-white">Management</span>
-              </h1>
+            </h1>
 
               {/* Subheading */}
               <p className="text-lg sm:text-xl text-white/90 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                 Streamline operations, improve care quality, and ensure compliance with our all-in-one platform designed for assisted living facilities.
-              </p>
+            </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
-                <button
+              <button
                   onClick={() => navigate('/register-facility')}
                   className="group relative bg-white text-blue-600 px-6 py-3 rounded-xl font-bold text-base hover:bg-gray-50 transition-all shadow-2xl hover:shadow-cyan-500/50 hover:scale-105 flex items-center justify-center space-x-2 overflow-hidden"
-                >
+              >
                   <span className="relative z-10">Start Free Trial</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                </button>
-                <button
+              </button>
+              <button
                   onClick={() => navigate('/login')}
                   className="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white px-6 py-3 rounded-xl font-bold text-base hover:bg-white/20 transition-all shadow-xl"
-                >
+              >
                   Sign In
-                </button>
+              </button>
               </div>
 
               {/* Trust Indicators - Compact */}

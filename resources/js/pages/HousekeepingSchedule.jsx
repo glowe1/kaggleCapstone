@@ -876,16 +876,18 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="text-sm font-semibold text-gray-900">Area Name</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Area Name
+                        </label>
                         <input
                             type="text"
                             name="name"
                             value={formValues.name}
                             onChange={handleChange}
                             required
-                            className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
                             style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
                             placeholder="e.g. Kitchen, Float #1"
                         />
@@ -893,39 +895,45 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
 
                     <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label className="text-sm font-semibold text-gray-900">Shift / Assignment Label</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Shift / Assignment Label
+                            </label>
                             <input
                                 type="text"
                                 name="shift_label"
                                 value={formValues.shift_label}
                                 onChange={handleChange}
-                                className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
-                            style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
+                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
+                                style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
                                 placeholder="e.g. Day Shift"
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-semibold text-gray-900">Location</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Location
+                            </label>
                             <input
                                 type="text"
                                 name="location"
                                 value={formValues.location}
                                 onChange={handleChange}
-                                className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
-                            style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
+                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
+                                style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
                                 placeholder="e.g. Main Level"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="text-sm font-semibold text-gray-900">Description / Notes</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Description / Notes
+                        </label>
                         <textarea
                             name="description"
                             value={formValues.description}
                             onChange={handleChange}
                             rows={3}
-                            className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
                             style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
                             placeholder="Responsibilities, reminders, etc."
                         />
@@ -933,15 +941,17 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
 
                     <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label className="text-sm font-semibold text-gray-900">Display Order</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Display Order
+                            </label>
                             <input
                                 type="number"
                                 name="display_order"
                                 value={formValues.display_order}
                                 onChange={handleChange}
                                 min={0}
-                                className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
-                            style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
+                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:border-[var(--theme-primary)]"
+                                style={{ '--tw-ring-color': 'var(--theme-primary-bg)' }}
                             />
                         </div>
                         <label className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3">

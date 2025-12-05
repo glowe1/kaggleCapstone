@@ -236,7 +236,7 @@ export default function RegisterFacility() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Number of Beds
+                Number of clients
               </label>
               <input
                 type="number"
