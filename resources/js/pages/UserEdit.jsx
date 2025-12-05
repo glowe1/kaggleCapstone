@@ -23,27 +23,53 @@ function FormProvider({ children, initialData }) {
         return date.toISOString().split('T')[0];
     };
 
-    const [formData, setFormData] = useState({
-        first_name: '',
-        middle_names: '',
-        last_name: '',
-        email: '',
-        password: '',
-        phone_number: '',
-        date_of_birth: '',
-        marital_status: '',
-        sex: '',
-        credentials: '',
-        credential_details: '',
-        date_employed: '',
-        supervisor_name: '',
-        provider_name: '',
-        role: '',
-        facility_id: '',
-        assigned_branch_id: '',
-        is_active: true,
-        notes: '',
-        ...initialData
+    const [formData, setFormData] = useState(() => {
+        // Initialize with initialData if available, otherwise use defaults
+        if (initialData && Object.keys(initialData).length > 0) {
+            return {
+                first_name: initialData.first_name || '',
+                middle_names: initialData.middle_names || '',
+                last_name: initialData.last_name || '',
+                email: initialData.email || '',
+                password: '', // Never prefill password
+                phone_number: initialData.phone_number || '',
+                date_of_birth: initialData.date_of_birth ? formatDateForInput(initialData.date_of_birth) : '',
+                marital_status: initialData.marital_status || '',
+                sex: initialData.sex || '',
+                credentials: initialData.credentials || '',
+                credential_details: initialData.credential_details || '',
+                date_employed: initialData.date_employed ? formatDateForInput(initialData.date_employed) : '',
+                supervisor_name: initialData.supervisor_name || '',
+                provider_name: initialData.provider_name || '',
+                role: typeof initialData.role === 'object' ? initialData.role?.name : (initialData.role || ''),
+                facility_id: initialData.facility_id || '',
+                assigned_branch_id: initialData.assigned_branch_id || (initialData.assigned_branch?.id || ''),
+                is_active: initialData.is_active !== undefined ? initialData.is_active : true,
+                notes: initialData.notes || '',
+            };
+        }
+        // Default empty form
+        return {
+            first_name: '',
+            middle_names: '',
+            last_name: '',
+            email: '',
+            password: '',
+            phone_number: '',
+            date_of_birth: '',
+            marital_status: '',
+            sex: '',
+            credentials: '',
+            credential_details: '',
+            date_employed: '',
+            supervisor_name: '',
+            provider_name: '',
+            role: '',
+            facility_id: '',
+            assigned_branch_id: '',
+            is_active: true,
+            notes: '',
+        };
     });
     const [profileImage, setProfileImage] = useState(null);
     const [profileImagePreview, setProfileImagePreview] = useState(null);
@@ -51,14 +77,29 @@ function FormProvider({ children, initialData }) {
 
     // Update form data when initialData changes (e.g. after fetch)
     useEffect(() => {
-        if (initialData) {
+        if (initialData && Object.keys(initialData).length > 0) {
             setFormData(prev => ({
                 ...prev,
-                ...initialData,
+                first_name: initialData.first_name || '',
+                middle_names: initialData.middle_names || '',
+                last_name: initialData.last_name || '',
+                email: initialData.email || '',
+                password: '', // Don't prefill password
+                phone_number: initialData.phone_number || '',
                 date_of_birth: formatDateForInput(initialData.date_of_birth),
+                marital_status: initialData.marital_status || '',
+                sex: initialData.sex || '',
+                credentials: initialData.credentials || '',
+                credential_details: initialData.credential_details || '',
                 date_employed: formatDateForInput(initialData.date_employed),
+                supervisor_name: initialData.supervisor_name || '',
+                provider_name: initialData.provider_name || '',
                 // Ensure role is just the name string if it comes as an object or relation
-                role: typeof initialData.role === 'object' ? initialData.role?.name : initialData.role,
+                role: typeof initialData.role === 'object' ? initialData.role?.name : (initialData.role || ''),
+                facility_id: initialData.facility_id || '',
+                assigned_branch_id: initialData.assigned_branch_id || (initialData.assigned_branch?.id || ''),
+                is_active: initialData.is_active !== undefined ? initialData.is_active : true,
+                notes: initialData.notes || '',
             }));
 
             // Set profile image preview from initial data
