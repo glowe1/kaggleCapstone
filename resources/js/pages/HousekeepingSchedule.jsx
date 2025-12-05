@@ -269,7 +269,7 @@ const closeAssignmentModal = () => {
                                 setIsAreaModalOpen(true);
                             }}
                             disabled={!branchId}
-                            className="inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--theme-primary-bg-light)] disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-1 rounded-xl border-2 bg-white px-3 py-1.5 text-xs font-bold transition-colors hover:bg-[var(--theme-primary-bg-light)] disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
                             style={{ borderColor: 'var(--theme-primary-bg)', color: 'var(--theme-primary)' }}
                         >
                             <Plus className="h-3 w-3" />
@@ -297,13 +297,13 @@ const closeAssignmentModal = () => {
                                     <div 
                                         key={area.id} 
                                         className={`w-full rounded-2xl border px-4 py-3 transition-all cursor-pointer ${isActive ? '' : 'border-gray-100 bg-white text-gray-700 hover:border-[var(--theme-primary-bg)]'}`}
-                                        style={isActive ? { borderColor: 'var(--theme-primary-bg)', backgroundColor: 'var(--theme-primary-bg)', color: 'var(--theme-primary)' } : {}}
+                                        style={isActive ? { borderColor: 'var(--theme-primary-bg)', backgroundColor: 'var(--theme-primary-bg)' } : {}}
                                         onClick={() => setSelectedAreaId(area.id)}
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-semibold">{area.name}</div>
-                                                <p className="text-xs text-gray-500">
+                                                <div className={`font-semibold ${isActive ? 'text-white' : 'text-gray-900'}`}>{area.name}</div>
+                                                <p className={`text-xs ${isActive ? 'text-white/90' : 'text-gray-500'}`}>
                                                     {[area.shift_label, area.location].filter(Boolean).join(' • ') || 'On-site'}
                                                 </p>
                                             </div>
@@ -314,7 +314,11 @@ const closeAssignmentModal = () => {
                                                         setEditingArea(area);
                                                         setIsAreaModalOpen(true);
                                                     }}
-                                                    className="inline-flex items-center rounded-lg border border-gray-200 p-2 text-gray-700 hover:bg-gray-50"
+                                                    className={`inline-flex items-center rounded-lg border p-2 transition-colors ${
+                                                        isActive 
+                                                            ? 'border-white/30 bg-white/20 text-white hover:bg-white/30' 
+                                                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                                                    }`}
                                                     aria-label="Edit area"
                                                 >
                                                     <Edit3 className="h-5 w-5" />
@@ -322,7 +326,7 @@ const closeAssignmentModal = () => {
                                                 <button
                                                     type="button"
                                                     onClick={async () => {
-                                                        if (!window.confirm(`Delete area “${area.name}”? This cannot be undone.`)) {
+                                                        if (!window.confirm(`Delete area "${area.name}"? This cannot be undone.`)) {
                                                             return;
                                                         }
                                                         try {
@@ -335,8 +339,11 @@ const closeAssignmentModal = () => {
                                                             window.alert(err?.response?.data?.message || err.message);
                                                         }
                                                     }}
-                                                    className="inline-flex items-center rounded-lg border p-2 transition-colors hover:bg-[var(--theme-primary-bg-light)]"
-                                                    style={{ borderColor: 'var(--theme-primary-bg)', color: 'var(--theme-primary)' }}
+                                                    className={`inline-flex items-center rounded-lg border p-2 transition-colors ${
+                                                        isActive 
+                                                            ? 'border-white/30 bg-white/20 text-white hover:bg-white/30' 
+                                                            : 'border-red-200 bg-white text-red-600 hover:bg-red-50'
+                                                    }`}
                                                     aria-label="Delete area"
                                                 >
                                                     <Trash2 className="h-5 w-5" />
@@ -447,7 +454,7 @@ const closeAssignmentModal = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => openAssignmentModal(task)}
-                                                className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--theme-primary-bg-light)]"
+                                                className="inline-flex items-center gap-1.5 rounded-lg border-2 px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[var(--theme-primary-bg-light)] bg-white shadow-md"
                                                 style={{ borderColor: 'var(--theme-primary-bg)', color: 'var(--theme-primary)' }}
                                             >
                                                 <Sparkles className="h-4 w-4" />
@@ -456,7 +463,7 @@ const closeAssignmentModal = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => openEditModal(task)}
-                                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-gray-400 px-4 py-2.5 text-sm font-bold text-gray-900 hover:bg-gray-100 bg-white shadow-md"
                                             >
                                                 <Edit3 className="h-4 w-4" />
                                                 Edit
@@ -472,8 +479,7 @@ const closeAssignmentModal = () => {
                                                         }
                                                     }
                                                 }}
-                                                className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--theme-primary-bg-light)]"
-                                                style={{ borderColor: 'var(--theme-primary-bg)', color: 'var(--theme-primary)' }}
+                                                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-red-400 px-4 py-2.5 text-sm font-bold text-red-700 transition-colors hover:bg-red-50 bg-white shadow-md"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                                 Delete
@@ -878,10 +884,11 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label htmlFor="area-name" className="block text-sm font-bold text-gray-900 mb-2">
                             Area Name
                         </label>
                         <input
+                            id="area-name"
                             type="text"
                             name="name"
                             value={formValues.name}
@@ -895,10 +902,11 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
 
                     <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="shift-label" className="block text-sm font-bold text-gray-900 mb-2">
                                 Shift / Assignment Label
                             </label>
                             <input
+                                id="shift-label"
                                 type="text"
                                 name="shift_label"
                                 value={formValues.shift_label}
@@ -909,10 +917,11 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="location" className="block text-sm font-bold text-gray-900 mb-2">
                                 Location
                             </label>
                             <input
+                                id="location"
                                 type="text"
                                 name="location"
                                 value={formValues.location}
@@ -925,10 +934,11 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label htmlFor="description" className="block text-sm font-bold text-gray-900 mb-2">
                             Description / Notes
                         </label>
                         <textarea
+                            id="description"
                             name="description"
                             value={formValues.description}
                             onChange={handleChange}
@@ -941,10 +951,11 @@ function AreaModal({ onClose, branchId, onSaved, initialValues }) {
 
                     <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="display-order" className="block text-sm font-bold text-gray-900 mb-2">
                                 Display Order
                             </label>
                             <input
+                                id="display-order"
                                 type="number"
                                 name="display_order"
                                 value={formValues.display_order}
