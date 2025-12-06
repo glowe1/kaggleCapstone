@@ -155,7 +155,7 @@ class UserResource extends Resource
                             ->label('Phone Number')
                             ->tel()
                             ->required()
-                            ->placeholder('(425) 555-0123')
+                            ->placeholder('(425) 555-0123'),
                         Forms\Components\DatePicker::make('date_of_birth')
                             ->label('Date of Birth')
                             ->required()
