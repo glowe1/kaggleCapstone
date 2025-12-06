@@ -160,6 +160,40 @@ class RoleController extends BaseApiController
                 $caregiverPermissionCount = $caregiverPermissions->count();
             }
 
+            // Sync specific permissions to nurse role
+            $nursePermissions = Permission::whereIn('name', [
+                'view_admin_panel',
+                'view_dashboard',
+                'view_own_profile',
+                'edit_own_profile',
+                'view_residents',
+                'edit_residents',
+                'view_medications',
+                'create_medications',
+                'edit_medications',
+                'view_appointments',
+                'create_appointments',
+                'edit_appointments',
+                'view_assessments',
+                'create_assessments',
+                'edit_assessments',
+                'view_vital_signs',
+                'create_vital_signs',
+                'edit_vital_signs',
+                'view_drugs',
+                'create_drugs',
+                'edit_drugs',
+                'view_incidents',
+                'create_incidents',
+                'edit_incidents',
+            ])->pluck('id');
+
+            $nursePermissionCount = 0;
+            if ($nursePermissions->count() > 0) {
+                $nurseRole->permissions()->sync($nursePermissions);
+                $nursePermissionCount = $nursePermissions->count();
+            }
+
             return $this->success([
                 'message' => 'Required roles ensured successfully',
                 'roles' => [
@@ -174,6 +208,10 @@ class RoleController extends BaseApiController
                     'caregiver' => [
                         'created' => $caregiverRole->wasRecentlyCreated,
                         'permissions_count' => $caregiverPermissionCount,
+                    ],
+                    'nurse' => [
+                        'created' => $nurseRole->wasRecentlyCreated,
+                        'permissions_count' => $nursePermissionCount,
                     ],
                 ],
                 'total_permissions_in_db' => $permissionCount,

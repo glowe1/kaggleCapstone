@@ -200,6 +200,7 @@ export default function Residents() {
                                 <CheckCircle className="w-3.5 h-3.5" />
                             )}
                         </button>
+                        )}
                     </div>
                 </div>
                 <div className="space-y-2 text-sm">
