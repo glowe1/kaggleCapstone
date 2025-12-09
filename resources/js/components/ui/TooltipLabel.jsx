@@ -14,7 +14,7 @@ export default function TooltipLabel({
     ...props
 }) {
     return (
-        <label htmlFor={htmlFor} className={`block text-sm font-medium text-gray-700 mb-2 ${className}`} {...props}>
+        <label htmlFor={htmlFor} className={`block text-sm font-semibold text-gray-900 mb-2 ${className}`} style={{ color: '#111827' }} {...props}>
             {label}
             {required && <span className="text-red-500 ml-1">*</span>}
             {tooltip && (

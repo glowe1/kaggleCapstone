@@ -33,7 +33,7 @@ export default function FormCheckbox({
                     {...props}
                 />
                 {label && (
-                    <label htmlFor={name} className="text-sm font-medium text-gray-700 cursor-pointer">
+                    <label htmlFor={name} className="text-sm font-semibold text-gray-900 cursor-pointer" style={{ color: '#111827' }}>
                         {label}
                     </label>
                 )}

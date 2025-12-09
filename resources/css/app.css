@@ -870,8 +870,17 @@ div[class*="bg-gray-50"] label,
 div[class*="bg-white"] label,
 .bg-gray-50 label,
 .bg-white label,
-form label {
-    color: #000000 !important;
+form label,
+label[for],
+label[htmlFor],
+.modal label,
+[role="dialog"] label,
+.fixed label,
+.z-50 label,
+.z-[50] label,
+.z-[9999] label {
+    color: #111827 !important;
+    font-weight: 600 !important;
 }
 
 div[class*="bg-gray-50"] input[type="text"],
