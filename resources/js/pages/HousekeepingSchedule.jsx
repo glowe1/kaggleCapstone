@@ -891,8 +891,8 @@ function AreaForm({ onClose, branchId, initialValues, onSuccess }) {
                     </button>
                 </div>
 
-                    {/* Form */}
-                    <FormProvider {...methods}>
+                {/* Form */}
+                <FormProvider {...methods}>
                         <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
                             <FormInput
                                 name="name"
