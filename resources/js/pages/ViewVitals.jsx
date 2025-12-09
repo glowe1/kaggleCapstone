@@ -243,8 +243,15 @@ export default function ViewVitals() {
     });
 
     // Calculate date range for selected month/year
-    const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of selected month
+    const startDate = useMemo(() => {
+        const date = new Date(year, month - 1, 1);
+        return date.toISOString().split('T')[0];
+    }, [year, month]);
+    
+    const endDate = useMemo(() => {
+        const date = new Date(year, month, 0); // Last day of selected month
+        return date.toISOString().split('T')[0];
+    }, [year, month]);
 
     // Mutation to update vital status
     const updateStatusMutation = useMutation({
@@ -282,8 +289,8 @@ export default function ViewVitals() {
     };
 
     // Fetch vitals data
-    const { data: vitalsData, isLoading, error } = useQuery({
-        queryKey: ['vitals-view', branchId, residentId, year, month, currentPage, perPage],
+    const { data: vitalsData, isLoading, error, refetch } = useQuery({
+        queryKey: ['vitals-view', branchId, residentId, startDate, endDate, currentPage, perPage],
         queryFn: async () => {
             const params = {
                 per_page: perPage,
@@ -295,12 +302,19 @@ export default function ViewVitals() {
             if (residentId) {
                 params.resident_id = residentId;
             }
-            if (branchId) {
-                params.branch_id = branchId;
-            }
+            // Note: branch_id is not a valid API parameter - branch filtering is done server-side based on user's facility/branch
 
-            const response = await api.get('/vitals', { params });
-            return response.data;
+            try {
+                const response = await api.get('/vitals', { params });
+                console.log('Vitals API Response:', response.data);
+                console.log('Vitals data array:', response.data?.data);
+                console.log('Total vitals:', response.data?.total);
+                return response.data;
+            } catch (err) {
+                console.error('Error fetching vitals:', err);
+                console.error('Error response:', err.response?.data);
+                throw err;
+            }
         },
         enabled: true,
         retry: false,
@@ -618,8 +632,14 @@ export default function ViewVitals() {
                         </div>
 
                         <div>
-                            <button className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors mt-6">
-                                Allow
+                            <button 
+                                onClick={() => {
+                                    console.log('Refetching vitals data...', { branchId, residentId, year, month, startDate, endDate });
+                                    refetch();
+                                }}
+                                className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors mt-6"
+                            >
+                                Apply Filters
                             </button>
                         </div>
 

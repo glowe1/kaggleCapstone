@@ -410,12 +410,22 @@ export default function Assessments() {
                                             {assessment.status?.replace('_', ' ')}
                                         </span>
                                         <div className="flex flex-col items-end space-y-1">
-                                            <Link
-                                                to={`/assessments/${assessment.id}`}
-                                                className="px-3 py-1 text-sm text-[var(--theme-text-on-primary)] bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors"
-                                            >
-                                                Start Assessment
-                                            </Link>
+                                            {assessment.status === 'completed' || assessment.status === 'approved' ? (
+                                                <button
+                                                    disabled
+                                                    className="px-3 py-1 text-sm text-gray-400 bg-gray-200 cursor-not-allowed rounded-lg transition-colors"
+                                                    title="Assessment is already completed or approved"
+                                                >
+                                                    Start Assessment
+                                                </button>
+                                            ) : (
+                                                <Link
+                                                    to={`/assessments/${assessment.id}`}
+                                                    className="px-3 py-1 text-sm text-[var(--theme-text-on-primary)] bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors"
+                                                >
+                                                    Start Assessment
+                                                </Link>
+                                            )}
                                             <Link
                                                 to={`/assessments/${assessment.id}/review`}
                                                 className="px-3 py-1 text-sm text-[var(--theme-text-on-primary)] bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors"
