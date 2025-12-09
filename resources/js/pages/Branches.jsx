@@ -238,25 +238,54 @@ function BranchForm({ record, facilities, currentUser, isSuperAdmin, isFacilityA
     e.preventDefault();
     setSubmitting(true);
     setErrors({});
+    
+    // Client-side validation
+    if (!form.name || !form.name.trim()) {
+      setErrors({ name: ['Name is required'] });
+      setSubmitting(false);
+      return;
+    }
+
+    // Ensure facility_id is set
+    let facilityId = form.facility_id;
+    if (!facilityId && isFacilityAdmin && currentUser?.facility_id) {
+      facilityId = currentUser.facility_id;
+    }
+    if (!facilityId) {
+      setErrors({ facility_id: ['Facility is required'] });
+      setSubmitting(false);
+      return;
+    }
+
     try {
       // Prepare form data - ensure proper formatting
       const submitData = {
         name: form.name.trim(),
-        facility_id: form.facility_id || (isFacilityAdmin && currentUser?.facility_id ? currentUser.facility_id : null),
-        address: form.address?.trim() || null,
-        phone: form.phone ? unformatPhoneNumber(form.phone) : null,
-        email: form.email?.trim() || null,
+        facility_id: facilityId,
         is_active: Boolean(form.is_active),
-        latitude: form.latitude ? parseFloat(form.latitude) : null,
-        longitude: form.longitude ? parseFloat(form.longitude) : null,
       };
 
-      // Remove null/empty values for optional fields
-      if (!submitData.phone) delete submitData.phone;
-      if (!submitData.email) delete submitData.email;
-      if (!submitData.address) delete submitData.address;
-      if (submitData.latitude === null) delete submitData.latitude;
-      if (submitData.longitude === null) delete submitData.longitude;
+      // Add optional fields only if they have values
+      if (form.address?.trim()) {
+        submitData.address = form.address.trim();
+      }
+      if (form.phone) {
+        const unformatted = unformatPhoneNumber(form.phone);
+        if (unformatted) {
+          submitData.phone = unformatted;
+        }
+      }
+      if (form.email?.trim()) {
+        submitData.email = form.email.trim();
+      }
+      if (form.latitude && !isNaN(parseFloat(form.latitude))) {
+        submitData.latitude = parseFloat(form.latitude);
+      }
+      if (form.longitude && !isNaN(parseFloat(form.longitude))) {
+        submitData.longitude = parseFloat(form.longitude);
+      }
+
+      console.log('Submitting branch data:', submitData);
       
       if (record) {
         await api.put(`/branches/${record.id}`, submitData);
@@ -268,9 +297,18 @@ function BranchForm({ record, facilities, currentUser, isSuperAdmin, isFacilityA
       console.error('Branch save error:', e.response?.data);
       const errorData = e.response?.data;
       if (errorData?.errors) {
-        setErrors(errorData.errors);
+        // Handle Laravel validation errors format
+        const formattedErrors = {};
+        Object.keys(errorData.errors).forEach(key => {
+          formattedErrors[key] = Array.isArray(errorData.errors[key]) 
+            ? errorData.errors[key] 
+            : [errorData.errors[key]];
+        });
+        setErrors(formattedErrors);
+      } else if (errorData?.message) {
+        setErrors({ general: errorData.message });
       } else {
-        setErrors({ general: errorData?.message || 'Failed to save branch. Please check all required fields.' });
+        setErrors({ general: 'Failed to save branch. Please check all required fields.' });
       }
     } finally {
       setSubmitting(false);
