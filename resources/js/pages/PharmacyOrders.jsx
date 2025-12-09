@@ -635,16 +635,18 @@ export default function PharmacyOrders() {
                                     <div className="flex space-x-2">
                                         <button
                                             onClick={() => handleViewItems(order)}
-                                            className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
                                         >
+                                            <Package className="w-4 h-4" />
                                             View Items
                                         </button>
                                         {order.status === 'draft' && (
                                             <>
                                                 <button
                                                     onClick={() => handleDelete(order.id)}
-                                                    className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="px-4 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2"
                                                 >
+                                                    <Trash2 className="w-4 h-4" />
                                                     Delete
                                                 </button>
                                             </>

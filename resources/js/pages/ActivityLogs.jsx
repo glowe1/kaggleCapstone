@@ -325,9 +325,9 @@ export default function ActivityLogsPage() {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <button
                                                     onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
-                                                    className="text-[var(--theme-primary)] hover:text-[var(--theme-primary-hover)] flex items-center"
+                                                    className="px-3 py-2 bg-[var(--theme-primary)] text-white rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors flex items-center gap-2 font-medium"
                                                 >
-                                                    <Eye className="w-4 h-4 mr-1" />
+                                                    <Eye className="w-4 h-4" />
                                                     {expandedLog === log.id ? 'Hide' : 'View'}
                                                 </button>
                                             </td>

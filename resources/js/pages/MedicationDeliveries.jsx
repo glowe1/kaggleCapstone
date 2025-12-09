@@ -426,17 +426,17 @@ export default function MedicationDeliveries() {
                                     <div className="flex items-center gap-2 ml-4">
                                         <button
                                             onClick={() => handleEdit(delivery)}
-                                            className="p-2 text-gray-600 hover:text-[var(--theme-primary)] transition-colors"
+                                            className="p-2 bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 hover:border-blue-300 rounded-lg transition-colors"
                                             title="Edit"
                                         >
-                                            <Edit className="w-4 h-4" />
+                                            <Edit className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(delivery.id)}
-                                            className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                                            className="p-2 bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300 rounded-lg transition-colors"
                                             title="Delete"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>
@@ -1086,8 +1086,9 @@ function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacy
                                                         <button
                                                             type="button"
                                                             onClick={() => removeRow(index)}
-                                                            className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                                            className="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
                                                         >
+                                                            <X className="w-4 h-4" />
                                                             Remove
                                                         </button>
                                                     )}
