@@ -473,6 +473,7 @@ export default function Layout() {
     }, [currentUser?.app_current_time]);
 
     const leaveRequestsPath = isCaregiver ? '/leave-requests' : '/administration/leave-requests';
+    const tLogsPath = '/t-logs';
 
     // Get theme from ThemeProvider (CSS variables are automatically set)
     const theme = useTheme();
@@ -726,11 +727,11 @@ export default function Layout() {
                                 <NotificationDropdown />
                                 <ReminderPanel />
                                 <Link
-                                    to={leaveRequestsPath}
+                                    to={tLogsPath}
                                     className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
-                                    title="Leave Requests"
+                                    title="T-Logs"
                                 >
-                                    <CalendarClock className="w-5 h-5 text-gray-700" />
+                                    <FileText className="w-5 h-5 text-gray-700" />
                                 </Link>
                             </>
                         )}
