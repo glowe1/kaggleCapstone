@@ -200,6 +200,9 @@ export default function NotificationDropdown() {
                     navUrl = '/assessments';
                 }
                 break;
+            case 'appointment_completed':
+                navUrl = '/appointments';
+                break;
             case 'leave_request':
             case 'leave_approved':
             case 'leave_rejected':
@@ -272,6 +275,9 @@ export default function NotificationDropdown() {
                     navUrl = '/fire-drills';
                 }
                 break;
+            case 'grocery_status_update':
+                navUrl = '/grocery-status';
+                break;
             case 'staff_clock_in':
             case 'staff_clock_out':
                 navUrl = '/check-in-dashboard';
@@ -298,6 +304,8 @@ export default function NotificationDropdown() {
                 return { Icon: Calendar, color: 'text-[var(--theme-primary)]' };
             case 'appointment_upcoming':
                 return { Icon: Calendar, color: 'text-[var(--theme-primary)]' };
+            case 'appointment_completed':
+                return { Icon: CheckCheck, color: 'text-[var(--theme-primary)]' };
             case 'vital_due':
                 return { Icon: Activity, color: 'text-[var(--theme-primary)]' };
             case 'assessment_due':
@@ -342,6 +350,8 @@ export default function NotificationDropdown() {
                 return { Icon: Sparkles, color: 'text-green-600' };
             case 'housekeeping_task_skipped':
                 return { Icon: Sparkles, color: 'text-amber-600' };
+            case 'grocery_status_update':
+                return { Icon: Calendar, color: 'text-[var(--theme-primary)]' };
             case 'staff_clock_in':
                 return { Icon: Clock, color: 'text-green-600' };
             case 'staff_clock_out':

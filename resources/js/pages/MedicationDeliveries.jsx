@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Truck, Plus, Search, Filter, Edit, Trash2, Calendar, Package, User, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Truck, Plus, Search, Filter, Edit, Trash2, Calendar, Package, User, X, Sparkles } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import Card from '../components/Card';
 import Select from '../components/ui/radix/Select';
@@ -62,6 +63,16 @@ export default function MedicationDeliveries() {
         queryFn: async () => (await api.get('/pharmacy-suppliers', { params: { per_page: 100, is_active: true } })).data,
     });
 
+    // Fetch pharmacy templates
+    const { data: pharmacyTemplatesData } = useQuery({
+        queryKey: ['pharmacy-templates', branchFilter],
+        queryFn: async () => {
+            const params = { per_page: 100 };
+            if (branchFilter) params.branch_id = branchFilter;
+            return (await api.get('/pharmacy-templates', { params })).data;
+        },
+    });
+
     // Build query params
     const queryParams = React.useMemo(() => {
         const params = { per_page: 50 };
@@ -95,11 +106,23 @@ export default function MedicationDeliveries() {
         },
     });
 
+    const createPharmacyTemplateMutation = useMutation({
+        mutationFn: async (payload) => (await api.post('/pharmacy-templates', payload)).data,
+        onSuccess: () => {
+            toast.success('Pharmacy template saved');
+            queryClient.invalidateQueries(['pharmacy-templates']);
+        },
+        onError: (error) => {
+            toast.error(error?.response?.data?.message || 'Failed to save template');
+        },
+    });
+
     const deliveries = data?.data || [];
     const branches = branchesData?.data || [];
     const residents = residentsData?.data || [];
     const medications = medicationsData?.data || [];
     const pharmacySuppliers = pharmacySuppliersData?.data || [];
+    const pharmacyTemplates = pharmacyTemplatesData?.data || [];
 
     // Filter deliveries by search
     const filteredDeliveries = React.useMemo(() => {
@@ -162,6 +185,8 @@ export default function MedicationDeliveries() {
                     residents={residents}
                     medications={medications}
                     pharmacySuppliers={pharmacySuppliers}
+                    pharmacyTemplates={pharmacyTemplates}
+                    onSaveTemplate={(payload) => createPharmacyTemplateMutation.mutateAsync(payload)}
                     isCaregiver={isCaregiver}
                     caregiverBranchId={currentUser?.assigned_branch_id}
                     onClose={handleCloseForm}
@@ -183,6 +208,8 @@ export default function MedicationDeliveries() {
                     residents={residents}
                     medications={medications}
                     pharmacySuppliers={pharmacySuppliers}
+                    pharmacyTemplates={pharmacyTemplates}
+                    onSaveTemplate={(payload) => createPharmacyTemplateMutation.mutateAsync(payload)}
                     isCaregiver={isCaregiver}
                     caregiverBranchId={currentUser?.assigned_branch_id}
                     formMode={formMode}
@@ -488,7 +515,7 @@ export default function MedicationDeliveries() {
     );
 }
 
-function MedicationDeliveryForm({ record, branches, residents, medications, pharmacySuppliers = [], isCaregiver, caregiverBranchId, formMode = 'full', onClose, onSuccess }) {
+function MedicationDeliveryForm({ record, branches, residents, medications, pharmacySuppliers = [], pharmacyTemplates = [], onSaveTemplate, isCaregiver, caregiverBranchId, formMode = 'full', onClose, onSuccess }) {
     const [formData, setFormData] = useState({
         branch_id: record?.branch_id || caregiverBranchId || '',
         delivery_type: record?.delivery_type || (formMode === 'quick' ? 'batch' : 'individual'),
@@ -504,6 +531,43 @@ function MedicationDeliveryForm({ record, branches, residents, medications, phar
 
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
+
+    React.useEffect(() => {
+        if (formMode === 'quick' && !record) {
+            setFormData((prev) => ({
+                ...prev,
+                delivery_type: 'batch',
+                status: 'received',
+            }));
+        }
+    }, [formMode, record]);
+
+    const applyTemplate = (templateId) => {
+        const tpl = pharmacyTemplates.find((t) => t.id === Number(templateId));
+        if (!tpl) return;
+        setFormData((prev) => ({
+            ...prev,
+            branch_id: tpl.branch_id?.toString() || prev.branch_id,
+            pharmacy_name: tpl.name || prev.pharmacy_name,
+            notes: tpl.default_notes || prev.notes,
+        }));
+        toast.success('Template applied');
+    };
+
+    const saveAsTemplate = async () => {
+        if (!onSaveTemplate) return;
+        try {
+            const payload = {
+                branch_id: Number(formData.branch_id),
+                name: formData.pharmacy_name || 'Pharmacy',
+                default_notes: formData.notes || null,
+            };
+            await onSaveTemplate(payload);
+        } catch (e) {
+            // error handled by mutation toast
+        }
+    };
 
     const availableSuppliers = pharmacySuppliers || [];
 
@@ -702,37 +766,66 @@ function MedicationDeliveryForm({ record, branches, residents, medications, phar
                                 </>
                             )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-900 mb-1">Pharmacy Supplier (Optional)</label>
-                                <select
-                                    value=""
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            const supplier = availableSuppliers.find(s => s.id == e.target.value);
-                                            if (supplier) {
-                                                setFormData({
-                                                    ...formData,
-                                                    pharmacy_name: supplier.name,
-                                                    notes: supplier.notes || formData.notes,
-                                                });
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-900 mb-1">Apply Pharmacy Template</label>
+                                        <Select
+                                            value={selectedTemplateId}
+                                            onValueChange={(value) => {
+                                                setSelectedTemplateId(value);
+                                                if (value) applyTemplate(value);
+                                            }}
+                                            placeholder="Choose a template"
+                                            options={pharmacyTemplates.map(t => ({
+                                                value: t.id.toString(),
+                                                label: t.name,
+                                            }))}
+                                            className="w-full"
+                                            disabled={!pharmacyTemplates.length}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={saveAsTemplate}
+                                        className="px-3 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg self-end disabled:opacity-50"
+                                        disabled={!formData.pharmacy_name || !formData.branch_id}
+                                    >
+                                        Save Template
+                                    </button>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 mb-1">Pharmacy Supplier (Optional)</label>
+                                    <select
+                                        value=""
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                const supplier = availableSuppliers.find(s => s.id == e.target.value);
+                                                if (supplier) {
+                                                    setFormData({
+                                                        ...formData,
+                                                        pharmacy_name: supplier.name,
+                                                        notes: supplier.notes || formData.notes,
+                                                    });
+                                                }
                                             }
-                                        }
-                                    }}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent mb-2 text-gray-900 bg-white"
-                                >
-                                    <option value="">Select a supplier...</option>
-                                    {availableSuppliers && availableSuppliers.length > 0 ? (
-                                        availableSuppliers.map(supplier => (
-                                            <option key={supplier.id} value={supplier.id}>
-                                                {supplier.name}
+                                        }}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent mb-2 text-gray-900 bg-white"
+                                    >
+                                        <option value="">Select a supplier...</option>
+                                        {availableSuppliers && availableSuppliers.length > 0 ? (
+                                            availableSuppliers.map(supplier => (
+                                                <option key={supplier.id} value={supplier.id}>
+                                                    {supplier.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="" disabled>
+                                                {pharmacySuppliersError ? 'Error loading suppliers' : 'No suppliers available'}
                                             </option>
-                                        ))
-                                    ) : (
-                                        <option value="" disabled>
-                                            {pharmacySuppliersError ? 'Error loading suppliers' : 'No suppliers available'}
-                                        </option>
-                                    )}
-                                </select>
+                                        )}
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-900 mb-1">Pharmacy Name *</label>
@@ -832,7 +925,7 @@ function MedicationDeliveryForm({ record, branches, residents, medications, phar
     );
 }
 
-function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacySuppliers = [], isCaregiver, caregiverBranchId, onClose, onSuccess }) {
+function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacySuppliers = [], pharmacyTemplates = [], onSaveTemplate, isCaregiver, caregiverBranchId, onClose, onSuccess }) {
     const [commonFields, setCommonFields] = useState({
         branch_id: caregiverBranchId || '',
         pharmacy_name: '',
@@ -853,6 +946,7 @@ function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacy
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [filteredResidents, setFilteredResidents] = React.useState([]);
     const [filteredMedications, setFilteredMedications] = React.useState({});
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
     // Filter residents by branch
     React.useEffect(() => {
@@ -862,6 +956,31 @@ function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacy
             setFilteredResidents(residents || []);
         }
     }, [commonFields.branch_id, residents]);
+
+    const applyTemplate = (templateId) => {
+        const tpl = pharmacyTemplates.find(t => t.id === Number(templateId));
+        if (!tpl) return;
+        setCommonFields((prev) => ({
+            ...prev,
+            branch_id: tpl.branch_id?.toString() || prev.branch_id,
+            pharmacy_name: tpl.name || prev.pharmacy_name,
+            notes: tpl.default_notes || prev.notes,
+        }));
+        toast.success('Template applied to common fields');
+    };
+
+    const saveAsTemplate = async () => {
+        if (!onSaveTemplate) return;
+        try {
+            await onSaveTemplate({
+                branch_id: Number(commonFields.branch_id),
+                name: commonFields.pharmacy_name || 'Pharmacy',
+                default_notes: commonFields.notes || null,
+            });
+        } catch (e) {
+            // handled by mutation toast
+        }
+    };
 
     // Fetch medications for each resident
     React.useEffect(() => {
@@ -1027,6 +1146,32 @@ function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacy
                                         <option value="verified">Verified</option>
                                         <option value="stored">Stored</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-900 mb-1">Apply Pharmacy Template</label>
+                                    <Select
+                                        value={selectedTemplateId}
+                                        onValueChange={(value) => {
+                                            setSelectedTemplateId(value);
+                                            if (value) applyTemplate(value);
+                                        }}
+                                        placeholder="Choose a template"
+                                        options={pharmacyTemplates.map(t => ({ value: t.id.toString(), label: t.name }))}
+                                        className="w-full"
+                                        disabled={!pharmacyTemplates.length}
+                                    />
+                                </div>
+                                <div className="flex items-end">
+                                    <button
+                                        type="button"
+                                        onClick={saveAsTemplate}
+                                        className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 w-full"
+                                        disabled={!commonFields.branch_id || !commonFields.pharmacy_name}
+                                    >
+                                        Save as Template
+                                    </button>
                                 </div>
                             </div>
                         </div>

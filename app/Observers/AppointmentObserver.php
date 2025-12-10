@@ -10,6 +10,57 @@ use Carbon\Carbon;
 class AppointmentObserver
 {
     /**
+     * Notify relevant users when an appointment is completed.
+     */
+    public function updated(Appointment $appointment): void
+    {
+        if (!$appointment->wasChanged('status')) {
+            return;
+        }
+
+        // Only act on transition to completed
+        if ($appointment->status !== 'completed') {
+            return;
+        }
+
+        $appointment->load(['resident.assignments.caregiver', 'appointmentType']);
+
+        $recipients = $appointment->resident?->assignments
+            ->where('is_active', true)
+            ->pluck('caregiver')
+            ->filter();
+
+        if ($recipients->isEmpty()) {
+            $recipients = User::whereIn('role', ['administrator', 'admin', 'manager', 'super_admin'])
+                ->where('is_active', true)
+                ->get();
+        }
+
+        $residentName = trim(($appointment->resident->first_name ?? '') . ' ' . ($appointment->resident->last_name ?? ''));
+        $appointmentType = $appointment->appointmentType?->name ?? 'General';
+        $date = $appointment->appointment_date
+            ? Carbon::parse($appointment->appointment_date)->format('M d, Y')
+            : 'Date TBD';
+
+        foreach ($recipients as $user) {
+            Notification::create([
+                'user_id' => $user->id,
+                'type' => 'appointment_completed',
+                'title' => 'Appointment Completed',
+                'message' => "{$residentName}'s {$appointmentType} appointment on {$date} was marked completed.",
+                'icon' => 'calendar-check',
+                'icon_color' => 'text-[var(--theme-primary)]',
+                'action_url' => '/appointments',
+                'metadata' => [
+                    'appointment_id' => $appointment->id,
+                    'resident_id' => $appointment->resident_id,
+                    'status' => $appointment->status,
+                ],
+            ]);
+        }
+    }
+
+    /**
      * Handle the Appointment "created" event.
      */
     public function created(Appointment $appointment): void

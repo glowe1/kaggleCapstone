@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { ShoppingCart, Plus, Search, Filter, Edit, Trash2, Calendar, Clock, CheckCircle, AlertCircle, Package, List, Grid, TrendingUp, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { ShoppingCart, Plus, Search, Filter, Edit, Trash2, Calendar, Clock, CheckCircle, AlertCircle, Package, List, Grid, TrendingUp, X, Sparkles } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import Card from '../components/Card';
 import WeeklyCalendarView from '../components/WeeklyCalendarView';
@@ -82,16 +83,24 @@ export default function GroceryStatus() {
             await api.delete(`/grocery-status-updates/${id}`);
         },
         onSuccess: () => {
+            toast.success('Update deleted');
             queryClient.invalidateQueries(['grocery-status-updates']);
+        },
+        onError: (error) => {
+            toast.error(error?.response?.data?.message || 'Delete failed');
         },
     });
 
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }) => {
-            await api.patch(`/grocery-status-updates/${id}/status`, { status });
+            await api.patch(`/grocery-status-updates/{id}/status`.replace('{id}', id), { status });
         },
         onSuccess: () => {
+            toast.success('Status updated');
             queryClient.invalidateQueries(['grocery-status-updates']);
+        },
+        onError: (error) => {
+            toast.error(error?.response?.data?.message || 'Update failed');
         },
     });
 
