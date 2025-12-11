@@ -130,7 +130,9 @@ class CleaningAreaController extends BaseApiController
     {
         $user = $request->user();
 
-        if (!$user || !$user->hasPermission($permission)) {
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['super_admin', 'administrator', 'admin'], true);
+
+        if (!$user || (!$isAdmin && !$user->hasPermission($permission))) {
             abort(403, 'You do not have permission to manage cleaning schedules.');
         }
     }
