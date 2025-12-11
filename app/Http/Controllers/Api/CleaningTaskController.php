@@ -58,7 +58,12 @@ class CleaningTaskController extends BaseApiController
 
     public function store(Request $request)
     {
-        $this->ensureCanManage($request, 'create_cleaning_areas');
+        $user = $request->user();
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['super_admin', 'administrator', 'admin'], true);
+        
+        if (!$isAdmin) {
+            $this->ensureCanManage($request, 'create_cleaning_areas');
+        }
 
         $data = $this->validateTask($request);
 
@@ -72,7 +77,12 @@ class CleaningTaskController extends BaseApiController
 
     public function update(Request $request, CleaningTask $cleaningTask)
     {
-        $this->ensureCanManage($request, 'edit_cleaning_areas');
+        $user = $request->user();
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['super_admin', 'administrator', 'admin'], true);
+        
+        if (!$isAdmin) {
+            $this->ensureCanManage($request, 'edit_cleaning_areas');
+        }
 
         $data = $this->validateTask($request, $cleaningTask);
 
@@ -86,7 +96,12 @@ class CleaningTaskController extends BaseApiController
 
     public function destroy(Request $request, CleaningTask $cleaningTask)
     {
-        $this->ensureCanManage($request, 'delete_cleaning_areas');
+        $user = $request->user();
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['super_admin', 'administrator', 'admin'], true);
+        
+        if (!$isAdmin) {
+            $this->ensureCanManage($request, 'delete_cleaning_areas');
+        }
 
         if ($cleaningTask->logs()->exists()) {
             throw ValidationException::withMessages([
@@ -123,7 +138,10 @@ class CleaningTaskController extends BaseApiController
         $area = CleaningArea::findOrFail($data['cleaning_area_id']);
         $user = $request->user();
 
-        if ($user->assigned_branch_id && $user->assigned_branch_id !== $area->branch_id) {
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['super_admin', 'administrator', 'admin'], true);
+        
+        // Only enforce branch restrictions for non-admin users
+        if (!$isAdmin && $user->assigned_branch_id && $user->assigned_branch_id !== $area->branch_id) {
             abort(403, 'You cannot manage tasks for another branch.');
         }
 
