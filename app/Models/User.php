@@ -322,6 +322,16 @@ class User extends Authenticatable implements FilamentUser
             return true;
         }
 
+        // Facility admins (admin/administrator) should have full module access within their facility
+        $isFacilityAdmin = $this->role === 'administrator'
+            || $this->role === 'admin'
+            || $this->hasRole('administrator')
+            || $this->hasRole('admin');
+
+        if ($isFacilityAdmin) {
+            return true;
+        }
+
         // If user doesn't have a facility, deny access
         if (!$this->facility_id || !$this->facility) {
             return false;
