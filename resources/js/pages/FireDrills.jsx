@@ -243,6 +243,19 @@ export default function FireDrills() {
         );
     }
 
+    if (!isCaregiver && showTemplateModal) {
+        return (
+            <FireDrillTemplateForm
+                branches={branches}
+                onClose={() => setShowTemplateModal(false)}
+                onCreated={() => {
+                    queryClient.invalidateQueries(['fire-drill-templates']);
+                    setShowTemplateModal(false);
+                }}
+            />
+        );
+    }
+
     return (
         <div>
             <SectionCard>
@@ -552,16 +565,6 @@ export default function FireDrills() {
                 />
             )}
 
-            {!isCaregiver && showTemplateModal && (
-                <FireDrillTemplateModal
-                    branches={branches}
-                    onClose={() => setShowTemplateModal(false)}
-                    onCreated={() => {
-                        queryClient.invalidateQueries(['fire-drill-templates']);
-                        setShowTemplateModal(false);
-                    }}
-                />
-            )}
 
             {!isCaregiver && showCreateFromTemplateModal && (
                 <CreateFromTemplateModal
@@ -800,140 +803,152 @@ function FireDrillForm({ record, branches, templates = [], isCaregiver, caregive
     );
 }
 
-function FireDrillTemplateModal({ branches, onClose, onCreated }) {
-    const [formData, setFormData] = useState({
-        branch_id: null,
-        name: '',
-        description: '',
-        frequency: 'monthly',
-        day_of_month: '',
-        scheduled_time: '10:00',
-        notes: '',
-    });
-    const [errors, setErrors] = useState({});
+function FireDrillTemplateForm({ branches, onClose, onCreated }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setErrors({});
+    const methods = useForm({
+        defaultValues: {
+            branch_id: null,
+            name: '',
+            description: '',
+            frequency: 'monthly',
+            day_of_month: '',
+            scheduled_time: '10:00',
+            notes: '',
+        },
+    });
+
+    const onSubmit = async (data) => {
         setIsSubmitting(true);
         try {
             await api.post('/fire-drill-templates', {
-                ...formData,
-                scheduled_time: `${formData.scheduled_time}:00`,
-                day_of_month: formData.day_of_month ? Number(formData.day_of_month) : null,
+                ...data,
+                branch_id: data.branch_id ? parseInt(data.branch_id) : null,
+                scheduled_time: `${data.scheduled_time}:00`,
+                day_of_month: data.day_of_month ? Number(data.day_of_month) : null,
             });
-            toast.success('Template created');
+            toast.success('Template created successfully');
             onCreated();
         } catch (error) {
-            setErrors(error?.response?.data?.errors || { general: [error?.response?.data?.message || 'Failed to save template'] });
+            const errorMessage = error?.response?.data?.message || 'Failed to save template';
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Create Fire Drill Template</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                        <X className="w-5 h-5" />
-                    </button>
+        <div className="space-y-6">
+            <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to fire drills
+                </button>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Create Template
+                </p>
+            </div>
+
+            <div className="rounded-3xl bg-white shadow-lg ring-1 ring-gray-100">
+                <div className="border-b border-gray-100 px-6 py-4 sm:px-8 sm:py-5">
+                    <h2 className="text-xl font-semibold text-gray-900">Create Fire Drill Template</h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Create a reusable template for scheduling fire drills.
+                    </p>
                 </div>
 
-                {errors.general && <p className="text-sm text-red-600 mb-2">{errors.general[0]}</p>}
+                <div className="px-6 py-6 sm:px-8 sm:py-8">
+                    <FormProvider {...methods}>
+                        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormInput
+                                    name="name"
+                                    label="Name"
+                                    placeholder="e.g., Monthly Fire Drill"
+                                    required
+                                />
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                                required
-                            />
-                            {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name[0]}</p>}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Branch *</label>
-                            <Select
-                                value={formData.branch_id?.toString() || ''}
-                                onValueChange={(value) => setFormData({ ...formData, branch_id: value ? Number(value) : null })}
-                                placeholder="Select Branch"
-                                options={branches.map(branch => ({ value: branch.id.toString(), label: branch.name }))}
-                                className="w-full"
-                            />
-                            {errors.branch_id && <p className="text-xs text-red-600 mt-1">{errors.branch_id[0]}</p>}
-                        </div>
-                    </div>
+                                <FormSelect
+                                    name="branch_id"
+                                    label="Branch"
+                                    placeholder="Select Branch"
+                                    required
+                                    options={branches.map(branch => ({
+                                        value: branch.id.toString(),
+                                        label: branch.name,
+                                    }))}
+                                />
+                            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
-                            <Select
-                                value={formData.frequency}
-                                onValueChange={(value) => setFormData({ ...formData, frequency: value })}
-                                options={[
-                                    { value: 'monthly', label: 'Monthly' },
-                                    { value: 'quarterly', label: 'Quarterly' },
-                                ]}
-                            />
-                            {errors.frequency && <p className="text-xs text-red-600 mt-1">{errors.frequency[0]}</p>}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Day of Month</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="31"
-                                value={formData.day_of_month}
-                                onChange={(e) => setFormData({ ...formData, day_of_month: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                                placeholder="e.g., 15"
-                            />
-                            {errors.day_of_month && <p className="text-xs text-red-600 mt-1">{errors.day_of_month[0]}</p>}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
-                            <input
-                                type="time"
-                                value={formData.scheduled_time}
-                                onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                                required
-                            />
-                            {errors.scheduled_time && <p className="text-xs text-red-600 mt-1">{errors.scheduled_time[0]}</p>}
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormSelect
+                                    name="frequency"
+                                    label="Frequency"
+                                    required
+                                    options={[
+                                        { value: 'monthly', label: 'Monthly' },
+                                        { value: 'quarterly', label: 'Quarterly' },
+                                    ]}
+                                />
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                        <textarea
-                            value={formData.notes}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                            placeholder="Guidelines, assembly points, etc."
-                        />
-                        {errors.notes && <p className="text-xs text-red-600 mt-1">{errors.notes[0]}</p>}
-                    </div>
+                                <FormInput
+                                    name="day_of_month"
+                                    label="Day of Month"
+                                    type="number"
+                                    min={1}
+                                    max={31}
+                                    placeholder="e.g., 15"
+                                />
 
-                    <div className="flex items-center justify-end gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] disabled:opacity-50"
-                        >
-                            {isSubmitting ? 'Saving...' : 'Save Template'}
-                        </button>
-                    </div>
-                </form>
+                                <FormInput
+                                    name="scheduled_time"
+                                    label="Time"
+                                    type="time"
+                                    required
+                                />
+                            </div>
+
+                            <FormTextarea
+                                name="notes"
+                                label="Notes"
+                                placeholder="Guidelines, assembly points, etc."
+                                rows={4}
+                            />
+
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{ backgroundColor: 'var(--theme-primary)' }}
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="h-4 w-4" />
+                                            Save Template
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </FormProvider>
+                </div>
             </div>
         </div>
     );
