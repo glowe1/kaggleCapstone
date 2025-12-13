@@ -844,6 +844,9 @@ export default function Dashboard() {
                             ))}
                         </div>
 
+                        {/* Today's Schedule - Timeline View */}
+                        <TodaysSchedule />
+
                         {/* Upcoming Events from All Modules */}
                         <UpcomingEventsWidget limit={15} />
 
