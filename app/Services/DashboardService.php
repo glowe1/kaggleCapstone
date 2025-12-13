@@ -731,6 +731,9 @@ class DashboardService
             'user_has_branch_id' => (bool)($user->assigned_branch_id ?? false),
             'has_branch_based_filtering' => (bool)($branchId && $facilityBranchIds && !empty($facilityBranchIds)),
             'has_valid_context' => $hasValidContext,
+            'debug_user_id' => $user->id,
+            'debug_facility_id' => $user->facility_id,
+            'debug_branch_id' => $user->assigned_branch_id,
         ];
     }
 

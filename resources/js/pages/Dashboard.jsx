@@ -16,8 +16,8 @@ import {
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import { hexToRgb, addOpacity } from '../utils/colorUtils';
-import { 
-    Users, Calendar, Activity, UserCheck, ClipboardList, AlertCircle, 
+import {
+    Users, Calendar, Activity, UserCheck, ClipboardList, AlertCircle,
     TrendingUp, Clock, CheckCircle, FileText, Heart, Pill, Moon,
     ArrowRight, Sparkles, MoreVertical, Flame, Zap, BarChart3,
     Building2, Stethoscope, TrendingDown, ArrowUp, ArrowDown,
@@ -55,7 +55,7 @@ function ResidentVitalsChart({ data }) {
     const { primary, secondary } = useTheme();
     const primaryRgb = hexToRgb(primary || '#25603E');
     const tooltipBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.9)` : 'rgba(37, 96, 62, 0.9)';
-    
+
     const chartData = {
         labels: data?.map(item => item.day) || [],
         datasets: [
@@ -119,7 +119,7 @@ function ResidentVitalsChart({ data }) {
                 borderColor: primary || '#25603E',
                 borderWidth: 1,
                 callbacks: {
-                    label: function(context) {
+                    label: function (context) {
                         return `${context.dataset.label}: ${context.parsed.y}`;
                     }
                 }
@@ -219,7 +219,7 @@ function ResidentVitalsTrendSection({ residents, defaultTrend }) {
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    
+
     // Fetch current user
     const { data: currentUser } = useQuery({
         queryKey: ['current-user'],
@@ -240,7 +240,7 @@ export default function Dashboard() {
             navigate('/super-admin/dashboard', { replace: true });
         }
     }, [currentUser, navigate]);
-    
+
     const { data: stats, isLoading, error } = useQuery({
         queryKey: ['dashboard-stats'],
         queryFn: async () => {
@@ -319,7 +319,7 @@ export default function Dashboard() {
                     api.get('/pharmacy/inventory?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                     api.get('/billing/expenses?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                 ]);
-                
+
                 return {
                     assessments: assessmentsRes.data?.meta?.total || assessmentsRes.data?.total || 0,
                     sleep: sleepRes.data?.meta?.total || sleepRes.data?.total || 0,
@@ -412,7 +412,7 @@ export default function Dashboard() {
 
     const currentHour = new Date().getHours();
     const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
-    
+
     // Define stat cards based on user type with gradients and modern styling
     // Ensure values are numbers
     const statCards = isCaregiver ? [
@@ -554,7 +554,7 @@ export default function Dashboard() {
     // Build actionable items from stats
     const actionableItems = useMemo(() => {
         const items = [];
-        
+
         // Pending assessments
         if (stats?.pending_assessments > 0) {
             items.push({
@@ -611,7 +611,7 @@ export default function Dashboard() {
         if (stats?.medication_reminders && stats.medication_reminders.length > 0) {
             const now = new Date();
             const next30Minutes = new Date(now.getTime() + 30 * 60 * 1000);
-            
+
             const dueSoon = stats.medication_reminders.filter(m => {
                 if (!m.due_at && !m.due_time) return false;
                 try {
@@ -624,16 +624,16 @@ export default function Dashboard() {
                         const today = new Date().toISOString().split('T')[0];
                         dueDate = new Date(`${today}T${m.due_time}`);
                     }
-                    
+
                     if (!dueDate || isNaN(dueDate.getTime())) return false;
-                    
+
                     // Check if due within next 30 minutes
                     return dueDate >= now && dueDate <= next30Minutes;
                 } catch (error) {
                     return false;
                 }
             });
-            
+
             if (dueSoon.length > 0) {
                 const residentCount = new Set(dueSoon.map(m => m.resident_name || m.resident_id)).size;
                 items.push({
@@ -683,7 +683,7 @@ export default function Dashboard() {
     // Build upcoming tasks
     const upcomingTasks = useMemo(() => {
         const tasks = [];
-        
+
         // Today's appointments
         const todayAppts = isCaregiver ? stats?.todays_appointments : stats?.today_appointments;
         if (todayAppts > 0) {
@@ -702,7 +702,7 @@ export default function Dashboard() {
                 if (!drill.scheduled_date) return;
                 try {
                     const timeStr = drill.scheduled_time || '10:00:00';
-                    const dateStr = drill.scheduled_date instanceof Date 
+                    const dateStr = drill.scheduled_date instanceof Date
                         ? drill.scheduled_date.toISOString().split('T')[0]
                         : drill.scheduled_date;
                     const drillDateTime = new Date(`${dateStr}T${timeStr}`);
@@ -739,7 +739,7 @@ export default function Dashboard() {
     // Build alerts
     const alerts = useMemo(() => {
         const alertList = [];
-        
+
         if (stats?.facility_context_missing) {
             alertList.push({
                 id: 'facility-context-missing',
@@ -783,76 +783,79 @@ export default function Dashboard() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 <div className="space-y-6">
                     {error && (
-                    <div className="bg-white rounded-xl shadow-sm border-l-4 border-amber-500 p-4">
-                        <div className="flex items-center space-x-3">
-                            <AlertCircle className="w-5 h-5 text-amber-600" />
-                            <p className="text-amber-800 text-sm">
-                                Note: API connection failed. Showing default values. Please check authentication.
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {!isLoading && stats && stats.facility_context_missing && (
-                    <div className="bg-yellow-50 rounded-xl shadow-sm border-l-4 border-yellow-500 p-4">
-                        <div className="flex items-center space-x-3">
-                            <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                            <div>
-                                <p className="text-yellow-800 text-sm font-medium">
-                                    Facility context missing
-                                </p>
-                                <p className="text-yellow-700 text-xs mt-1">
-                                    Dashboard stats may be incomplete. Please ensure your user account has a facility assigned.
+                        <div className="bg-white rounded-xl shadow-sm border-l-4 border-amber-500 p-4">
+                            <div className="flex items-center space-x-3">
+                                <AlertCircle className="w-5 h-5 text-amber-600" />
+                                <p className="text-amber-800 text-sm">
+                                    Note: API connection failed. Showing default values. Please check authentication.
                                 </p>
                             </div>
                         </div>
-                    </div>
-                )}
-                
-                {isLoading && (
-                    <DashboardSkeleton />
-                )}
-                
-                {!isLoading && (
-                    <>
-                        {/* Minimal Welcome Header */}
-                        <div className="bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-primary-dark)] rounded-xl shadow-sm p-6 text-white">
-                            <h1 className="text-2xl font-bold mb-1">
-                                {greeting}, {currentUser?.first_name || currentUser?.name || 'User'} 👋
-                            </h1>
-                            <p className="text-white/90 text-sm">
-                                {isCaregiver ? 'Welcome to your Care Dashboard' : 'Managing care with compassion and excellence'}
-                            </p>
+                    )}
+
+                    {!isLoading && stats && stats.facility_context_missing && (
+                        <div className="bg-yellow-50 rounded-xl shadow-sm border-l-4 border-yellow-500 p-4">
+                            <div className="flex items-center space-x-3">
+                                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-yellow-800">Facility Context Missing</h3>
+                                    <div className="mt-1 text-sm text-yellow-700">
+                                        <p>Dashboard stats may be incomplete. Please ensure your user account has a facility assigned.</p>
+                                        <p className="mt-1 text-xs font-mono">
+                                            Debug: UserID: {stats.debug_user_id || 'N/A'} |
+                                            FacID: {stats.debug_facility_id || 'N/A'} |
+                                            BranchID: {stats.debug_branch_id || 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    )}
 
-                        {/* Actionable Items Section - Most Important, Show First */}
-                        {actionableItems.length > 0 && (
-                            <ActionableItemsSection 
-                                items={actionableItems}
-                                onItemClick={(item) => item.link && navigate(item.link)}
-                            />
-                        )}
+                    {isLoading && (
+                        <DashboardSkeleton />
+                    )}
 
-                        {/* Key Stat Cards - Primary Metrics */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {statCards.map((card, index) => (
-                                <StatCard
-                                    key={index}
-                                    {...card}
-                                    onClick={() => card.link && navigate(card.link)}
+                    {!isLoading && (
+                        <>
+                            {/* Minimal Welcome Header */}
+                            <div className="bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-primary-dark)] rounded-xl shadow-sm p-6 text-white">
+                                <h1 className="text-2xl font-bold mb-1">
+                                    {greeting}, {currentUser?.first_name || currentUser?.name || 'User'} 👋
+                                </h1>
+                                <p className="text-white/90 text-sm">
+                                    {isCaregiver ? 'Welcome to your Care Dashboard' : 'Managing care with compassion and excellence'}
+                                </p>
+                            </div>
+
+                            {/* Actionable Items Section - Most Important, Show First */}
+                            {actionableItems.length > 0 && (
+                                <ActionableItemsSection
+                                    items={actionableItems}
+                                    onItemClick={(item) => item.link && navigate(item.link)}
                                 />
-                            ))}
-                        </div>
+                            )}
 
-                        {/* Today's Schedule - Timeline View */}
-                        <TodaysSchedule />
+                            {/* Key Stat Cards - Primary Metrics */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {statCards.map((card, index) => (
+                                    <StatCard
+                                        key={index}
+                                        {...card}
+                                        onClick={() => card.link && navigate(card.link)}
+                                    />
+                                ))}
+                            </div>
 
-                        {/* Upcoming Events from All Modules */}
-                        <UpcomingEventsWidget limit={15} />
+                            {/* Today's Schedule - Timeline View */}
+                            <TodaysSchedule />
 
-                        {/* Upcoming Fire Drills Widget - Important Safety Item */}
-                        {upcomingFireDrills?.data && upcomingFireDrills.data.length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                            {/* Upcoming Events from All Modules */}
+                            <UpcomingEventsWidget limit={15} />
+
+                            {/* Upcoming Fire Drills Widget - Important Safety Item */}
+                            {upcomingFireDrills?.data && upcomingFireDrills.data.length > 0 && (
+                                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                                     <div className="px-6 py-4 border-b border-gray-200">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
@@ -885,11 +888,11 @@ export default function Dashboard() {
                                                 tomorrow.setDate(tomorrow.getDate() + 1);
                                                 const isToday = drillDate.toDateString() === today.toDateString();
                                                 const isTomorrow = drillDate.toDateString() === tomorrow.toDateString();
-                                                
+
                                                 let urgencyColor = 'text-gray-600';
                                                 let urgencyBg = 'bg-gray-50';
                                                 let urgencyText = '';
-                                                
+
                                                 if (isToday) {
                                                     urgencyColor = 'text-red-600';
                                                     urgencyBg = 'bg-red-50';
@@ -916,8 +919,8 @@ export default function Dashboard() {
                                                 }
 
                                                 return (
-                                                    <div 
-                                                        key={drill.id} 
+                                                    <div
+                                                        key={drill.id}
                                                         className={`flex items-center justify-between p-3 ${urgencyBg} rounded-xl hover:opacity-90 transition-colors cursor-pointer`}
                                                         onClick={() => navigate('/fire-drills')}
                                                     >
@@ -944,102 +947,102 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                 </div>
-                        )}
+                            )}
 
-                        {/* Trends Chart for Admins - Analytics Section */}
-                        {!isCaregiver && trendsData && (
-                            <TrendsChartWidget data={trendsData} />
-                        )}
+                            {/* Trends Chart for Admins - Analytics Section */}
+                            {!isCaregiver && trendsData && (
+                                <TrendsChartWidget data={trendsData} />
+                            )}
 
-                        {/* Resident Vitals Trend Chart - Only for Caregivers */}
-                        {isCaregiver && stats?.resident_list && stats.resident_list.length > 0 && (
-                            <ResidentVitalsTrendSection 
-                                residents={stats.resident_list}
-                                defaultTrend={stats.resident_vitals_trend}
-                            />
-                        )}
+                            {/* Resident Vitals Trend Chart - Only for Caregivers */}
+                            {isCaregiver && stats?.resident_list && stats.resident_list.length > 0 && (
+                                <ResidentVitalsTrendSection
+                                    residents={stats.resident_list}
+                                    defaultTrend={stats.resident_vitals_trend}
+                                />
+                            )}
 
-                        {/* Modules Overview for Admins - Navigation Section */}
-                        {!isCaregiver && (
-                            <ModulesOverview 
-                                stats={stats}
-                                moduleStats={moduleStats}
-                                navigate={navigate}
-                            />
-                        )}
+                            {/* Modules Overview for Admins - Navigation Section */}
+                            {!isCaregiver && (
+                                <ModulesOverview
+                                    stats={stats}
+                                    moduleStats={moduleStats}
+                                    navigate={navigate}
+                                />
+                            )}
 
-                        {/* Key Insights Section - Moved from Sidebar */}
-                        {!isCaregiver && stats && (
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-200">
-                                    <div className="flex items-center gap-2">
-                                        <TrendingUp className="w-5 h-5 text-[var(--theme-primary)]" />
-                                        <h2 className="text-lg font-bold text-[var(--theme-primary)]">Key Insights</h2>
+                            {/* Key Insights Section - Moved from Sidebar */}
+                            {!isCaregiver && stats && (
+                                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-gray-200">
+                                        <div className="flex items-center gap-2">
+                                            <TrendingUp className="w-5 h-5 text-[var(--theme-primary)]" />
+                                            <h2 className="text-lg font-bold text-[var(--theme-primary)]">Key Insights</h2>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">Performance metrics and analytics</p>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1">Performance metrics and analytics</p>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                                        <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                                            <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
-                                                <Users className="w-5 h-5" />
+                                    <div className="p-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
+                                                <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
+                                                    <Users className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-600">Occupancy Rate</p>
+                                                    <p className="text-lg font-semibold text-gray-900">
+                                                        {(stats.occupancy_rate ?? 0).toFixed(1)}%
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-gray-600">Occupancy Rate</p>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    {(stats.occupancy_rate ?? 0).toFixed(1)}%
-                                                </p>
+                                            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
+                                                <div className="bg-green-50 text-green-600 p-2 rounded-lg">
+                                                    <ClipboardList className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-600">Compliance Score</p>
+                                                    <p className="text-lg font-semibold text-gray-900">
+                                                        {(stats.compliance_score ?? 0).toFixed(1)}%
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                                            <div className="bg-green-50 text-green-600 p-2 rounded-lg">
-                                                <ClipboardList className="w-5 h-5" />
+                                            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
+                                                <div className="bg-purple-50 text-purple-600 p-2 rounded-lg">
+                                                    <Pill className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-600">Medication Adherence</p>
+                                                    <p className="text-lg font-semibold text-gray-900">
+                                                        {(stats.medication_adherence_rate ?? 0).toFixed(1)}%
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-gray-600">Compliance Score</p>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    {(stats.compliance_score ?? 0).toFixed(1)}%
-                                                </p>
+                                            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
+                                                <div className="bg-orange-50 text-orange-600 p-2 rounded-lg">
+                                                    <Clock className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-600">Avg Response Time</p>
+                                                    <p className="text-lg font-semibold text-gray-900">
+                                                        {(stats.average_incident_response_time ?? 0).toFixed(1)} hrs
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                                            <div className="bg-purple-50 text-purple-600 p-2 rounded-lg">
-                                                <Pill className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-600">Medication Adherence</p>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    {(stats.medication_adherence_rate ?? 0).toFixed(1)}%
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                                            <div className="bg-orange-50 text-orange-600 p-2 rounded-lg">
-                                                <Clock className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-600">Avg Response Time</p>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    {(stats.average_incident_response_time ?? 0).toFixed(1)} hrs
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                                            <div className="bg-indigo-50 text-indigo-600 p-2 rounded-lg">
-                                                <UserCheck className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-600">Staff Count</p>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    {stats.staff_utilization ?? 0}
-                                                </p>
+                                            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
+                                                <div className="bg-indigo-50 text-indigo-600 p-2 rounded-lg">
+                                                    <UserCheck className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-600">Staff Count</p>
+                                                    <p className="text-lg font-semibold text-gray-900">
+                                                        {stats.staff_utilization ?? 0}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -1219,7 +1222,7 @@ function ModulesOverview({ stats, moduleStats, navigate }) {
 // Trends Chart Widget for Admins
 function TrendsChartWidget({ data }) {
     const { primary, secondary } = useTheme();
-    
+
     if (!data || !data.labels || data.labels.length === 0) {
         return null;
     }
@@ -1228,14 +1231,14 @@ function TrendsChartWidget({ data }) {
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary').trim() || primary || '#1E3A5F';
     const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-secondary').trim() || secondary || '#86EFAC';
     const primaryLight = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary-light').trim() || '#2E5A8F';
-    
+
     // Convert hex to rgb for chart.js (using imported function)
     const primaryRgb = hexToRgb(primaryColor);
     const secondaryRgb = hexToRgb(secondaryColor);
     const primaryLightRgb = hexToRgb(primaryLight);
-    
+
     const tooltipBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.9)` : 'rgba(37, 96, 62, 0.9)';
-    
+
     const chartData = {
         labels: data.labels || [],
         datasets: [
@@ -1317,7 +1320,7 @@ function StatCardsGrid({ statCards, isCaregiver, onCardClick }) {
     });
 
     return (
-        <div 
+        <div
             ref={containerRef}
             className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8`}
         >
@@ -1344,7 +1347,7 @@ function StatCardsGrid({ statCards, isCaregiver, onCardClick }) {
                     >
                         {/* Gradient decoration */}
                         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.gradient}`}></div>
-                        
+
                         {/* Content - Data-dense layout */}
                         <div className="p-4 sm:p-6">
                             <div className="flex items-start justify-between mb-3 sm:mb-4">
@@ -1360,7 +1363,7 @@ function StatCardsGrid({ statCards, isCaregiver, onCardClick }) {
                                         )}
                                     </div>
                                     <div className="flex items-baseline space-x-2">
-                                        <p 
+                                        <p
                                             ref={valueRef}
                                             className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--theme-primary)]"
                                         >
@@ -1385,7 +1388,7 @@ function StatCardsGrid({ statCards, isCaregiver, onCardClick }) {
                                     </div>
                                 </Tooltip>
                             </div>
-                            
+
                             {/* Hover effect */}
                             {card.link && (
                                 <div className="flex items-center text-[var(--theme-primary)] text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
