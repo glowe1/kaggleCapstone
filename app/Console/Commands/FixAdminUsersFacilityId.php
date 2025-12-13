@@ -37,16 +37,18 @@ class FixAdminUsersFacilityId extends Command
             return 1;
         }
 
-        // Get all admin/administrator users without facility_id but with assigned_branch_id
+        // Get all admin/administrator users without facility_id
         $adminUsers = User::whereIn('role', ['admin', 'administrator'])
             ->whereNull('facility_id')
-            ->whereNotNull('assigned_branch_id')
             ->get();
 
         if ($adminUsers->isEmpty()) {
-            $this->info('✅ No admin users need fixing - all have facility_id or no assigned_branch_id');
+            $this->info('✅ No admin users need fixing - all have facility_id');
             return 0;
         }
+
+        $this->info("📋 Found {$adminUsers->count()} admin user(s) without facility_id:");
+        $this->line('');
 
         $this->info("📋 Found {$adminUsers->count()} admin user(s) that need fixing:");
         $this->line('');
@@ -55,24 +57,70 @@ class FixAdminUsersFacilityId extends Command
         $failed = 0;
 
         foreach ($adminUsers as $user) {
-            $branch = Branch::find($user->assigned_branch_id);
+            $facilityId = null;
+            $method = '';
             
-            if ($branch && $branch->facility_id) {
-                $user->facility_id = $branch->facility_id;
+            // Method 1: Try assigned_branch_id
+            if ($user->assigned_branch_id) {
+                $branch = Branch::find($user->assigned_branch_id);
+                if ($branch && $branch->facility_id) {
+                    $facilityId = $branch->facility_id;
+                    $method = "assigned_branch_id → branch → facility_id";
+                }
+            }
+            
+            // Method 2: Try to find from residents created by this user
+            if (!$facilityId) {
+                $resident = \App\Models\Resident::where('created_by', $user->id)
+                    ->whereNotNull('facility_id')
+                    ->first();
+                
+                if ($resident && $resident->facility_id) {
+                    $facilityId = $resident->facility_id;
+                    $method = "residents created by user → facility_id";
+                }
+            }
+            
+            // Method 3: Try to find from residents' branches created by this user
+            if (!$facilityId) {
+                $resident = \App\Models\Resident::where('created_by', $user->id)
+                    ->whereNotNull('branch_id')
+                    ->with('branch')
+                    ->first();
+                
+                if ($resident && $resident->branch && $resident->branch->facility_id) {
+                    $facilityId = $resident->branch->facility_id;
+                    $method = "residents created by user → branch → facility_id";
+                }
+            }
+            
+            // Method 4: Try to find from any facility (if only one exists)
+            if (!$facilityId) {
+                $facilityCount = \App\Models\Facility::count();
+                if ($facilityCount === 1) {
+                    $facility = \App\Models\Facility::first();
+                    if ($facility) {
+                        $facilityId = $facility->id;
+                        $method = "only facility in system";
+                    }
+                }
+            }
+            
+            if ($facilityId) {
+                $user->facility_id = $facilityId;
                 $user->save();
                 
                 $this->line("✅ Fixed user: {$user->email} (ID: {$user->id})");
-                $this->line("   - Branch: {$branch->name} (ID: {$branch->id})");
-                $this->line("   - Facility ID set to: {$branch->facility_id}");
+                $this->line("   - Method: {$method}");
+                $this->line("   - Facility ID set to: {$facilityId}");
                 $this->line('');
                 $fixed++;
             } else {
                 $this->warn("⚠️  Cannot fix user: {$user->email} (ID: {$user->id})");
-                if (!$branch) {
-                    $this->line("   - Branch ID {$user->assigned_branch_id} not found");
-                } else {
-                    $this->line("   - Branch '{$branch->name}' has no facility_id");
-                }
+                $this->line("   - No assigned_branch_id");
+                $this->line("   - No residents created by this user");
+                $this->line("   - Multiple facilities exist (cannot auto-assign)");
+                $this->line("   - ACTION REQUIRED: Manually assign this user to a branch or facility");
                 $this->line('');
                 $failed++;
             }
