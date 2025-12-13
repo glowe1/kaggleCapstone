@@ -18,6 +18,9 @@ class DashboardController extends BaseApiController
     {
         $user = auth()->user();
         
+        // Refresh user model to ensure we have latest facility_id and assigned_branch_id
+        $user->refresh();
+        
         // Check if cache should be cleared (for debugging/admin use)
         if (request()->has('clear_cache') && ($user->role === 'super_admin' || $user->role === 'administrator')) {
             $this->dashboardService->clearCacheForUser($user);
