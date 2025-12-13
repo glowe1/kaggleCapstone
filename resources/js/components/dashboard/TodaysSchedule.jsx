@@ -108,23 +108,23 @@ export default function TodaysSchedule() {
                             >
                                 {/* Time indicator */}
                                 <div className="relative z-10 flex-shrink-0">
-                                    <div className="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold text-sm shadow-md group-hover:bg-purple-700 transition-colors">
-                                        {event.time_short}
+                                    <div className="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold text-xs shadow-md group-hover:bg-purple-700 transition-colors">
+                                        {event.time_short || event.time || 'N/A'}
                                     </div>
                                 </div>
 
                                 {/* Event content */}
                                 <div className="flex-1 min-w-0 pt-1 pb-4 border-b border-gray-100 last:border-b-0">
-                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                    <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
-                                                {event.title}
+                                            <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors truncate">
+                                                {event.title || 'Untitled Event'}
                                             </h3>
                                             <p className="text-sm text-gray-600 mb-2">
-                                                {event.resident_name}
+                                                {event.resident_name || 'No resident'}
                                             </p>
-                                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                {event.time && (
+                                            <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
+                                                {event.time && event.time !== 'Anytime' && (
                                                     <div className="flex items-center gap-1">
                                                         <Clock className="w-3.5 h-3.5" />
                                                         <span>{event.time}</span>
@@ -133,15 +133,17 @@ export default function TodaysSchedule() {
                                                 {event.location && (
                                                     <div className="flex items-center gap-1">
                                                         <MapPin className="w-3.5 h-3.5" />
-                                                        <span>{event.location}</span>
+                                                        <span className="truncate max-w-[200px]">{event.location}</span>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                         {/* Category tag */}
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getCategoryStyles(event.category_color)}`}>
-                                            {event.category}
-                                        </span>
+                                        {event.category && (
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getCategoryStyles(event.category_color || 'blue')}`}>
+                                                {event.category}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
