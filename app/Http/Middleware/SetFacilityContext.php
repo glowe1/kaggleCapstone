@@ -53,11 +53,19 @@ class SetFacilityContext
                 if ($facility && $user->facility_id !== $facility->id) {
                     abort(403, 'You do not have access to this facility.');
                 }
-            } else {
-                // Use user's facility_id for path-based routing (cache the relationship)
+            }
+            
+            // If no facility found from subdomain (or no subdomain), try user's facility_id then branch
+            if (!$facility) {
                 if ($user->facility_id) {
                     $facility = Cache::remember("facility.{$user->facility_id}", 3600, function () use ($user) {
                         return $user->facility;
+                    });
+                } elseif ($user->assigned_branch_id) {
+                    // Fallback: Try to get facility from assigned branch
+                    $facility = Cache::remember("facility.branch.{$user->assigned_branch_id}", 3600, function () use ($user) {
+                        $branch = \App\Models\Branch::find($user->assigned_branch_id);
+                        return $branch ? $branch->facility : null;
                     });
                 }
             }
