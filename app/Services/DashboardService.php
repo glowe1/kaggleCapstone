@@ -950,6 +950,93 @@ class DashboardService
     }
 
     /**
+     * Get today's schedule (appointments for today)
+     */
+    public function getTodaysSchedule(?User $user = null): array
+    {
+        $user = $user ?? auth()->user();
+        $isCaregiver = UserRoles::isCaregiverRole($user->role);
+        
+        $query = Appointment::withoutGlobalScopes()
+            ->with(['resident', 'appointmentType', 'branch'])
+            ->whereDate('appointment_date', today())
+            ->whereNotIn('status', ['cancelled', 'completed']);
+        
+        // Apply facility/branch filtering
+        if ($isCaregiver && $user->assigned_branch_id) {
+            $query->whereHas('resident', function ($q) use ($user) {
+                $q->where('branch_id', $user->assigned_branch_id)->where('is_active', true);
+            });
+        } else {
+            // For admins, filter by facility
+            $facility = $this->getCurrentFacility($user);
+            $facilityId = $facility ? $facility->id : null;
+            
+            if ($facilityId) {
+                $query->whereHas('resident.branch', function ($q) use ($facilityId) {
+                    $q->where('facility_id', $facilityId);
+                })->whereHas('resident', function ($q) {
+                    $q->where('is_active', true);
+                });
+            } else {
+                // If no facility, only show active residents
+                $query->whereHas('resident', function ($q) {
+                    $q->where('is_active', true);
+                });
+            }
+        }
+        
+        return $query->orderBy('appointment_time')
+            ->limit(50) // Limit to prevent too many results
+            ->get()
+            ->map(function ($appointment) {
+                $residentName = 'Unknown';
+                if ($appointment->resident) {
+                    $name = trim(($appointment->resident->first_name ?? '') . ' ' . ($appointment->resident->last_name ?? ''));
+                    $residentName = !empty($name) ? $name : ($appointment->resident->name ?? 'Unknown');
+                }
+                
+                // Determine category/type
+                $category = 'Appointment';
+                $categoryColor = 'blue';
+                $appointmentType = $appointment->appointmentType?->name ?? $appointment->description ?? 'Appointment';
+                if (stripos($appointmentType, 'therapy') !== false || stripos($appointmentType, 'physical') !== false) {
+                    $category = 'Therapy';
+                    $categoryColor = 'purple';
+                } elseif (stripos($appointmentType, 'review') !== false || stripos($appointmentType, 'medication') !== false) {
+                    $category = 'Review';
+                    $categoryColor = 'green';
+                } elseif (stripos($appointmentType, 'visit') !== false || stripos($appointmentType, 'family') !== false) {
+                    $category = 'Visit';
+                    $categoryColor = 'pink';
+                }
+                
+                $time = $appointment->appointment_time
+                    ? Carbon::parse($appointment->appointment_time)->format('g:i A')
+                    : 'TBD';
+                
+                $timeShort = $appointment->appointment_time
+                    ? Carbon::parse($appointment->appointment_time)->format('g A')
+                    : 'TBD';
+                
+                return [
+                    'id' => $appointment->id,
+                    'title' => $appointmentType,
+                    'resident_name' => $residentName,
+                    'time' => $time,
+                    'time_short' => $timeShort,
+                    'time_24h' => $appointment->appointment_time ? Carbon::parse($appointment->appointment_time)->format('H:i') : null,
+                    'location' => $appointment->location ?? ($appointment->resident->room_number ?? 'Consultation Room'),
+                    'room' => $appointment->resident->room_number ?? null,
+                    'category' => $category,
+                    'category_color' => $categoryColor,
+                    'status' => $appointment->status ?? 'scheduled',
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
      * Get admin upcoming appointments
      */
     private function getAdminUpcomingAppointments(): array
