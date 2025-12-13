@@ -251,7 +251,7 @@ export default function CaregiverDashboard({
                             <QuickAction
                                 label="New Incident"
                                 icon={AlertCircle}
-                                onClick={() => navigate('/incidents/create')}
+                                onClick={() => navigate('/incidents')}
                                 color="bg-orange-50 text-orange-600 hover:bg-orange-100"
                             />
                             <QuickAction
@@ -263,7 +263,7 @@ export default function CaregiverDashboard({
                             <QuickAction
                                 label="Daily Notes"
                                 icon={FileText}
-                                onClick={() => navigate('/notes')}
+                                onClick={() => navigate('/t-logs')}
                                 color="bg-blue-50 text-blue-600 hover:bg-blue-100"
                             />
                         </div>

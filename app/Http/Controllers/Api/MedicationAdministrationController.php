@@ -31,7 +31,7 @@ class MedicationAdministrationController extends BaseApiController
         
         // Clone query for different aggregations to avoid modifying the base query
         $total = (clone $query)->count();
-        $administered = (clone $query)->where('status', 'administered')->count();
+        $administered = (clone $query)->where('status', 'completed')->count();
         $missed = (clone $query)->where('status', 'missed')->count();
         $refused = (clone $query)->where('status', 'refused')->count();
         
@@ -64,7 +64,7 @@ class MedicationAdministrationController extends BaseApiController
             $chartData[] = [
                 'date' => $dateStr,
                 'day' => $current->format('D'), // Mon, Tue, etc.
-                'administered' => $dayData->where('status', 'administered')->sum('count'),
+                'administered' => $dayData->where('status', 'completed')->sum('count'),
                 'missed' => $dayData->where('status', 'missed')->sum('count'),
                 'refused' => $dayData->where('status', 'refused')->sum('count'),
             ];
