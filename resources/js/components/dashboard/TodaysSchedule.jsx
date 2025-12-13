@@ -108,7 +108,7 @@ export default function TodaysSchedule() {
                             >
                                 {/* Time indicator */}
                                 <div className="relative z-10 flex-shrink-0">
-                                    <div className="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold text-xs shadow-md group-hover:bg-purple-700 transition-colors">
+                                    <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-xs shadow-md group-hover:bg-blue-700 transition-colors">
                                         {event.time_short || event.time || 'N/A'}
                                     </div>
                                 </div>
@@ -117,7 +117,7 @@ export default function TodaysSchedule() {
                                 <div className="flex-1 min-w-0 pt-1 pb-4 border-b border-gray-100 last:border-b-0">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors truncate">
+                                            <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors truncate">
                                                 {event.title || 'Untitled Event'}
                                             </h3>
                                             <p className="text-sm text-gray-600 mb-2">

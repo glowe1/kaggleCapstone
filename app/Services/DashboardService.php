@@ -1613,14 +1613,15 @@ class DashboardService
                 ->each(function ($resident) use (&$schedule) {
                     $name = trim(($resident->first_name ?? '') . ' ' . ($resident->last_name ?? ''));
                     $residentName = !empty($name) ? $name : ($resident->name ?? 'Unknown');
+                    // Use a default morning time (9:00 AM) for vitals so they appear in timeline
                     $schedule[] = [
                         'id' => 'vitals_resident_' . $resident->id,
                         'type' => 'vitals',
                         'title' => 'Record Vitals',
                         'resident_name' => $residentName,
-                        'time' => 'Anytime',
-                        'time_24h' => '00:00',
-                        'time_short' => 'Anytime',
+                        'time' => '9:00 AM',
+                        'time_24h' => '09:00',
+                        'time_short' => '9:00 AM',
                         'location' => $resident->room_number ?? $resident->room ?? 'N/A',
                         'category' => 'Vitals',
                         'category_color' => 'green',
@@ -1687,7 +1688,7 @@ class DashboardService
                             'time_short' => $time,
                             'location' => $medication->resident->room_number ?? $medication->resident->room ?? 'N/A',
                             'category' => 'Medication',
-                            'category_color' => 'purple',
+                            'category_color' => 'blue',
                             'link' => '/medications',
                         ];
                     }
