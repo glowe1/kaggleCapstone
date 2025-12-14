@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Mail, Send } from 'lucide-react';
+import { Mail, Send, Info } from 'lucide-react';
 import api from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
 
@@ -34,6 +34,8 @@ export default function EmailSettings() {
     },
   });
 
+  const [mailDriver, setMailDriver] = useState(settings?.mail_driver?.value || 'smtp');
+
   const defaultValues = useMemo(
     () => ({
       mail_driver: settings?.mail_driver?.value || 'smtp',
@@ -44,27 +46,46 @@ export default function EmailSettings() {
       mail_encryption: settings?.mail_encryption?.value || 'tls',
       mail_from_address: settings?.mail_from_address?.value || '',
       mail_from_name: settings?.mail_from_name?.value || '',
+      ses_region: settings?.ses_region?.value || '',
+      ses_configuration_set: settings?.ses_configuration_set?.value || '',
       test_recipient: settings?.test_recipient?.value || '',
     }),
     [settings]
   );
 
+  // Update mailDriver state when settings load
+  React.useEffect(() => {
+    if (settings?.mail_driver?.value) {
+      setMailDriver(settings.mail_driver.value);
+    }
+  }, [settings]);
+
+  const isSESDriver = mailDriver === 'ses' || mailDriver === 'ses-v2';
+
   const saveMutation = useMutation({
     mutationFn: async (values) => {
+      const isSES = values.mail_driver === 'ses' || values.mail_driver === 'ses-v2';
       const payload = {
         settings: {
           mail_driver: { value: values.mail_driver, type: 'string' },
-          mail_host: { value: values.mail_host, type: 'string' },
-          mail_port: { value: values.mail_port, type: 'integer' },
-          mail_username: { value: values.mail_username, type: 'string' },
-          // Only send password if filled, to avoid overwriting with empty
-          ...(values.mail_password
-            ? { mail_password: { value: values.mail_password, type: 'string' } }
-            : {}),
-          mail_encryption: { value: values.mail_encryption, type: 'string' },
           mail_from_address: { value: values.mail_from_address, type: 'string' },
           mail_from_name: { value: values.mail_from_name, type: 'string' },
           test_recipient: { value: values.test_recipient, type: 'string' },
+          // SMTP-specific fields
+          ...(!isSES && {
+            mail_host: { value: values.mail_host, type: 'string' },
+            mail_port: { value: values.mail_port, type: 'integer' },
+            mail_username: { value: values.mail_username, type: 'string' },
+            mail_encryption: { value: values.mail_encryption, type: 'string' },
+            ...(values.mail_password
+              ? { mail_password: { value: values.mail_password, type: 'string' } }
+              : {}),
+          }),
+          // SES-specific fields
+          ...(isSES && {
+            ses_region: { value: values.ses_region || null, type: 'string' },
+            ses_configuration_set: { value: values.ses_configuration_set || null, type: 'string' },
+          }),
         },
       };
 
@@ -83,12 +104,39 @@ export default function EmailSettings() {
     },
   });
 
+  const testEmailMutation = useMutation({
+    mutationFn: async (recipient) => {
+      const response = await api.post(`/facilities/${facilityId}/settings/email/test`, {
+        recipient,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.showToast(`Test email sent successfully to ${data.recipient}`, 'success');
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.message || 'Failed to send test email';
+      toast.showToast(errorMessage, 'error');
+    },
+  });
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const values = Object.fromEntries(formData.entries());
     values.mail_port = values.mail_port ? parseInt(values.mail_port, 10) : null;
     saveMutation.mutate(values);
+  };
+
+  const handleTestEmail = (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const recipient = formData.get('test_recipient');
+    if (!recipient) {
+      toast.showToast('Please enter a test recipient email address', 'error');
+      return;
+    }
+    testEmailMutation.mutate(recipient);
   };
 
   if (!facilityId) {
@@ -129,69 +177,125 @@ export default function EmailSettings() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
             <select
               name="mail_driver"
-              defaultValue={defaultValues.mail_driver}
+              value={mailDriver}
+              onChange={(e) => setMailDriver(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
             >
               <option value="smtp">SMTP</option>
+              <option value="ses">Amazon SES</option>
+              <option value="ses-v2">Amazon SES v2</option>
               <option value="sendmail">Sendmail</option>
               <option value="log">Log (development)</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Host</label>
-            <input
-              name="mail_host"
-              defaultValue={defaultValues.mail_host}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-              placeholder="smtp.example.com"
-            />
-          </div>
+          {isSESDriver && (
+            <div className="md:col-span-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start space-x-2">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">AWS Credentials</p>
+                  <p>
+                    AWS credentials are configured globally in your .env file (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION).
+                    You can optionally override the region below.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Port</label>
-            <input
-              name="mail_port"
-              type="number"
-              defaultValue={defaultValues.mail_port}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-            />
-          </div>
+          {!isSESDriver && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Host</label>
+                <input
+                  name="mail_host"
+                  defaultValue={defaultValues.mail_host}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  placeholder="smtp.example.com"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Encryption</label>
-            <select
-              name="mail_encryption"
-              defaultValue={defaultValues.mail_encryption}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-            >
-              <option value="tls">TLS</option>
-              <option value="ssl">SSL</option>
-              <option value="null">None</option>
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Port</label>
+                <input
+                  name="mail_port"
+                  type="number"
+                  defaultValue={defaultValues.mail_port}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-            <input
-              name="mail_username"
-              defaultValue={defaultValues.mail_username}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Encryption</label>
+                <select
+                  name="mail_encryption"
+                  defaultValue={defaultValues.mail_encryption}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                >
+                  <option value="tls">TLS</option>
+                  <option value="ssl">SSL</option>
+                  <option value="null">None</option>
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              name="mail_password"
-              type="password"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-              placeholder="••••••••"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Leave blank to keep the existing password.
-            </p>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input
+                  name="mail_username"
+                  defaultValue={defaultValues.mail_username}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  name="mail_password"
+                  type="password"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  placeholder="••••••••"
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  Leave blank to keep the existing password.
+                </p>
+              </div>
+            </>
+          )}
+
+          {isSESDriver && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  AWS Region (Optional)
+                </label>
+                <input
+                  name="ses_region"
+                  defaultValue={defaultValues.ses_region}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  placeholder="us-east-1"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Leave blank to use the global AWS_DEFAULT_REGION from .env
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Configuration Set (Optional)
+                </label>
+                <input
+                  name="ses_configuration_set"
+                  defaultValue={defaultValues.ses_configuration_set}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  placeholder="my-config-set"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Optional SES configuration set for tracking and analytics
+                </p>
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -219,8 +323,18 @@ export default function EmailSettings() {
         </div>
 
         <div className="border-t border-gray-200 pt-4 mt-4 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Test Email</h2>
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4 items-center">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-900">Test Email</h2>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saveMutation.isPending}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Test Recipient Email
@@ -233,19 +347,20 @@ export default function EmailSettings() {
               />
             </div>
             <button
-              type="submit"
-              disabled={saveMutation.isPending}
+              type="button"
+              onClick={handleTestEmail}
+              disabled={testEmailMutation.isPending}
               className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saveMutation.isPending ? (
+              {testEmailMutation.isPending ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Saving...
+                  Sending...
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  Save & Send Test Email
+                  Send Test Email
                 </>
               )}
             </button>

@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Models\FacilitySetting;
+use App\Services\MailConfigurationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class FacilitySettingsController extends Controller
 {
@@ -94,6 +97,89 @@ class FacilitySettingsController extends Controller
     }
 
     /**
+     * Send a test email using the facility's configured email settings.
+     */
+    public function testEmail(Request $request, Facility $facility): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Only super_admin or facility admin/manager can send test emails.
+        $isAdmin = in_array($user->role, ['super_admin', 'administrator', 'admin', 'manager'], true);
+
+        if (!$isAdmin || ($user->role !== 'super_admin' && $user->facility_id !== $facility->id)) {
+            return response()->json(['message' => 'Unauthorized. Admin access required for this facility.'], 403);
+        }
+
+        $validated = $request->validate([
+            'recipient' => 'required|email',
+        ]);
+
+        try {
+            // Configure mail for facility
+            $mailConfigService = app(MailConfigurationService::class);
+            $mailConfigService->configureForFacility($facility);
+
+            // Get from address and name from facility settings or use defaults
+            $settings = FacilitySetting::where('facility_id', $facility->id)
+                ->where('category', 'email')
+                ->get()
+                ->mapWithKeys(function ($setting) {
+                    return [$setting->key => $setting->casted_value];
+                });
+
+            $fromAddress = $settings->get('mail_from_address') ?? config('mail.from.address');
+            $fromName = $settings->get('mail_from_name') ?? config('mail.from.name');
+
+            // Send test email
+            Mail::raw('This is a test email from ' . $facility->name . '. Your email configuration is working correctly.', function ($message) use ($validated, $fromAddress, $fromName, $facility) {
+                $message->to($validated['recipient'])
+                    ->subject('Test Email - ' . $facility->name)
+                    ->from($fromAddress, $fromName);
+            });
+
+            Log::info('Test email sent', [
+                'facility_id' => $facility->id,
+                'recipient' => $validated['recipient'],
+                'from_address' => $fromAddress,
+            ]);
+
+            return response()->json([
+                'message' => 'Test email sent successfully',
+                'recipient' => $validated['recipient'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send test email', [
+                'facility_id' => $facility->id,
+                'recipient' => $validated['recipient'],
+                'error' => $e->getMessage(),
+            ]);
+
+            // Provide helpful error messages for common SES issues
+            $errorMessage = $e->getMessage();
+            $helpfulMessage = 'Failed to send test email. ';
+
+            if (str_contains($errorMessage, 'Email address not verified') || str_contains($errorMessage, 'not verified')) {
+                $helpfulMessage .= 'The sender email address is not verified in Amazon SES. Please verify it in the AWS SES console.';
+            } elseif (str_contains($errorMessage, 'sandbox') || str_contains($errorMessage, 'production access')) {
+                $helpfulMessage .= 'Your Amazon SES account is in sandbox mode. You can only send to verified email addresses. Request production access in the AWS SES console.';
+            } elseif (str_contains($errorMessage, 'Invalid') || str_contains($errorMessage, 'credentials')) {
+                $helpfulMessage .= 'Invalid AWS credentials. Please check your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your .env file.';
+            } else {
+                $helpfulMessage .= $errorMessage;
+            }
+
+            return response()->json([
+                'message' => $helpfulMessage,
+                'error' => $errorMessage,
+            ], 500);
+        }
+    }
+
+    /**
      * Get validation rules per category.
      */
     protected function rulesForCategory(string $category): array
@@ -106,7 +192,7 @@ class FacilitySettingsController extends Controller
 
         return match ($category) {
             'email' => array_merge($base, [
-                'settings.mail_driver.value' => 'nullable|string|in:smtp,sendmail,log,mailgun,postmark,ses',
+                'settings.mail_driver.value' => 'nullable|string|in:smtp,sendmail,log,mailgun,postmark,ses,ses-v2',
                 'settings.mail_host.value' => 'nullable|string|max:255',
                 'settings.mail_port.value' => 'nullable|integer|min:1|max:65535',
                 'settings.mail_username.value' => 'nullable|string|max:255',
@@ -114,6 +200,8 @@ class FacilitySettingsController extends Controller
                 'settings.mail_encryption.value' => 'nullable|string|in:tls,ssl,null',
                 'settings.mail_from_address.value' => 'nullable|email',
                 'settings.mail_from_name.value' => 'nullable|string|max:255',
+                'settings.ses_region.value' => 'nullable|string|max:50',
+                'settings.ses_configuration_set.value' => 'nullable|string|max:255',
                 'settings.test_recipient.value' => 'nullable|email',
             ]),
             'security' => array_merge($base, [

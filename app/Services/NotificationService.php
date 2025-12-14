@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
+    protected MailConfigurationService $mailConfigService;
+
+    public function __construct(MailConfigurationService $mailConfigService)
+    {
+        $this->mailConfigService = $mailConfigService;
+    }
+
     /**
      * Send email notification for late medication
      */
@@ -20,6 +27,14 @@ class NotificationService
         $medicationName = $medication->drug?->name ?? $medication->name;
         $residentName = trim(($resident->first_name ?? '') . ' ' . ($resident->last_name ?? ''));
         
+        // Get facility from resident's branch
+        $facility = $this->mailConfigService->getFacilityFromResident($resident);
+        
+        // Configure mail for facility if available
+        if ($facility) {
+            $this->mailConfigService->configureForFacility($facility);
+        }
+        
         foreach ($caregivers as $caregiver) {
             if ($caregiver->email) {
                 try {
@@ -27,16 +42,18 @@ class NotificationService
                         new LateMedicationNotification($medication, $resident, 'Scheduled Time')
                     );
                     
-                    // Log email sent (since using log driver, this will appear in logs)
+                    // Log email sent
                     Log::info('Late medication email sent', [
                         'to' => $caregiver->email,
                         'medication' => $medicationName,
                         'resident' => $residentName,
+                        'facility_id' => $facility?->id,
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Failed to send late medication email', [
                         'to' => $caregiver->email,
                         'error' => $e->getMessage(),
+                        'facility_id' => $facility?->id,
                     ]);
                 }
             }
@@ -50,6 +67,14 @@ class NotificationService
     {
         $residentName = trim(($resident->first_name ?? '') . ' ' . ($resident->last_name ?? ''));
         
+        // Get facility from resident's branch
+        $facility = $this->mailConfigService->getFacilityFromResident($resident);
+        
+        // Configure mail for facility if available
+        if ($facility) {
+            $this->mailConfigService->configureForFacility($facility);
+        }
+        
         foreach ($caregivers as $caregiver) {
             if ($caregiver->email) {
                 try {
@@ -57,16 +82,18 @@ class NotificationService
                         new LateVitalSignNotification($resident, $hoursOverdue)
                     );
                     
-                    // Log email sent (since using log driver, this will appear in logs)
+                    // Log email sent
                     Log::info('Late vital sign email sent', [
                         'to' => $caregiver->email,
                         'resident' => $residentName,
                         'hours_overdue' => $hoursOverdue,
+                        'facility_id' => $facility?->id,
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Failed to send late vital sign email', [
                         'to' => $caregiver->email,
                         'error' => $e->getMessage(),
+                        'facility_id' => $facility?->id,
                     ]);
                 }
             }

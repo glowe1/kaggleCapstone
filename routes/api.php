@@ -328,6 +328,7 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
     Route::prefix('facilities')->middleware('auth:sanctum')->group(function () {
         Route::get('/{facility}/settings/{category}', [FacilitySettingsController::class, 'show']);
         Route::put('/{facility}/settings/{category}', [FacilitySettingsController::class, 'update']);
+        Route::post('/{facility}/settings/email/test', [FacilitySettingsController::class, 'testEmail']);
     });
 
     // Database Management
