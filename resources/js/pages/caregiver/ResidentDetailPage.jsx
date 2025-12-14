@@ -779,7 +779,7 @@ export default function ResidentDetailPage() {
                                                 {formatDate(record.sleep_date)}
                                             </p>
                                             <p className="mt-1 text-xs text-emerald-700">
-                                                Duration: {record.hours_slept ?? 'N/A'} hours
+                                                Duration: {record.total_sleep_hours ? Number(record.total_sleep_hours).toFixed(2) : 'N/A'} hours
                                             </p>
                                             {record.notes ? (
                                                 <p className="mt-2 text-xs text-emerald-700 line-clamp-2">

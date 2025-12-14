@@ -15,6 +15,7 @@ class SleepRecordResource extends JsonResource
             'sleep_time' => $this->sleep_time,
             'wake_time' => $this->wake_time,
             'total_sleep_hours' => $this->total_sleep_hours,
+            'notes' => $this->notes,
             'resident' => new ResidentResource($this->whenLoaded('resident')),
             'created_at' => $this->created_at?->toISOString(),
         ];
