@@ -420,20 +420,50 @@ function MedicationTimeBadges({ medication }) {
         const scheduledTime = parseScheduledTime(timeValue);
         if (!scheduledTime) return null;
 
-        const toleranceMinutes = 30;
+        // Use a wider tolerance (2 hours) to match administrations that were recorded as refused/missed
+        // This ensures they show up on the card even if recorded at a slightly different time
+        const toleranceMinutes = 120;
         const toleranceMs = toleranceMinutes * 60 * 1000;
 
-        const matchingAdmin = todayAdminData?.data?.find((admin) => {
+        // First, try to find an exact match or close match within tolerance
+        let matchingAdmin = todayAdminData?.data?.find((admin) => {
             const adminTime = getPacificDate(new Date(admin.administered_at));
-            return Math.abs(adminTime.getTime() - scheduledTime.getTime()) <= toleranceMs;
+            const timeDiff = Math.abs(adminTime.getTime() - scheduledTime.getTime());
+            return timeDiff <= toleranceMs;
         });
+
+        // If no match found within tolerance, check if there's an administration for this medication
+        // that was recorded today (could be refused/missed for a specific time)
+        // Match by comparing time slots more flexibly (within 15 minutes)
+        if (!matchingAdmin && todayAdminData?.data?.length > 0) {
+            const scheduledHours = scheduledTime.getHours();
+            const scheduledMinutes = scheduledTime.getMinutes();
+            const scheduledTotalMinutes = scheduledHours * 60 + scheduledMinutes;
+            
+            matchingAdmin = todayAdminData.data.find((admin) => {
+                const adminTime = getPacificDate(new Date(admin.administered_at));
+                const adminHours = adminTime.getHours();
+                const adminMinutes = adminTime.getMinutes();
+                const adminTotalMinutes = adminHours * 60 + adminMinutes;
+                
+                // Match if within 15 minutes of scheduled time (for refused/missed that might be recorded slightly off)
+                const timeDiffMinutes = Math.abs(adminTotalMinutes - scheduledTotalMinutes);
+                return timeDiffMinutes <= 15;
+            });
+        }
 
         if (matchingAdmin) {
             return matchingAdmin.status;
         }
 
+        // Only mark as missed if time has passed and no administration exists
         const now = getPacificNow();
-        if (now.getTime() - scheduledTime.getTime() >= toleranceMs) {
+        const timeHasPassed = now.getTime() > scheduledTime.getTime() + (60 * 60 * 1000); // 1 hour after scheduled time
+        
+        // Check if there are any administrations for this medication today
+        // If there are administrations but none matched, don't mark as missed
+        // (they might be for other time slots)
+        if (timeHasPassed && (!todayAdminData?.data || todayAdminData.data.length === 0)) {
             return 'missed';
         }
 
@@ -981,7 +1011,10 @@ function QuickAdminister({ medication, onSuccess }) {
                                         updated_at: administeredAt,
                                     };
                                     
-                                    // Optimistically update cache
+                                    // Optimistically update cache for both query keys
+                                    // Also update the MedicationTimeBadges query key to ensure badges update immediately
+                                    const badgesQueryKey = ['medication-administrations-today', medication.id];
+                                    
                                     queryClient.setQueryData(queryKey, (old) => {
                                         if (!old) {
                                             return {
@@ -997,6 +1030,21 @@ function QuickAdminister({ medication, onSuccess }) {
                                     });
                                     
                                     queryClient.setQueryData(checkQueryKey, (old) => {
+                                        if (!old) {
+                                            return {
+                                                data: [optimisticAdmin],
+                                                total: 1,
+                                            };
+                                        }
+                                        return {
+                                            ...old,
+                                            data: [...(old.data || []), optimisticAdmin],
+                                            total: (old.total || 0) + 1,
+                                        };
+                                    });
+                                    
+                                    // Update badges query cache to show refused/missed immediately
+                                    queryClient.setQueryData(badgesQueryKey, (old) => {
                                         if (!old) {
                                             return {
                                                 data: [optimisticAdmin],
@@ -1048,6 +1096,17 @@ function QuickAdminister({ medication, onSuccess }) {
                                         });
                                         
                                         queryClient.setQueryData(checkQueryKey, (old) => {
+                                            if (!old) return old;
+                                            const filtered = (old.data || []).filter(a => a.id !== optimisticAdmin.id);
+                                            return {
+                                                ...old,
+                                                data: [...filtered, realAdmin],
+                                            };
+                                        });
+                                        
+                                        // Update badges query with real data
+                                        const badgesQueryKey = ['medication-administrations-today', medication.id];
+                                        queryClient.setQueryData(badgesQueryKey, (old) => {
                                             if (!old) return old;
                                             const filtered = (old.data || []).filter(a => a.id !== optimisticAdmin.id);
                                             return {
