@@ -82,9 +82,12 @@ export function hasModuleAccess(path, enabledModules, isSuperAdmin) {
     enabledModules = [];
   }
 
-  // If no enabled modules, deny access (unless super admin)
+  // If no enabled modules are configured, allow access to all modules by default.
+  // This matches the navigation behavior where we only filter when modules exist.
+  // It also prevents users from being redirected away from pages when module
+  // settings have not been set up yet.
   if (enabledModules.length === 0) {
-    return false;
+    return true;
   }
 
   // Check if path requires a specific module
