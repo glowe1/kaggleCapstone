@@ -5,6 +5,7 @@ import {
   AlertCircle, ArrowRight, FileText, Shield, Clock
 } from 'lucide-react';
 import PublicNavigation from '../../components/PublicNavigation';
+import PublicFooter from '../../components/PublicFooter';
 import api from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
 
@@ -624,7 +625,7 @@ export default function RegisterFacility() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
                     Next
                     <ArrowRight className="w-4 h-4" />
@@ -633,7 +634,7 @@ export default function RegisterFacility() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
@@ -653,6 +654,8 @@ export default function RegisterFacility() {
           </div>
         </div>
       </section>
+
+      <PublicFooter />
     </div>
   );
 }
