@@ -545,6 +545,15 @@ export default function RegisterFacility() {
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
             Join HomeLogic360 and streamline your care facility management
           </p>
+          <div className="mt-6">
+            <button
+              onClick={() => navigate('/facility-setup')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all text-sm font-medium border border-white/20"
+            >
+              <FileText className="w-4 h-4" />
+              View Required Information Checklist
+            </button>
+          </div>
         </div>
       </section>
 
