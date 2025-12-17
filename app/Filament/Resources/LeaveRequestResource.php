@@ -108,13 +108,9 @@ class LeaveRequestResource extends Resource
                             ->placeholder('Select staff member (leave blank for yourself)')
                             ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->email ?? 'Unknown User')
                             ->helperText('Leave blank to create a leave request for yourself, or select another staff member if you have permission.')
-                            ->visible(fn () => {
-                                $user = auth()->user();
-                                // Show field if user has permission to create leave requests for others
-                                return $user->hasRole('administrator') || 
-                                       $user->hasRole('super_admin') || 
-                                       $user->hasPermission('create_leave_requests');
-                            }),
+                            ->visible(fn () => auth()->user()->hasRole('administrator') || 
+                                               auth()->user()->hasRole('super_admin') || 
+                                               auth()->user()->hasPermission('create_leave_requests')),
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Start Date')
                             ->required()

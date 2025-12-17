@@ -59,11 +59,26 @@ class CleaningTaskAssignmentController extends BaseApiController
                 ['status', 'notified_at', 'updated_at']
             );
 
-            // Retrieve the upserted record
-            $assignment = CleaningTaskAssignment::where($keys)->firstOrFail();
+            // Retrieve the upserted record - use whereDate for scheduled_date to handle date comparison properly
+            $assignment = CleaningTaskAssignment::where('cleaning_task_id', $keys['cleaning_task_id'])
+                ->where('user_id', $keys['user_id'])
+                ->whereDate('scheduled_date', $keys['scheduled_date'])
+                ->first();
 
-            // Load relationships for notification
-            $assignment->load('user', 'task.area');
+            if (!$assignment) {
+                throw new \Exception('Failed to create or retrieve assignment after upsert.');
+            }
+
+            // Load relationships for notification - handle missing relationships gracefully
+            try {
+                $assignment->load('user', 'task.area');
+            } catch (\Exception $e) {
+                \Log::warning('Failed to load relationships for assignment', [
+                    'assignment_id' => $assignment->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Continue anyway - relationships might not be critical for the response
+            }
 
             // Try to send notification, but don't fail the assignment if it fails
             try {
