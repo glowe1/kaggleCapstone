@@ -127,13 +127,32 @@ class CleaningTaskAssignmentController extends BaseApiController
 
     private function authorizeAssignments($user, CleaningTask $task): void
     {
-        if (!$user || !$user->hasPermission('edit_cleaning_areas')) {
+        if (!$user) {
+            abort(401, 'You must be authenticated to assign housekeeping tasks.');
+        }
+
+        try {
+            if (!$user->hasPermission('edit_cleaning_areas')) {
+                abort(403, 'You do not have permission to assign housekeeping tasks.');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error checking permission for caregiver assignment', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
             abort(403, 'You do not have permission to assign housekeeping tasks.');
         }
 
         // Load area relationship if not already loaded
-        if (!$task->relationLoaded('area')) {
-            $task->load('area');
+        try {
+            if (!$task->relationLoaded('area')) {
+                $task->load('area');
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to load area relationship for task', [
+                'task_id' => $task->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // Check branch access if user has an assigned branch
