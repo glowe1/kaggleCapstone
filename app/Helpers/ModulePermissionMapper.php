@@ -80,6 +80,7 @@ class ModulePermissionMapper
         'create_cleaning_areas' => Modules::HOUSEKEEPING,
         'edit_cleaning_areas' => Modules::HOUSEKEEPING,
         'delete_cleaning_areas' => Modules::HOUSEKEEPING,
+        'assign_cleaning_tasks' => Modules::HOUSEKEEPING,
         
         // Reports module
         'view_reports' => Modules::REPORTS,

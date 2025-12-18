@@ -75,6 +75,7 @@ class UnifiedProductionSeeder extends Seeder
 
             // Housekeeping management
             'view_cleaning_areas', 'create_cleaning_areas', 'edit_cleaning_areas', 'delete_cleaning_areas',
+            'assign_cleaning_tasks',
             
             // Role and permission management
             'view_roles', 'create_roles', 'edit_roles', 'delete_roles',
@@ -144,7 +145,7 @@ class UnifiedProductionSeeder extends Seeder
             'view_assessments', 'view_vital_signs', 'create_vital_signs',
             'view_assignments', 'create_leave_requests', 'view_leave_requests',
             'view_incidents', 'create_incidents', 'view_behaviors', 'create_behaviors',
-            'view_sleep_records', 'create_sleep_records'
+            'view_sleep_records', 'create_sleep_records', 'assign_cleaning_tasks'
         ])->pluck('id');
         $caregiverRole->permissions()->sync($caregiverPermissions);
 
@@ -160,7 +161,8 @@ class UnifiedProductionSeeder extends Seeder
             'view_assignments', 'create_assignments', 'edit_assignments',
             'view_reports', 'create_reports', 'view_incidents', 'create_incidents', 'edit_incidents',
             'view_behaviors', 'create_behaviors', 'edit_behaviors',
-            'view_sleep_records', 'create_sleep_records', 'edit_sleep_records'
+            'view_sleep_records', 'create_sleep_records', 'edit_sleep_records',
+            'assign_cleaning_tasks'
         ])->pluck('id');
         $nurseRole->permissions()->sync($nursePermissions);
 

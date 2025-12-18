@@ -197,7 +197,7 @@ class CleaningTaskAssignmentController extends BaseApiController
         }
 
         try {
-            if (!$user->hasPermission('edit_cleaning_areas')) {
+            if (!$user->hasPermission('assign_cleaning_tasks')) {
                 \Log::warning('User lacks permission for caregiver assignment', [
                     'user_id' => $user->id,
                     'user_role' => $user->role,

@@ -247,8 +247,9 @@ class User extends Authenticatable implements FilamentUser
 
     public function hasPermission(string $permission): bool
     {
-        // Super admins bypass all restrictions
-        if ($this->role === 'super_admin' || $this->hasRole('super_admin')) {
+        // Admins bypass all restrictions
+        $adminRoles = ['super_admin', 'administrator', 'admin'];
+        if (in_array($this->role, $adminRoles) || $this->roles()->whereIn('name', $adminRoles)->exists()) {
             return true;
         }
 

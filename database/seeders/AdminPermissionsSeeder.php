@@ -100,6 +100,7 @@ class AdminPermissionsSeeder extends Seeder
             ['name' => 'create_cleaning_areas', 'group' => 'Housekeeping', 'description' => 'Create cleaning areas and assignments'],
             ['name' => 'edit_cleaning_areas', 'group' => 'Housekeeping', 'description' => 'Edit cleaning areas and assignments'],
             ['name' => 'delete_cleaning_areas', 'group' => 'Housekeeping', 'description' => 'Archive cleaning areas'],
+            ['name' => 'assign_cleaning_tasks', 'group' => 'Housekeeping', 'description' => 'Assign caregivers to cleaning tasks'],
             
             // Vital Ranges permissions
             ['name' => 'view_vital_ranges', 'group' => 'Vital Ranges', 'description' => 'View vital ranges'],
