@@ -160,6 +160,10 @@ class ResidentSignOutController extends Controller
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->sendResidentSignOutEmail($signOut, $users, 'signed_out');
     }
 
     /**
@@ -213,6 +217,10 @@ class ResidentSignOutController extends Controller
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->sendResidentSignOutEmail($signOut, $users, 'returned');
     }
 
     /**

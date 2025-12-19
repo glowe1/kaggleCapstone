@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\FireDrill;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class FireDrillObserver
@@ -49,6 +50,10 @@ class FireDrillObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendFireDrillEmail($fireDrill, $users);
     }
 
     /**

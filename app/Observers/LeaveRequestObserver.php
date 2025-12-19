@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\LeaveRequest;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class LeaveRequestObserver
@@ -42,6 +43,10 @@ class LeaveRequestObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendLeaveRequestEmail($leaveRequest, $admins, 'created');
     }
 
     /**
@@ -81,12 +86,16 @@ class LeaveRequestObserver
                         'metadata' => [
                             'leave_request_id' => $leaveRequest->id,
                             'status' => $currentStatus,
-                        ],
-                    ]);
-                }
+                    ],
+                ]);
             }
+
+            // Send email notification to staff member
+            $notificationService = app(NotificationService::class);
+            $notificationService->sendLeaveRequestEmail($leaveRequest, collect([$staff]), $currentStatus === 'approved' ? 'approved' : 'declined');
         }
     }
+}
 }
 
 

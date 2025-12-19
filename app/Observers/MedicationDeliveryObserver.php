@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\MedicationDelivery;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class MedicationDeliveryObserver
 {
@@ -60,6 +61,10 @@ class MedicationDeliveryObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendMedicationDeliveryEmail($delivery, $admins);
     }
 }
 

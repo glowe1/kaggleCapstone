@@ -226,6 +226,10 @@ class StaffClockInController extends Controller
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->sendStaffClockInEmail($clockIn, $users, 'clocked_in');
     }
 
     /**
@@ -277,6 +281,10 @@ class StaffClockInController extends Controller
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->sendStaffClockInEmail($clockIn, $users, 'clocked_out');
     }
 
     /**

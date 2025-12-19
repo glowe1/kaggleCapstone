@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\VitalSign;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class VitalSignObserver
@@ -119,10 +120,19 @@ class VitalSignObserver
                         'vital_sign_id' => $vitalSign->id,
                         'resident_id' => $vitalSign->resident_id,
                         'status' => 'critical',
-                    ],
-                ]);
-            }
+                ],
+            ]);
+        }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendVitalSignEmail($vitalSign, $caregivers, $isCritical);
+        
+        // If critical, also send to admins
+        if ($isCritical && $admins->isNotEmpty()) {
+            $notificationService->sendVitalSignEmail($vitalSign, $admins, true);
         }
     }
+}
 }
 

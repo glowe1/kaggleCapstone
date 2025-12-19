@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\GroceryStatusUpdate;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class GroceryStatusUpdateObserver
 {
@@ -52,6 +53,10 @@ class GroceryStatusUpdateObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendGroceryStatusEmail($update, $recipients);
     }
 }
 

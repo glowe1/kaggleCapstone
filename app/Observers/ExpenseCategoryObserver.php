@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\ExpenseCategory;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class ExpenseCategoryObserver
 {
@@ -43,6 +44,10 @@ class ExpenseCategoryObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendExpenseCategoryEmail($category, $admins, 'created');
     }
 
     /**
@@ -79,6 +84,10 @@ class ExpenseCategoryObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendExpenseCategoryEmail($category, $admins, 'updated');
     }
 
     /**
@@ -113,6 +122,10 @@ class ExpenseCategoryObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendExpenseCategoryEmail($category, $admins, 'deleted');
     }
 }
 

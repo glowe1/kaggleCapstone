@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Assessment;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class AssessmentObserver
@@ -48,6 +49,10 @@ class AssessmentObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendAssessmentEmail($assessment, $admins, 'created');
     }
 
     /**
@@ -112,6 +117,10 @@ class AssessmentObserver
                     ],
                 ]);
             }
+
+            // Send email notifications
+            $notificationService = app(NotificationService::class);
+            $notificationService->sendAssessmentEmail($assessment, $admins, 'completed');
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\PharmacyOrder;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class PharmacyOrderObserver
 {
@@ -52,6 +53,10 @@ class PharmacyOrderObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendPharmacyOrderEmail($order, $admins, 'created');
     }
 
     /**
@@ -104,6 +109,10 @@ class PharmacyOrderObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendPharmacyOrderEmail($order, $admins, 'status_changed');
     }
 }
 

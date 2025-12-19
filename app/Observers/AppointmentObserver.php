@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Appointment;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class AppointmentObserver
@@ -62,6 +63,10 @@ class AppointmentObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendAppointmentEmail($appointment, $recipients, 'completed');
     }
 
     /**
@@ -146,6 +151,10 @@ class AppointmentObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendAppointmentEmail($appointment, $caregivers, 'created');
     }
 }
 

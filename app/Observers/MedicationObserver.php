@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Medication;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class MedicationObserver
@@ -88,6 +89,10 @@ class MedicationObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendMedicationEmail($medication, $caregivers);
     }
 }
 

@@ -200,6 +200,10 @@ class EmployeeDocumentController extends BaseApiController
                     ],
                 ]);
             }
+
+            // Send email notifications
+            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService->sendEmployeeDocumentEmail($document, $admins, 'uploaded');
         }
 
         // Log activity

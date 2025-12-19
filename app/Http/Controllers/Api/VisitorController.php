@@ -150,6 +150,10 @@ class VisitorController extends Controller
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->sendVisitorEmail($visitor, $users, 'checked_in');
     }
 
     /**
@@ -202,6 +206,10 @@ class VisitorController extends Controller
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->sendVisitorEmail($visitor, $users, 'checked_out');
     }
 
     /**

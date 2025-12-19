@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\SleepRecord;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class SleepRecordObserver
@@ -54,6 +55,10 @@ class SleepRecordObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendSleepRecordEmail($sleepRecord, $caregivers);
     }
 }
 

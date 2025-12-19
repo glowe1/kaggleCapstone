@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Expense;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 
 class ExpenseObserver
@@ -51,6 +52,10 @@ class ExpenseObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendExpenseEmail($expense, $admins, 'created');
     }
 
     /**
@@ -98,6 +103,10 @@ class ExpenseObserver
                     ],
                 ]);
             }
+
+            // Send email notifications
+            $notificationService = app(NotificationService::class);
+            $notificationService->sendExpenseEmail($expense, $admins, 'paid');
         }
     }
 
@@ -142,6 +151,10 @@ class ExpenseObserver
                 ],
             ]);
         }
+
+        // Send email notifications
+        $notificationService = app(NotificationService::class);
+        $notificationService->sendExpenseEmail($expense, $admins, 'deleted');
     }
 }
 
