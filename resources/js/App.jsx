@@ -134,6 +134,7 @@ const ExpenseReports = lazyWithRetry(() => import('./pages/reports/ExpenseReport
 const Incidents = lazyWithRetry(() => import('./pages/Incidents'));
 const TLogs = lazyWithRetry(() => import('./pages/TLogs'));
 const ChartReports = lazyWithRetry(() => import('./pages/reports/ChartReports'));
+const AnalyticsDashboard = lazyWithRetry(() => import('./pages/reports/AnalyticsDashboard'));
 const ResidentCharts = lazyWithRetry(() => import('./pages/reports/ResidentCharts'));
 const VitalsCharts = lazyWithRetry(() => import('./pages/reports/VitalsCharts'));
 const VitalsReports = lazyWithRetry(() => import('./pages/reports/VitalsReports'));
@@ -255,6 +256,7 @@ function App() {
 
                 {/* Reports */}
                 <Route path="reports" element={<Suspense fallback={<PageLoader />}><Reports /></Suspense>} />
+                <Route path="reports/analytics" element={<Suspense fallback={<PageLoader />}><AnalyticsDashboard /></Suspense>} />
                 <Route path="reports/charts" element={<Suspense fallback={<PageLoader />}><ChartReports /></Suspense>} />
                 <Route path="reports/resident-charts" element={<Suspense fallback={<PageLoader />}><ResidentCharts /></Suspense>} />
                 <Route path="reports/vitals-charts" element={<Suspense fallback={<PageLoader />}><VitalsCharts /></Suspense>} />

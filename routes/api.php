@@ -253,6 +253,9 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
         Route::get('/staff', [ChartController::class, 'staffStats']);
     });
 
+    // Analytics
+    Route::get('/analytics/dashboard', [\App\Http\Controllers\Api\AnalyticsController::class, 'dashboard'])->middleware('auth:sanctum');
+
     // Cleaning / Housekeeping
     Route::prefix('cleaning')->middleware('auth:sanctum')->group(function () {
         Route::get('/checklists', [CleaningChecklistController::class, 'index']);
