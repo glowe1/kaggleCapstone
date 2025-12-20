@@ -442,8 +442,8 @@ class ChartController extends BaseApiController
             }
             return $trends;
         } else {
-            return $query->selectRaw('DATE(sleep_date) as date, AVG(total_sleep_hours) as avg_hours')
-                ->groupBy('date')
+            return $query->selectRaw('DATE(sleep_records.sleep_date) as date, AVG(sleep_records.total_sleep_hours) as avg_hours')
+                ->groupByRaw('DATE(sleep_records.sleep_date)')
                 ->orderBy('date')
                 ->get()
                 ->map(fn($r) => [
@@ -512,8 +512,8 @@ class ChartController extends BaseApiController
             }
             return $trends;
         } else {
-            return $query->selectRaw('DATE(sleep_date) as date, AVG(sleep_quality) as avg_quality')
-                ->groupBy('date')
+            return $query->selectRaw('DATE(sleep_records.sleep_date) as date, AVG(sleep_records.sleep_quality) as avg_quality')
+                ->groupByRaw('DATE(sleep_records.sleep_date)')
                 ->orderBy('date')
                 ->get()
                 ->map(fn($r) => [
