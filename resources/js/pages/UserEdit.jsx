@@ -457,7 +457,8 @@ function EmploymentTab({ roles, branches, facilities, isSuperAdmin, isFacilityAd
                     {(isSuperAdmin || isFacilityAdmin || isBranchAdmin) && (
                         <div className="mt-2 flex items-center justify-between">
                             <div className="text-[10px] text-gray-500">
-                                Debug: {roles.length} roles found.
+                                Debug: {roles.length} roles found. Roles: [{roles.map(r => r.name).join(', ')}]
+                                <br />
                                 "admin" role: {roles.some(r => r.name?.toLowerCase().trim() === 'admin') ? '✅' : '❌'}
                             </div>
                             {!roles.some(r => r.name?.toLowerCase().trim() === 'admin') && (
@@ -691,7 +692,18 @@ export default function UserEditWrapper() {
 
     const { data: rolesData } = useQuery({
         queryKey: ['roles-options'],
-        queryFn: async () => (await api.get('/roles', { params: { per_page: 100 } })).data
+        queryFn: async () => {
+            const response = await api.get('/roles', { params: { per_page: 100 } });
+            console.log('UserEdit: Roles API Response:', response.data);
+            console.log('UserEdit: Roles data array:', response.data?.data);
+            if (response.data?.data) {
+                const adminRole = response.data.data.find(r => r.name?.toLowerCase() === 'admin');
+                console.log('UserEdit: Admin role found:', adminRole ? 'YES' : 'NO', adminRole);
+            }
+            return response.data;
+        },
+        staleTime: 0, // Always fetch fresh data
+        cacheTime: 0, // Don't cache
     });
 
     const { data: branchesData } = useQuery({
