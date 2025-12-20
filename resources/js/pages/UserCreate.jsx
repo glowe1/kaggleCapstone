@@ -101,10 +101,10 @@ function FormProvider({ children, initialData }) {
     };
 
     return (
-        <FormContext.Provider value={{ 
-            formData, 
-            updateForm, 
-            profileImage, 
+        <FormContext.Provider value={{
+            formData,
+            updateForm,
+            profileImage,
             setProfileImage,
             profileImagePreview,
             setProfileImagePreview,
@@ -118,9 +118,9 @@ function FormProvider({ children, initialData }) {
 
 // Personal Info Tab
 function PersonalInfoTab() {
-    const { 
-        formData, 
-        updateForm, 
+    const {
+        formData,
+        updateForm,
         profileImagePreview,
         handleFileChange,
         handleRemoveImage
@@ -317,18 +317,18 @@ function EmploymentTab({ roles, branches, facilities, isSuperAdmin }) {
                             if (roles && roles.length > 0) {
                                 console.log('Available roles:', roles.map(r => r.name));
                             }
-                            
+
                             return roles && roles.length > 0 ? (
                                 roles
                                     .filter(r => {
                                         const roleName = r.name?.toLowerCase();
-                                        const isAllowed = roleName === 'administrator' || 
-                                               roleName === 'admin' ||
-                                               roleName === 'caregiver' || 
-                                               roleName === 'care_giver' ||
-                                               roleName === 'nurse' ||
-                                               roleName === 'registered_nurse' ||
-                                               roleName === 'licensed_nurse';
+                                        const isAllowed = roleName === 'administrator' ||
+                                            roleName === 'admin' ||
+                                            roleName === 'caregiver' ||
+                                            roleName === 'care_giver' ||
+                                            roleName === 'nurse' ||
+                                            roleName === 'registered_nurse' ||
+                                            roleName === 'licensed_nurse';
                                         if (!isAllowed && r.name) {
                                             console.log('Filtered out role:', r.name);
                                         }
@@ -336,16 +336,16 @@ function EmploymentTab({ roles, branches, facilities, isSuperAdmin }) {
                                     })
                                     .filter(r => {
                                         const roleName = r.name?.toLowerCase();
-                                        return roleName !== 'duty_roster' && 
-                                               roleName !== 'duty roster';
+                                        return roleName !== 'duty_roster' &&
+                                            roleName !== 'duty roster';
                                     })
                                     .map(r => {
                                         const roleName = r.name?.toLowerCase();
-                                        const displayName = roleName === 'administrator' 
+                                        const displayName = roleName === 'administrator'
                                             ? 'Administrator (Facility-wide)'
                                             : roleName === 'admin'
-                                            ? 'Admin (Branch-level)'
-                                            : r.name;
+                                                ? 'Admin'
+                                                : r.name;
                                         return (
                                             <option key={r.id} value={r.name}>{displayName}</option>
                                         );
@@ -486,9 +486,8 @@ function SecurityTab({ isEditing }) {
                             onChange={(e) => updateForm({ password_confirmation: e.target.value })}
                             required={!isEditing && formData.password}
                             minLength={8}
-                            className={`w-full px-4 py-2 pr-10 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] ${
-                                passwordError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-4 py-2 pr-10 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] ${passwordError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
+                                }`}
                         />
                         <button
                             type="button"
@@ -683,13 +682,13 @@ function UserCreateContent({
 
             // Invalidate general users query
             queryClient.invalidateQueries(['users']);
-            
+
             // If user was created with a facility_id, invalidate the facility-users query for that facility
             if (createdUser?.facility_id || formData.facility_id) {
                 const facilityId = createdUser?.facility_id || formData.facility_id;
                 queryClient.invalidateQueries(['facility-users', facilityId]);
             }
-            
+
             showToast('User created successfully!', 'success');
             navigate(-1); // Go back
         } catch (error) {
@@ -765,11 +764,10 @@ function UserCreateContent({
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition whitespace-nowrap ${
-                                        activeTab === tab.id
+                                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition whitespace-nowrap ${activeTab === tab.id
                                             ? 'bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] shadow-sm'
                                             : 'text-gray-600 hover:bg-gray-50'
-                                    }`}
+                                        }`}
                                 >
                                     <Icon className="w-4 h-4" />
                                     <span>{tab.label}</span>

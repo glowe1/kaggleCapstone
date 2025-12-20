@@ -15,7 +15,7 @@ const FormContext = React.createContext();
 function FormProvider({ children, initialData }) {
     const formatDateForInput = (dateString) => {
         if (!dateString) return '';
-        
+
         // If it's already a Date object
         if (dateString instanceof Date) {
             const year = dateString.getFullYear();
@@ -23,7 +23,7 @@ function FormProvider({ children, initialData }) {
             const day = String(dateString.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
-        
+
         // If it's not a string, try to convert
         if (typeof dateString !== 'string') {
             try {
@@ -39,19 +39,19 @@ function FormProvider({ children, initialData }) {
             }
             return '';
         }
-        
+
         // If it's already in YYYY-MM-DD format (Laravel date cast format)
         if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
             return dateString;
         }
-        
+
         // Handle Laravel ISO datetime format (YYYY-MM-DDTHH:mm:ss.uuuuuuZ or YYYY-MM-DD HH:mm:ss)
         // Extract just the date part
         const dateMatch = dateString.match(/^(\d{4}-\d{2}-\d{2})/);
         if (dateMatch) {
             return dateMatch[1];
         }
-        
+
         // Try to parse various date formats
         try {
             const date = new Date(dateString);
@@ -65,7 +65,7 @@ function FormProvider({ children, initialData }) {
         } catch (e) {
             console.warn('Failed to parse date:', dateString, e);
         }
-        
+
         return '';
     };
 
@@ -124,7 +124,7 @@ function FormProvider({ children, initialData }) {
         if (initialData && Object.keys(initialData).length > 0) {
             const formattedDateOfBirth = initialData.date_of_birth ? formatDateForInput(initialData.date_of_birth) : '';
             const formattedDateEmployed = initialData.date_employed ? formatDateForInput(initialData.date_employed) : '';
-            
+
             console.log('UserEdit: Updating form data', {
                 hasInitialData: !!initialData,
                 date_of_birth_raw: initialData.date_of_birth,
@@ -132,7 +132,7 @@ function FormProvider({ children, initialData }) {
                 date_employed_raw: initialData.date_employed,
                 date_employed_formatted: formattedDateEmployed
             });
-            
+
             setFormData(prev => ({
                 ...prev,
                 first_name: initialData.first_name || '',
@@ -214,10 +214,10 @@ function FormProvider({ children, initialData }) {
     };
 
     return (
-        <FormContext.Provider value={{ 
-            formData, 
-            updateForm, 
-            profileImage, 
+        <FormContext.Provider value={{
+            formData,
+            updateForm,
+            profileImage,
             setProfileImage,
             profileImagePreview,
             setProfileImagePreview,
@@ -232,9 +232,9 @@ function FormProvider({ children, initialData }) {
 
 // Personal Info Tab
 function PersonalInfoTab() {
-    const { 
-        formData, 
-        updateForm, 
+    const {
+        formData,
+        updateForm,
         profileImagePreview,
         handleFileChange,
         handleRemoveImage
@@ -429,26 +429,26 @@ function EmploymentTab({ roles, branches, facilities, isSuperAdmin }) {
                         {roles
                             .filter(r => {
                                 const roleName = r.name?.toLowerCase();
-                                return roleName === 'administrator' || 
-                                       roleName === 'admin' ||
-                                       roleName === 'caregiver' || 
-                                       roleName === 'care_giver' ||
-                                       roleName === 'nurse' ||
-                                       roleName === 'registered_nurse' ||
-                                       roleName === 'licensed_nurse';
+                                return roleName === 'administrator' ||
+                                    roleName === 'admin' ||
+                                    roleName === 'caregiver' ||
+                                    roleName === 'care_giver' ||
+                                    roleName === 'nurse' ||
+                                    roleName === 'registered_nurse' ||
+                                    roleName === 'licensed_nurse';
                             })
                             .filter(r => {
                                 const roleName = r.name?.toLowerCase();
-                                return roleName !== 'duty_roster' && 
-                                       roleName !== 'duty roster';
+                                return roleName !== 'duty_roster' &&
+                                    roleName !== 'duty roster';
                             })
                             .map(r => {
                                 const roleName = r.name?.toLowerCase();
-                                const displayName = roleName === 'administrator' 
+                                const displayName = roleName === 'administrator'
                                     ? 'Administrator (Facility-wide)'
                                     : roleName === 'admin'
-                                    ? 'Admin (Branch-level)'
-                                    : r.name;
+                                        ? 'Admin'
+                                        : r.name;
                                 return (
                                     <option key={r.id} value={r.name}>{displayName}</option>
                                 );
@@ -585,9 +585,8 @@ function SecurityTab({ isEditing }) {
                             onChange={(e) => updateForm({ password_confirmation: e.target.value })}
                             required={!isEditing && formData.password}
                             minLength={8}
-                            className={`w-full px-4 py-2 pr-10 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] ${
-                                passwordError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-4 py-2 pr-10 border rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] ${passwordError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
+                                }`}
                         />
                         <button
                             type="button"
@@ -800,12 +799,12 @@ function UserEditContent({
 
             queryClient.invalidateQueries(['users']);
             queryClient.invalidateQueries(['user', userId]);
-            
+
             // If user has a facility_id, invalidate the facility-users query
             if (formData.facility_id) {
                 queryClient.invalidateQueries(['facility-users', formData.facility_id]);
             }
-            
+
             showToast('User updated successfully!', 'success');
             navigate(-1); // Go back
         } catch (error) {
@@ -881,11 +880,10 @@ function UserEditContent({
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition whitespace-nowrap ${
-                                        activeTab === tab.id
+                                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition whitespace-nowrap ${activeTab === tab.id
                                             ? 'bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] shadow-sm'
                                             : 'text-gray-600 hover:bg-gray-50'
-                                    }`}
+                                        }`}
                                 >
                                     <Icon className="w-4 h-4" />
                                     <span>{tab.label}</span>
