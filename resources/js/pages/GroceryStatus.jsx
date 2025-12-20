@@ -644,7 +644,7 @@ export default function GroceryStatus() {
                                                                 {update.status !== 'pending' && (
                                                                     <button
                                                                         onClick={() => handleQuickStatusUpdate(update.id, 'pending')}
-                                                                        className="px-4 py-2 text-sm font-semibold text-white bg-gray-600 hover:bg-gray-700 active:bg-gray-800 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                                                        className="px-3 py-1.5 text-xs font-semibold text-white bg-gray-600 hover:bg-gray-700 active:bg-gray-800 rounded-lg transition-colors shadow-sm hover:shadow-md"
                                                                         title="Mark as Pending"
                                                                     >
                                                                         Pending
@@ -653,7 +653,7 @@ export default function GroceryStatus() {
                                                                 {update.status !== 'in_progress' && (
                                                                     <button
                                                                         onClick={() => handleQuickStatusUpdate(update.id, 'in_progress')}
-                                                                        className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                                                        className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors shadow-sm hover:shadow-md"
                                                                         title="Mark as In Progress"
                                                                     >
                                                                         In Progress
@@ -662,7 +662,7 @@ export default function GroceryStatus() {
                                                                 {update.status !== 'completed' && (
                                                                     <button
                                                                         onClick={() => handleQuickStatusUpdate(update.id, 'completed')}
-                                                                        className="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                                                        className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg transition-colors shadow-sm hover:shadow-md"
                                                                         title="Mark as Completed"
                                                                     >
                                                                         Complete
@@ -671,7 +671,7 @@ export default function GroceryStatus() {
                                                                 {update.status !== 'needs_attention' && (
                                                                     <button
                                                                         onClick={() => handleQuickStatusUpdate(update.id, 'needs_attention')}
-                                                                        className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                                                        className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-colors shadow-sm hover:shadow-md"
                                                                         title="Mark as Needs Attention"
                                                                     >
                                                                         Needs Attention
