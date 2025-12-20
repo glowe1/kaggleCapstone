@@ -542,26 +542,27 @@ export default function CreateAppointment() {
                         </div>
                         <div className="px-6 py-4">
                             <div className="mb-4">
-                                <p className="text-sm text-gray-600 mb-2">
-                                    <span className="font-medium">Date:</span> {completingAppointment.appointment_date ? new Date(completingAppointment.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                                <p className="text-sm mb-2">
+                                    <span className="font-semibold text-gray-900">Date:</span> <span className="text-gray-700">{completingAppointment.appointment_date ? new Date(completingAppointment.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
                                 </p>
-                                <p className="text-sm text-gray-600 mb-2">
-                                    <span className="font-medium">Provider:</span> {completingAppointment.provider_name || 'N/A'}
+                                <p className="text-sm mb-2">
+                                    <span className="font-semibold text-gray-900">Provider:</span> <span className="text-gray-700">{completingAppointment.provider_name || 'N/A'}</span>
                                 </p>
-                                <p className="text-sm text-gray-600">
-                                    <span className="font-medium">Type:</span> {completingAppointment.appointment_type?.name || completingAppointment.appointmentType?.name || 'Other'}
+                                <p className="text-sm">
+                                    <span className="font-semibold text-gray-900">Type:</span> <span className="text-gray-700">{completingAppointment.appointment_type?.name || completingAppointment.appointmentType?.name || 'Other'}</span>
                                 </p>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-sm font-bold text-gray-900 mb-2">
+                                <label htmlFor="completion-notes" className="block text-sm font-semibold text-gray-900 mb-2">
                                     Completion Notes <span className="text-gray-500 font-normal">(Optional)</span>
                                 </label>
                                 <textarea
+                                    id="completion-notes"
                                     value={completionNotes}
                                     onChange={(e) => setCompletionNotes(e.target.value)}
                                     placeholder="Enter notes about the appointment outcome..."
                                     rows={4}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent resize-none"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent resize-none text-gray-900"
                                 />
                             </div>
                         </div>
