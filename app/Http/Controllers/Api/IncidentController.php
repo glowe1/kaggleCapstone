@@ -120,48 +120,45 @@ class IncidentController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
-        $user = auth()->user();
-        
-        // Allow administrators and super admins to create incidents even without specific permission
-        $isSuperAdmin = $user && ($user->role === 'super_admin' || $user->hasRole('super_admin'));
-        $isAdmin = $user && ($user->role === 'administrator' || $user->role === 'admin');
-        
-        // Check if user is a caregiver
-        $isCaregiver = $this->isCaregiver($user);
-        
-        // Caregivers can create incidents for residents in their assigned branch
-        // Admins and super admins can create incidents without specific permission
-        // Other users need the create_incidents permission
-        if (!$isSuperAdmin && !$isAdmin && !$isCaregiver) {
-            if ($error = $this->requirePermission('create_incidents')) {
+        try {
+            $user = auth()->user();
+            
+            // Allow administrators and super admins to create incidents even without specific permission
+            $isSuperAdmin = $user && ($user->role === 'super_admin' || $user->hasRole('super_admin'));
+            $isAdmin = $user && ($user->role === 'administrator' || $user->role === 'admin');
+            
+            // Check if user is a caregiver
+            $isCaregiver = $this->isCaregiver($user);
+            
+            // Caregivers can create incidents for residents in their assigned branch
+            // Admins and super admins can create incidents without specific permission
+            // Other users need the create_incidents permission
+            if (!$isSuperAdmin && !$isAdmin && !$isCaregiver) {
+                if ($error = $this->requirePermission('create_incidents')) {
+                    return $error;
+                }
+            }
+
+            // Check module access
+            if ($error = $this->requireModuleAccess(\App\Constants\Modules::INCIDENTS)) {
                 return $error;
             }
-        }
 
-        // Check module access
-        if ($error = $this->requireModuleAccess(\App\Constants\Modules::INCIDENTS)) {
-            return $error;
-        }
-
-        $validated = $request->validate([
-            'resident_id' => 'required|exists:residents,id',
-            'branch_id' => 'nullable|exists:branches,id',
-            'incident_type' => 'required|string|max:255',
-            'description' => 'required|string',
-            'incident_date' => 'required|date',
-            'location' => 'nullable|string|max:255',
-            'severity' => 'required|in:low,medium,high,critical',
-            'priority' => 'required|in:low,medium,high,critical',
-            'status' => 'nullable|in:open,in_progress,resolved,closed,on_hold',
-            'action_taken' => 'nullable|string',
-            'witnesses' => 'nullable|string',
-            'follow_up' => 'nullable|string',
-            'assigned_to' => 'nullable|exists:users,id',
-            'attachments' => 'nullable|array',
-            'attachments.*.file' => 'required_with:attachments|file|max:2048|mimes:pdf,jpeg,jpg,png,gif,doc,docx,webp',
-            'attachments.*.file_type' => 'nullable|in:photo,document,video,other',
-            'attachments.*.description' => 'nullable|string',
-        ]);
+            $validated = $request->validate([
+                'resident_id' => 'required|exists:residents,id',
+                'branch_id' => 'nullable|exists:branches,id',
+                'incident_type' => 'required|string|max:255',
+                'description' => 'required|string',
+                'incident_date' => 'required|date',
+                'location' => 'nullable|string|max:255',
+                'severity' => 'required|in:low,medium,high,critical',
+                'priority' => 'required|in:low,medium,high,critical',
+                'status' => 'nullable|in:open,in_progress,resolved,closed,on_hold',
+                'action_taken' => 'nullable|string',
+                'witnesses' => 'nullable|string',
+                'follow_up' => 'nullable|string',
+                'assigned_to' => 'nullable|exists:users,id',
+            ]);
 
         // If branch_id not provided, infer from resident
         if (!isset($validated['branch_id'])) {
@@ -229,6 +226,18 @@ class IncidentController extends BaseApiController
                 
                 // Process the file if we have a valid UploadedFile
                 if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid()) {
+                    // Validate file size (2MB = 2048 KB)
+                    $maxSize = 2 * 1024 * 1024; // 2MB in bytes
+                    if ($file->getSize() > $maxSize) {
+                        throw new \Exception("File '{$file->getClientOriginalName()}' exceeds maximum size of 2MB");
+                    }
+                    
+                    // Validate file type
+                    $allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                    if (!in_array($file->getMimeType(), $allowedMimes)) {
+                        throw new \Exception("File '{$file->getClientOriginalName()}' has an invalid file type. Allowed types: PDF, JPEG, PNG, GIF, WebP, DOC, DOCX");
+                    }
+                    
                     $storedPath = $file->store('incident-attachments', 'public');
                     
                     IncidentAttachment::create([
@@ -247,7 +256,21 @@ class IncidentController extends BaseApiController
             }
         }
 
-        return response()->json($incident->load(['resident', 'branch', 'reportedBy', 'assignedTo', 'attachments']), 201);
+            return response()->json($incident->load(['resident', 'branch', 'reportedBy', 'assignedTo', 'attachments']), 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error creating incident: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->except(['attachments']),
+            ]);
+            return response()->json([
+                'message' => 'Failed to create incident: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id): JsonResponse

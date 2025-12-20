@@ -169,6 +169,17 @@ export default function Incidents() {
             console.error('Error creating incident:', error);
             if (error.response?.status === 413) {
                 toast.error('File size too large. Maximum file size is 2MB per file, and total request size is 8MB. Please reduce file sizes and try again.');
+            } else if (error.response?.status === 422) {
+                // Validation errors
+                const errors = error.response?.data?.errors;
+                if (errors) {
+                    const firstError = Object.values(errors)[0];
+                    toast.error(Array.isArray(firstError) ? firstError[0] : firstError);
+                } else {
+                    toast.error(error.response?.data?.message || 'Validation failed');
+                }
+            } else if (error.response?.status === 500) {
+                toast.error(error.response?.data?.message || 'Server error occurred. Please try again or contact support.');
             } else {
                 toast.error(error.response?.data?.message || 'Failed to create incident');
             }

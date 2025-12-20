@@ -317,7 +317,7 @@ export default function Dashboard() {
                     api.get('/cleaning/tasks?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                     api.get('/incidents?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                     api.get('/grocery-status-updates?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
-                    api.get('/pharmacy/inventory?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
+                    api.get('/pharmacy-inventory?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                     api.get('/billing/expenses?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                     api.get('/fire-drills?per_page=1').catch(() => ({ data: { meta: { total: 0 } } })),
                 ]);
