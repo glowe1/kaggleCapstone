@@ -71,7 +71,7 @@ export default function MedicationDeliveries() {
     });
 
     // Fetch pharmacy suppliers
-    const { data: pharmacySuppliersData } = useQuery({
+    const { data: pharmacySuppliersData, error: pharmacySuppliersError } = useQuery({
         queryKey: ['pharmacy-suppliers'],
         queryFn: async () => (await api.get('/pharmacy-suppliers', { params: { per_page: 100, is_active: true } })).data,
     });
