@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
@@ -9,23 +9,27 @@ import {
     Clock, 
     TrendingUp,
     Plus,
-    Filter,
-    Search,
     User,
     MapPin,
     Stethoscope,
     ChevronRight,
-    FileText
+    FileText,
+    List
 } from 'lucide-react';
 import Card from '../components/Card';
 import SectionCard from '../components/SectionCard';
 
+const tabs = [
+    { id: 'today', label: 'Today', icon: Calendar },
+    { id: 'upcoming', label: 'Upcoming', icon: Clock },
+    { id: 'completed', label: 'Completed', icon: CheckCircle },
+    { id: 'this_month', label: 'This Month', icon: TrendingUp },
+];
+
 export default function AppointmentsDashboard() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [statusFilter, setStatusFilter] = useState('all');
     const [dateFilter, setDateFilter] = useState('upcoming');
-    const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState('upcoming'); // 'today', 'upcoming', 'completed', 'this_month'
 
     // Fetch current user
@@ -45,24 +49,31 @@ export default function AppointmentsDashboard() {
     }, [currentUser]);
 
     // Fetch statistics
-    const { data: statistics, isLoading: statsLoading } = useQuery({
+    const { data: statistics, isLoading: statsLoading, error: statsError } = useQuery({
         queryKey: ['appointments-statistics'],
         queryFn: async () => {
-            const response = await api.get('/appointments/statistics');
-            return response.data;
+            try {
+                const response = await api.get('/appointments/statistics');
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching statistics:', error);
+                throw error;
+            }
         },
+        refetchOnWindowFocus: true,
     });
 
     // Fetch appointments based on filters
     const { data: appointmentsData, isLoading: appointmentsLoading, refetch } = useQuery({
-        queryKey: ['appointments-dashboard', statusFilter, dateFilter, search, activeTab],
+        queryKey: ['appointments-dashboard', dateFilter, activeTab],
         queryFn: async () => {
             const params = {
                 per_page: 50,
             };
             
-            if (statusFilter !== 'all') {
-                params.status = statusFilter;
+            // Apply status filter based on active tab
+            if (activeTab === 'completed') {
+                params.status = 'completed';
             }
             
             if (dateFilter === 'upcoming') {
@@ -82,10 +93,6 @@ export default function AppointmentsDashboard() {
                 endOfMonth.setHours(23, 59, 59, 999);
                 params.date_from = startOfMonth.toISOString().split('T')[0];
                 params.date_to = endOfMonth.toISOString().split('T')[0];
-            }
-            
-            if (search) {
-                params.search = search;
             }
             
             const response = await api.get('/appointments', { params });
@@ -128,6 +135,30 @@ export default function AppointmentsDashboard() {
         total: 0,
         this_week: 0,
         this_month: 0,
+    };
+
+    // Debug: Log statistics when they change
+    useEffect(() => {
+        if (statistics) {
+            console.log('Appointments Statistics:', statistics);
+        }
+        if (statsError) {
+            console.error('Statistics Error:', statsError);
+        }
+    }, [statistics, statsError]);
+
+    // Handle tab click - sync filters with active tab
+    const handleTabClick = (tabId) => {
+        setActiveTab(tabId);
+        if (tabId === 'today') {
+            setDateFilter('today');
+        } else if (tabId === 'upcoming') {
+            setDateFilter('upcoming');
+        } else if (tabId === 'completed') {
+            setDateFilter('all');
+        } else if (tabId === 'this_month') {
+            setDateFilter('all');
+        }
     };
 
     const formatTime = (timeString) => {
@@ -180,9 +211,9 @@ export default function AppointmentsDashboard() {
                 <div className="flex items-center gap-3">
                     <Link
                         to="/appointments"
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        className="inline-flex items-center gap-2 rounded-lg border-2 border-[var(--theme-primary)] bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-hover)] transition-colors shadow-sm"
                     >
-                        <Filter className="w-4 h-4" />
+                        <List className="h-4 w-4" />
                         View All
                     </Link>
                     <button
@@ -195,130 +226,109 @@ export default function AppointmentsDashboard() {
                 </div>
             </div>
 
-            {/* Statistics Cards - Clickable Tabs */}
+            {/* Statistics Cards */}
+            {statsError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-red-800">
+                        Error loading statistics. Please refresh the page.
+                    </p>
+                </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card 
-                    className={`p-6 cursor-pointer transition-all hover:shadow-lg ${activeTab === 'today' ? 'ring-2 ring-[var(--theme-primary)] bg-[var(--theme-primary)]/5' : ''}`}
-                    onClick={() => {
-                        setActiveTab('today');
-                        setDateFilter('today');
-                        setStatusFilter('all');
-                    }}
-                >
+                <Card className="p-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Today</p>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.today}</p>
+                            <p className="text-2xl font-bold text-gray-900 mt-1">
+                                {statsLoading ? (
+                                    <span className="inline-block animate-pulse">...</span>
+                                ) : (
+                                    stats.today
+                                )}
+                            </p>
                         </div>
-                        <div className={`p-3 rounded-lg ${activeTab === 'today' ? 'bg-[var(--theme-primary)]' : 'bg-blue-100'}`}>
-                            <Calendar className={`w-6 h-6 ${activeTab === 'today' ? 'text-white' : 'text-blue-600'}`} />
+                        <div className="p-3 bg-blue-100 rounded-lg">
+                            <Calendar className="w-6 h-6 text-blue-600" />
                         </div>
                     </div>
                 </Card>
 
-                <Card 
-                    className={`p-6 cursor-pointer transition-all hover:shadow-lg ${activeTab === 'upcoming' ? 'ring-2 ring-[var(--theme-primary)] bg-[var(--theme-primary)]/5' : ''}`}
-                    onClick={() => {
-                        setActiveTab('upcoming');
-                        setDateFilter('upcoming');
-                        setStatusFilter('all');
-                    }}
-                >
+                <Card className="p-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Upcoming</p>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.upcoming}</p>
+                            <p className="text-2xl font-bold text-gray-900 mt-1">
+                                {statsLoading ? (
+                                    <span className="inline-block animate-pulse">...</span>
+                                ) : (
+                                    stats.upcoming
+                                )}
+                            </p>
                         </div>
-                        <div className={`p-3 rounded-lg ${activeTab === 'upcoming' ? 'bg-[var(--theme-primary)]' : 'bg-green-100'}`}>
-                            <Clock className={`w-6 h-6 ${activeTab === 'upcoming' ? 'text-white' : 'text-green-600'}`} />
+                        <div className="p-3 bg-green-100 rounded-lg">
+                            <Clock className="w-6 h-6 text-green-600" />
                         </div>
                     </div>
                 </Card>
 
-                <Card 
-                    className={`p-6 cursor-pointer transition-all hover:shadow-lg ${activeTab === 'completed' ? 'ring-2 ring-[var(--theme-primary)] bg-[var(--theme-primary)]/5' : ''}`}
-                    onClick={() => {
-                        setActiveTab('completed');
-                        setDateFilter('all');
-                        setStatusFilter('completed');
-                    }}
-                >
+                <Card className="p-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Completed</p>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.completed}</p>
+                            <p className="text-2xl font-bold text-gray-900 mt-1">
+                                {statsLoading ? (
+                                    <span className="inline-block animate-pulse">...</span>
+                                ) : (
+                                    stats.completed
+                                )}
+                            </p>
                         </div>
-                        <div className={`p-3 rounded-lg ${activeTab === 'completed' ? 'bg-[var(--theme-primary)]' : 'bg-purple-100'}`}>
-                            <CheckCircle className={`w-6 h-6 ${activeTab === 'completed' ? 'text-white' : 'text-purple-600'}`} />
+                        <div className="p-3 bg-purple-100 rounded-lg">
+                            <CheckCircle className="w-6 h-6 text-purple-600" />
                         </div>
                     </div>
                 </Card>
 
-                <Card 
-                    className={`p-6 cursor-pointer transition-all hover:shadow-lg ${activeTab === 'this_month' ? 'ring-2 ring-[var(--theme-primary)] bg-[var(--theme-primary)]/5' : ''}`}
-                    onClick={() => {
-                        setActiveTab('this_month');
-                        setDateFilter('all');
-                        setStatusFilter('all');
-                        // We'll need to add a custom filter for this month
-                    }}
-                >
+                <Card className="p-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">This Month</p>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.this_month}</p>
+                            <p className="text-2xl font-bold text-gray-900 mt-1">
+                                {statsLoading ? (
+                                    <span className="inline-block animate-pulse">...</span>
+                                ) : (
+                                    stats.this_month
+                                )}
+                            </p>
                         </div>
-                        <div className={`p-3 rounded-lg ${activeTab === 'this_month' ? 'bg-[var(--theme-primary)]' : 'bg-orange-100'}`}>
-                            <TrendingUp className={`w-6 h-6 ${activeTab === 'this_month' ? 'text-white' : 'text-orange-600'}`} />
+                        <div className="p-3 bg-orange-100 rounded-lg">
+                            <TrendingUp className="w-6 h-6 text-orange-600" />
                         </div>
                     </div>
                 </Card>
             </div>
 
-            {/* Filters and Search */}
-            <SectionCard>
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                    <div className="flex flex-wrap gap-3 flex-1">
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-gray-500" />
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="scheduled">Scheduled</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="in_progress">In Progress</option>
-                            </select>
-                        </div>
-
-                        <select
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
+            {/* Tab Navigation */}
+            <nav className="flex flex-wrap gap-2 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-gray-100">
+                {tabs.map(({ id, label, icon: Icon }) => {
+                    const isActive = activeTab === id;
+                    return (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => handleTabClick(id)}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition whitespace-nowrap ${
+                                isActive
+                                    ? 'bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] shadow-sm'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                            }`}
                         >
-                            <option value="upcoming">Upcoming</option>
-                            <option value="today">Today</option>
-                            <option value="past">Past</option>
-                            <option value="all">All Dates</option>
-                        </select>
-                    </div>
-
-                    <div className="relative w-full md:w-auto">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search appointments..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
-                        />
-                    </div>
-                </div>
-            </SectionCard>
+                            <Icon className="h-4 w-4" />
+                            <span>{label}</span>
+                        </button>
+                    );
+                })}
+            </nav>
 
             {/* Appointments List */}
             <SectionCard>
@@ -341,7 +351,7 @@ export default function AppointmentsDashboard() {
                         <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600">No appointments found</p>
                         <p className="text-gray-500 text-sm mt-2">
-                            {search ? 'Try adjusting your search' : 'Create a new appointment to get started'}
+                            Create a new appointment to get started
                         </p>
                     </div>
                 ) : (
