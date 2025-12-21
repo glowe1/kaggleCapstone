@@ -60,7 +60,7 @@ const navigation = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', children: null },
     { name: 'My Residents', icon: Users, path: '/my-residents', children: null },
     { name: 'Assessments', icon: ClipboardList, path: '/assessments', children: null },
-    { name: 'Appointment', icon: Calendar, path: '/appointments', children: null },
+    { name: 'Appointment', icon: Calendar, path: '/appointments/dashboard', children: null },
     { 
         name: 'Vitals', 
         icon: Heart, 
