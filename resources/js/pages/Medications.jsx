@@ -220,6 +220,13 @@ export default function Medications() {
             return normalized === 'caregiver' || (lower.includes('care') && lower.includes('giver'));
         });
     }, [currentUser]);
+    
+    // Check if user is a branch-level admin (not super_admin)
+    const isBranchAdmin = React.useMemo(() => {
+        if (!currentUser) return false;
+        const role = currentUser.role?.toLowerCase().trim() || '';
+        return (role === 'administrator' || role === 'admin') && role !== 'super_admin';
+    }, [currentUser]);
 
     // Redirect caregivers to the residents page
     React.useEffect(() => {
@@ -602,6 +609,7 @@ export default function Medications() {
                     branches={branchesData?.data || []}
                     currentUser={currentUser}
                     isCaregiver={isCaregiver}
+                    isBranchAdmin={isBranchAdmin}
                     onClose={() => {
                         setShowForm(false);
                         setEditing(null);
@@ -1068,17 +1076,17 @@ function MedicationAdministrationForm({ medication, onClose, onSuccess }) {
 }
 
 // Medication Create/Edit Form Component
-function MedicationForm({ record, residents, branches, currentUser, isCaregiver, onClose, onSuccess }) {
-    // Filter branches and residents for caregivers
+function MedicationForm({ record, residents, branches, currentUser, isCaregiver, isBranchAdmin, onClose, onSuccess }) {
+    // Filter branches and residents for caregivers and admin users
     const filteredBranches = React.useMemo(() => {
-        if (!isCaregiver || !currentUser?.assigned_branch_id) return branches;
+        if ((!isCaregiver && !isBranchAdmin) || !currentUser?.assigned_branch_id) return branches;
         return branches.filter(b => b.id === currentUser.assigned_branch_id);
-    }, [branches, isCaregiver, currentUser]);
+    }, [branches, isCaregiver, isBranchAdmin, currentUser]);
 
     const filteredResidents = React.useMemo(() => {
-        if (!isCaregiver || !currentUser?.assigned_branch_id) return residents;
+        if ((!isCaregiver && !isBranchAdmin) || !currentUser?.assigned_branch_id) return residents;
         return residents.filter(r => r.branch_id === currentUser.assigned_branch_id);
-    }, [residents, isCaregiver, currentUser]);
+    }, [residents, isCaregiver, isBranchAdmin, currentUser]);
 
     // Helper to convert date to YYYY-MM-DD format for date inputs
     const formatDateForInput = (dateValue) => {
@@ -1095,7 +1103,7 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
 
     const [formData, setFormData] = useState({
         resident_id: record?.resident_id || '',
-        branch_id: record?.branch_id || (isCaregiver && currentUser?.assigned_branch_id ? currentUser.assigned_branch_id : ''),
+        branch_id: record?.branch_id || ((isCaregiver || isBranchAdmin) && currentUser?.assigned_branch_id ? currentUser.assigned_branch_id : ''),
         drug_id: record?.drug_id || '',
         name: record?.name || '',
         instructions: record?.instructions || '',
@@ -1112,12 +1120,12 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
         time_4: record?.time_4 || '',
     });
 
-    // Auto-select branch for caregivers on mount
+    // Auto-select branch for caregivers and admin users on mount
     React.useEffect(() => {
-        if (isCaregiver && currentUser?.assigned_branch_id && !record && !formData.branch_id) {
+        if ((isCaregiver || isBranchAdmin) && currentUser?.assigned_branch_id && !record && !formData.branch_id) {
             setFormData(prev => ({ ...prev, branch_id: currentUser.assigned_branch_id }));
         }
-    }, [isCaregiver, currentUser, record]);
+    }, [isCaregiver, isBranchAdmin, currentUser, record]);
 
     // Set default start_date (if not editing existing record)
     // This runs after component mount to ensure server time is available, or uses formatter fallback
@@ -1253,8 +1261,8 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
                                 });
                             }}
                             required
-                            disabled={isCaregiver && currentUser?.assigned_branch_id}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            disabled={(isCaregiver || isBranchAdmin) && currentUser?.assigned_branch_id}
+                            className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent ${(isCaregiver || isBranchAdmin) && currentUser?.assigned_branch_id ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''}`}
                         >
                             <option value="">Select Branch</option>
                             {filteredBranches.map(b => (
