@@ -835,7 +835,7 @@ export default function AppointmentsDashboard() {
                                                         <p className="text-xs text-gray-600 mt-1">Max size: 10MB</p>
                                                     </div>
                                                     <div className="col-span-2">
-                                                        <label className="block text-sm font-bold text-black mb-2" style={{ color: '#111827', fontWeight: 700 }}>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-1">
                                                             Notes
                                                         </label>
                                                         <textarea
