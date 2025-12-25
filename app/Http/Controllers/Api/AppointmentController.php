@@ -213,6 +213,59 @@ class AppointmentController extends BaseApiController
         return response()->json($appointment->load(['resident', 'healthcareProvider', 'appointmentType']), 201);
     }
 
+    public function update(Request $request, $id): JsonResponse
+    {
+        $appointment = Appointment::findOrFail($id);
+        $user = auth()->user();
+
+        // Check permissions
+        $isSuperAdmin = $user && ($user->role === 'super_admin' || $user->hasRole('super_admin'));
+        $isAdmin = $user && $user->isAnyAdmin();
+        $isCaregiver = $this->isCaregiver($user);
+
+        if (!$isSuperAdmin && !$isAdmin && !$isCaregiver) {
+            if ($error = $this->requirePermission('update_appointments')) {
+                return $error;
+            }
+        }
+
+        $validated = $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'resident_id' => 'sometimes|exists:residents,id',
+            'branch_id' => 'nullable|exists:branches,id',
+            'appointment_type_id' => 'nullable|exists:appointment_types,id',
+            'healthcare_provider_id' => 'nullable|exists:healthcare_providers,id',
+            'appointment_date' => 'sometimes|required|date',
+            'appointment_time' => 'sometimes|required|date_format:H:i',
+            'provider_name' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'status' => 'nullable|in:scheduled,completed,cancelled,confirmed,in_progress',
+            'notes' => 'nullable|string',
+        ]);
+
+        // If appointment_date or appointment_time is updated, regenerate title if needed
+        if (isset($validated['appointment_date']) || isset($validated['appointment_time'])) {
+            $resident = $appointment->resident;
+            if ($resident) {
+                $appointmentDate = $validated['appointment_date'] ?? $appointment->appointment_date;
+                $appointmentTime = $validated['appointment_time'] ?? $appointment->appointment_time;
+                
+                $residentName = trim(($resident->first_name ?? '') . ' ' . ($resident->last_name ?? ''));
+                $dateLabel = is_string($appointmentDate) ? date('M j, Y', strtotime($appointmentDate)) : now()->toDateString();
+                $timeLabel = $appointmentTime ? date('g:i A', strtotime($appointmentTime)) : '';
+                $withTime = $timeLabel ? " at {$timeLabel}" : '';
+                $provider = $validated['provider_name'] ?? $appointment->provider_name;
+                $base = $provider ? "Appointment with {$provider}" : 'Appointment';
+                $validated['title'] = "$base - {$residentName} on {$dateLabel}{$withTime}";
+            }
+        }
+
+        $appointment->update($validated);
+
+        return response()->json($appointment->load(['resident', 'healthcareProvider', 'appointmentType', 'branch', 'createdBy']));
+    }
+
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $request->validate([
