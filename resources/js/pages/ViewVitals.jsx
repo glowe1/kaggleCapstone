@@ -735,8 +735,8 @@ export default function ViewVitals() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
+                    <div className="overflow-x-auto" style={{ position: 'relative' }}>
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -769,7 +769,7 @@ export default function ViewVitals() {
                                             vitalsData.data.map((vital) => {
                                                 const date = new Date(vital.measurement_date);
                                                 return (
-                                                    <tr key={vital.id} className="hover:bg-gray-50">
+                                                    <tr key={vital.id} className="hover:bg-gray-50" style={{ position: 'relative', zIndex: openMenuId === vital.id ? 10 : 1 }}>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                             {date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
                                                         </td>
@@ -798,7 +798,7 @@ export default function ViewVitals() {
                                                         {vital.status || 'approved'}
                                                     </span>
                                                 </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 relative">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                             <div className="relative" ref={(el) => (menuRefs.current[vital.id] = el)}>
                                                                 <button
                                                                     type="button"
@@ -813,26 +813,37 @@ export default function ViewVitals() {
                                                                     <MoreVertical className="w-5 h-5" />
                                                                 </button>
                                                                 {openMenuId === vital.id && (
-                                                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50" style={{ zIndex: 9999 }}>
-                                                                        <div className="py-1">
-                                                                            {vital.status === 'pending_review' && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        e.stopPropagation();
-                                                                                        handleApprove(vital.id);
-                                                                                        setOpenMenuId(null);
-                                                                                    }}
-                                                                                    disabled={updateStatusMutation.isPending}
-                                                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                                >
-                                                                                    <CheckCircle className="w-4 h-4 text-green-600" />
-                                                                                    Approve
-                                                                                </button>
-                                                                            )}
+                                                                    <>
+                                                                        {/* Backdrop to close menu when clicking outside */}
+                                                                        <div 
+                                                                            className="fixed inset-0 z-[9998]" 
+                                                                            onClick={() => setOpenMenuId(null)}
+                                                                            style={{ position: 'fixed' }}
+                                                                        />
+                                                                        <div 
+                                                                            className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200" 
+                                                                            style={{ zIndex: 9999, position: 'absolute' }}
+                                                                        >
+                                                                            <div className="py-1">
+                                                                                {vital.status === 'pending_review' && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            e.stopPropagation();
+                                                                                            handleApprove(vital.id);
+                                                                                            setOpenMenuId(null);
+                                                                                        }}
+                                                                                        disabled={updateStatusMutation.isPending}
+                                                                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                                    >
+                                                                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                                                                        Approve
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
+                                                                    </>
                                                                 )}
                                                             </div>
                                                         </td>
