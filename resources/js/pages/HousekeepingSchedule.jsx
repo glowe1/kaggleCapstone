@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, FormProvider } from 'react-hook-form';
+import { useSearchParams } from 'react-router-dom';
 import {
     Sparkles,
     Plus,
@@ -22,6 +23,7 @@ import FormInput from '../components/forms/FormInput';
 import FormTextarea from '../components/forms/FormTextarea';
 import FormCheckbox from '../components/forms/FormCheckbox';
 import FormSelect from '../components/forms/FormSelect';
+import BranchSelector from '../components/housekeeping/BranchSelector';
 
 const frequencyOptions = [
     { value: 'daily', label: 'Daily' },
@@ -41,6 +43,9 @@ const dayOptions = [
 ];
 
 export default function HousekeepingSchedule() {
+    const [searchParams] = useSearchParams();
+    const selectedBranchId = searchParams.get('branch');
+
     const formatTime = (value) => {
         if (!value) return '';
         try {
@@ -76,21 +81,6 @@ export default function HousekeepingSchedule() {
     const [assignmentTask, setAssignmentTask] = React.useState(null);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = React.useState(false);
 
-    const { data: areasData, isLoading: areasLoading, error: areasError } = useQuery({
-        queryKey: ['cleaning-areas'],
-        queryFn: async () => {
-            const response = await api.get('/cleaning/areas');
-            return response.data.data || [];
-        },
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    });
-
-    React.useEffect(() => {
-        if (!selectedAreaId && Array.isArray(areasData) && areasData.length > 0) {
-            setSelectedAreaId(areasData[0].id);
-        }
-    }, [areasData, selectedAreaId]);
-
     const { data: currentUser } = useQuery({
         queryKey: ['current-user'],
         queryFn: async () => {
@@ -100,14 +90,42 @@ export default function HousekeepingSchedule() {
         staleTime: 5 * 60 * 1000, // Cache for 5 minutes - reuse global user query
     });
 
+    const { data: areasData, isLoading: areasLoading, error: areasError } = useQuery({
+        queryKey: ['cleaning-areas', selectedBranchId],
+        queryFn: async () => {
+            const params = {};
+            if (selectedBranchId) {
+                params.branch_id = selectedBranchId;
+            }
+            const response = await api.get('/cleaning/areas', { params });
+            return response.data.data || [];
+        },
+        enabled: !!selectedBranchId, // Only fetch if branch is selected
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+
+    React.useEffect(() => {
+        if (!selectedAreaId && Array.isArray(areasData) && areasData.length > 0) {
+            setSelectedAreaId(areasData[0].id);
+        }
+    }, [areasData, selectedAreaId]);
+
+    // Reset selected area when branch changes
+    React.useEffect(() => {
+        setSelectedAreaId(null);
+    }, [selectedBranchId]);
+
 const { data: caregiversData } = useQuery({
-    queryKey: ['caregiver-users'],
+    queryKey: ['caregiver-users', selectedBranchId],
     queryFn: async () => {
-        const response = await api.get('/users', {
-            params: { per_page: 100, status: 'active', role: 'caregiver' },
-        });
+        const params = { per_page: 100, status: 'active', role: 'caregiver' };
+        if (selectedBranchId) {
+            params.branch_id = selectedBranchId;
+        }
+        const response = await api.get('/users', { params });
         return response.data;
     },
+    enabled: !!selectedBranchId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
 });
 const caregivers = caregiversData?.data ?? [];
@@ -117,18 +135,20 @@ const caregivers = caregiversData?.data ?? [];
         isLoading: tasksLoading,
         error: tasksError,
     } = useQuery({
-        queryKey: ['cleaning-tasks', selectedAreaId, assignmentDate],
+        queryKey: ['cleaning-tasks', selectedAreaId, assignmentDate, selectedBranchId],
         queryFn: async () => {
-            const response = await api.get('/cleaning/tasks', {
-                params: {
-                    area_id: selectedAreaId,
-                    per_page: 200,
-                    date: assignmentDate,
-                },
-            });
+            const params = {
+                area_id: selectedAreaId,
+                per_page: 200,
+                date: assignmentDate,
+            };
+            if (selectedBranchId) {
+                params.branch_id = selectedBranchId;
+            }
+            const response = await api.get('/cleaning/tasks', { params });
             return response.data?.data ?? [];
         },
-        enabled: Boolean(selectedAreaId),
+        enabled: Boolean(selectedAreaId) && Boolean(selectedBranchId),
         staleTime: 30 * 1000, // Cache for 30 seconds
     });
 
@@ -213,7 +233,8 @@ const closeAssignmentModal = () => {
     };
 
     const selectedArea = areasData?.find((area) => area.id === selectedAreaId);
-    const branchId = currentUser?.assigned_branch_id ?? currentUser?.assigned_branch?.id ?? null;
+    // Use selected branch from URL, fallback to user's assigned branch
+    const branchId = selectedBranchId ? parseInt(selectedBranchId) : (currentUser?.assigned_branch_id ?? currentUser?.assigned_branch?.id ?? null);
 
     // Fetch branches for task form
     const { data: branchesData } = useQuery({
@@ -223,6 +244,20 @@ const closeAssignmentModal = () => {
             return response.data;
         },
     });
+
+    // Show branch selector and wait for branch selection
+    if (!selectedBranchId) {
+        return (
+            <div className="space-y-6">
+                <BranchSelector currentUser={currentUser} />
+                <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+                    <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-4 text-sm font-semibold text-gray-700">Please select a branch to continue</p>
+                    <p className="mt-2 text-xs text-gray-500">Select a branch from the dropdown above to view and manage housekeeping schedules.</p>
+                </div>
+            </div>
+        );
+    }
 
     // If task form is open, show the form instead of the main content
     if (isModalOpen) {
@@ -234,6 +269,7 @@ const closeAssignmentModal = () => {
                 isSaving={createTask.isLoading || updateTask.isLoading}
                 currentUser={currentUser}
                 branches={branchesData?.data || []}
+                selectedBranchId={branchId}
             />
         );
     }
@@ -276,6 +312,7 @@ const closeAssignmentModal = () => {
 
     return (
         <div className="space-y-6">
+            <BranchSelector currentUser={currentUser} />
             <header 
                 className="rounded-3xl p-6 text-white shadow-lg" 
                 style={{ 
@@ -587,11 +624,14 @@ const closeAssignmentModal = () => {
     );
 }
 
-function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, branches }) {
-    // Determine initial branch_id - use area's branch if editing, or current user's branch
+function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, branches, selectedBranchId: propSelectedBranchId }) {
+    // Determine initial branch_id - use area's branch if editing, or selected branch from parent, or current user's branch
     const getInitialBranchId = () => {
         if (initialValues?.area?.branch_id) {
             return initialValues.area.branch_id.toString();
+        }
+        if (propSelectedBranchId) {
+            return propSelectedBranchId.toString();
         }
         if (initialValues?.cleaning_area_id) {
             // We'll fetch the area to get branch_id
@@ -672,6 +712,10 @@ function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, bra
             if (initialValues?.area?.branch_id) {
                 setSelectedBranchId(initialValues.area.branch_id.toString());
                 setValue('branch_id', initialValues.area.branch_id.toString());
+            } else if (propSelectedBranchId) {
+                // Use prop selected branch if available
+                setSelectedBranchId(propSelectedBranchId.toString());
+                setValue('branch_id', propSelectedBranchId.toString());
             } else if (allAreasData) {
                 // Fallback: find area in all areas data
                 const area = allAreasData.find(a => a.id === initialValues.cleaning_area_id);
@@ -681,7 +725,7 @@ function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, bra
                 }
             }
         }
-    }, [initialValues, selectedBranchId, allAreasData, setValue]);
+    }, [initialValues, selectedBranchId, allAreasData, setValue, propSelectedBranchId]);
     const daysOfWeek = watch('days_of_week') || [];
     const isRequired = watch('is_required');
     const formBranchId = watch('branch_id');

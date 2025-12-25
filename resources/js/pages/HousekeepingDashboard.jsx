@@ -1,8 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles, RefreshCcw, CalendarDays, CheckCircle2, XCircle, Clock3, ShieldCheck, FileText, User } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Sparkles, RefreshCcw, CalendarDays, CheckCircle2, XCircle, Clock3, ShieldCheck, FileText, User, Building2 } from 'lucide-react';
 import api from '../services/api';
 import { getLocalDateString } from '../utils/pacificTime';
+import BranchSelector from '../components/housekeeping/BranchSelector';
 
 const statusOptions = [
     { value: '', label: 'All statuses' },
@@ -24,6 +26,8 @@ const formatTime = (value) => {
 };
 
 export default function HousekeepingDashboard() {
+    const [searchParams] = useSearchParams();
+    const selectedBranchId = searchParams.get('branch');
     const [selectedDate, setSelectedDate] = React.useState(() => getLocalDateString());
     const [areaId, setAreaId] = React.useState('');
     const [status, setStatus] = React.useState('');
@@ -38,21 +42,33 @@ export default function HousekeepingDashboard() {
     });
     const [reportDateTo, setReportDateTo] = React.useState(() => getLocalDateString());
 
+    const { data: currentUser } = useQuery({
+        queryKey: ['current-user'],
+        queryFn: async () => {
+            const response = await api.get('/user');
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+
     const { data, isLoading, isFetching, error, refetch } = useQuery({
-        queryKey: ['housekeeping-dashboard', selectedDate, areaId, status],
+        queryKey: ['housekeeping-dashboard', selectedDate, areaId, status, selectedBranchId],
         queryFn: async () => {
             const params = { date: selectedDate };
             if (areaId) params.area_id = areaId;
             if (status) params.status = status;
+            if (selectedBranchId) params.branch_id = selectedBranchId;
             const response = await api.get('/cleaning/dashboard', { params });
             return response.data;
         },
+        enabled: !!selectedBranchId, // Only fetch if branch is selected
     });
 
     const { data: completionReport, isLoading: reportLoading, error: reportError } = useQuery({
-        queryKey: ['housekeeping-completion-report', reportDateFrom, reportDateTo],
+        queryKey: ['housekeeping-completion-report', reportDateFrom, reportDateTo, selectedBranchId],
         queryFn: async () => {
             const params = { date_from: reportDateFrom, date_to: reportDateTo };
+            if (selectedBranchId) params.branch_id = selectedBranchId;
             try {
                 const response = await api.get('/cleaning/completion-report', { params });
                 console.log('Completion report response:', response.data);
@@ -62,7 +78,7 @@ export default function HousekeepingDashboard() {
                 throw error;
             }
         },
-        enabled: showCompletionReport,
+        enabled: showCompletionReport && !!selectedBranchId,
         staleTime: 60 * 1000, // Cache for 1 minute - reports don't change as frequently
         retry: 1, // Only retry once on failure
     });
@@ -71,8 +87,23 @@ export default function HousekeepingDashboard() {
     const rows = data?.rows ?? [];
     const areas = data?.areas ?? [];
 
+    // Show branch selector and wait for branch selection
+    if (!selectedBranchId) {
+        return (
+            <div className="space-y-6">
+                <BranchSelector currentUser={currentUser} />
+                <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+                    <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-4 text-sm font-semibold text-gray-700">Please select a branch to continue</p>
+                    <p className="mt-2 text-xs text-gray-500">Select a branch from the dropdown above to view housekeeping dashboard data.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
+            <BranchSelector currentUser={currentUser} />
             <header 
                 className="rounded-3xl p-6 text-white shadow-lg" 
                 style={{ 

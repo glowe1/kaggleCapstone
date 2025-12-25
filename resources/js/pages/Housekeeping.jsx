@@ -1,8 +1,10 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Sparkles, CalendarDays, RefreshCcw, CheckCircle2, XCircle, Loader2, StickyNote, Info } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Sparkles, CalendarDays, RefreshCcw, CheckCircle2, XCircle, Loader2, StickyNote, Info, Building2 } from 'lucide-react';
 import api from '../services/api';
 import { getLocalDateString } from '../utils/pacificTime';
+import BranchSelector from '../components/housekeeping/BranchSelector';
 
 const getStatusStyles = (status) => {
     switch (status) {
@@ -17,20 +19,34 @@ const getStatusStyles = (status) => {
 };
 
 export default function Housekeeping() {
+    const [searchParams] = useSearchParams();
+    const selectedBranchId = searchParams.get('branch');
     const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = React.useState(() => getLocalDateString());
     const [skipNotesModal, setSkipNotesModal] = React.useState({ open: false, taskId: null, notes: '' });
     const [expandedSkipTask, setExpandedSkipTask] = React.useState(null); // Track which task is showing skip input
     const [skipNotes, setSkipNotes] = React.useState({}); // Store skip notes per task
 
-    const { data, isLoading, error, isFetching } = useQuery({
-        queryKey: ['cleaning-checklists', selectedDate],
+    const { data: currentUser } = useQuery({
+        queryKey: ['current-user'],
         queryFn: async () => {
-            const response = await api.get('/cleaning/checklists', {
-                params: { date: selectedDate },
-            });
+            const response = await api.get('/user');
             return response.data;
         },
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data, isLoading, error, isFetching } = useQuery({
+        queryKey: ['cleaning-checklists', selectedDate, selectedBranchId],
+        queryFn: async () => {
+            const params = { date: selectedDate };
+            if (selectedBranchId) {
+                params.branch_id = selectedBranchId;
+            }
+            const response = await api.get('/cleaning/checklists', { params });
+            return response.data;
+        },
+        enabled: !!selectedBranchId, // Only fetch if branch is selected
         staleTime: 30 * 1000, // Cache for 30 seconds - checklist data changes frequently
         keepPreviousData: true,
     });
@@ -239,8 +255,23 @@ export default function Housekeeping() {
         );
     };
 
+    // Show branch selector and wait for branch selection
+    if (!selectedBranchId) {
+        return (
+            <div className="space-y-6">
+                <BranchSelector currentUser={currentUser} />
+                <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+                    <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-4 text-sm font-semibold text-gray-700">Please select a branch to continue</p>
+                    <p className="mt-2 text-xs text-gray-500">Select a branch from the dropdown above to view and manage housekeeping checklists.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
+            <BranchSelector currentUser={currentUser} />
             <header 
                 className="rounded-3xl p-6 text-white shadow-lg" 
                 style={{ 
