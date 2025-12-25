@@ -158,7 +158,7 @@ export default function Housekeeping() {
                             type="button"
                             disabled={disabled}
                             onClick={() => handleSkipClick(task.id)}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 ring-1 ring-amber-200 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:bg-amber-50 disabled:text-amber-300"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-300 disabled:text-amber-100"
                         >
                             <XCircle className="h-4 w-4" />
                             Skip
