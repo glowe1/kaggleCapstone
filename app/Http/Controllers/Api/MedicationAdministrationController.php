@@ -132,8 +132,8 @@ class MedicationAdministrationController extends BaseApiController
             $query->where('branch_id', $request->get('branch_id'));
         }
 
-        // Filter by status
-        if ($request->has('status')) {
+        // Filter by status (only if status is provided and not empty)
+        if ($request->has('status') && $request->get('status') !== '' && $request->get('status') !== null) {
             $query->where('status', $request->get('status'));
         }
 

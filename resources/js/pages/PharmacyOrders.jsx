@@ -15,6 +15,8 @@ export default function PharmacyOrders() {
     const [editing, setEditing] = useState(null);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showItems, setShowItems] = useState(false);
+    const [editingReceived, setEditingReceived] = useState(false);
+    const [receivedQuantities, setReceivedQuantities] = useState({});
     const [currentUser, setCurrentUser] = useState(null);
     
     // Fetch current user
@@ -117,6 +119,23 @@ export default function PharmacyOrders() {
         },
     });
 
+    const markAsReceivedMutation = useMutation({
+        mutationFn: async ({ orderId, items }) => {
+            const response = await api.post(`/pharmacy-orders/${orderId}/mark-received`, { items });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['pharmacy-orders']);
+            setSelectedOrder(data);
+            setEditingReceived(false);
+            setReceivedQuantities({});
+        },
+        onError: (error) => {
+            console.error('Failed to update received quantities:', error);
+            alert(error.response?.data?.message || 'Failed to update received quantities. Please try again.');
+        },
+    });
+
     const createMutation = useMutation({
         mutationFn: async (data) => {
             const response = await api.post('/pharmacy-orders', data);
@@ -156,6 +175,36 @@ export default function PharmacyOrders() {
     const handleViewItems = (order) => {
         setSelectedOrder(order);
         setShowItems(true);
+        setEditingReceived(false);
+        // Initialize received quantities from order items
+        const quantities = {};
+        if (order.items) {
+            order.items.forEach(item => {
+                quantities[item.id] = item.quantity_received || 0;
+            });
+        }
+        setReceivedQuantities(quantities);
+    };
+
+    const handleReceivedQuantityChange = (itemId, value) => {
+        setReceivedQuantities(prev => ({
+            ...prev,
+            [itemId]: parseInt(value) || 0
+        }));
+    };
+
+    const handleSaveReceivedQuantities = () => {
+        if (!selectedOrder) return;
+        
+        const items = Object.entries(receivedQuantities).map(([itemId, quantity]) => ({
+            id: parseInt(itemId),
+            quantity_received: quantity
+        }));
+
+        markAsReceivedMutation.mutate({
+            orderId: selectedOrder.id,
+            items
+        });
     };
 
     const handleAddItem = () => {
@@ -499,13 +548,54 @@ export default function PharmacyOrders() {
                         <div>
                             <h2 className="text-xl font-semibold text-gray-900">Order Items</h2>
                             <p className="text-sm text-gray-600">Order #: {selectedOrder.order_number}</p>
+                            <p className="text-sm text-gray-500">Status: <span className="font-medium capitalize">{selectedOrder.status?.replace('_', ' ')}</span></p>
                         </div>
-                        <button
-                            onClick={() => { setShowItems(false); setSelectedOrder(null); }}
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                        >
-                            Back to Orders
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {!editingReceived && selectedOrder.status !== 'received' && selectedOrder.status !== 'cancelled' && (
+                                <button
+                                    onClick={() => setEditingReceived(true)}
+                                    className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors"
+                                >
+                                    Update Received Quantities
+                                </button>
+                            )}
+                            {editingReceived && (
+                                <>
+                                    <button
+                                        onClick={handleSaveReceivedQuantities}
+                                        disabled={markAsReceivedMutation.isPending}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                    >
+                                        {markAsReceivedMutation.isPending ? 'Saving...' : 'Save'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setEditingReceived(false);
+                                            // Reset to original values
+                                            const quantities = {};
+                                            selectedOrder.items.forEach(item => {
+                                                quantities[item.id] = item.quantity_received || 0;
+                                            });
+                                            setReceivedQuantities(quantities);
+                                        }}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                </>
+                            )}
+                            <button
+                                onClick={() => { 
+                                    setShowItems(false); 
+                                    setSelectedOrder(null);
+                                    setEditingReceived(false);
+                                    setReceivedQuantities({});
+                                }}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                            >
+                                Back to Orders
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -534,7 +624,20 @@ export default function PharmacyOrders() {
                                                     {item.quantity_ordered}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {item.quantity_received || 0}
+                                                    {editingReceived ? (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max={item.quantity_ordered}
+                                                            value={receivedQuantities[item.id] ?? item.quantity_received ?? 0}
+                                                            onChange={(e) => handleReceivedQuantityChange(item.id, e.target.value)}
+                                                            className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent"
+                                                        />
+                                                    ) : (
+                                                        <span className={item.quantity_received === item.quantity_ordered ? 'text-green-600 font-medium' : item.quantity_received > 0 ? 'text-yellow-600' : ''}>
+                                                            {item.quantity_received || 0}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     ${parseFloat(item.unit_cost || 0).toFixed(2)}
