@@ -282,9 +282,9 @@ export default function AppointmentDetail() {
                         </h2>
                         {appointment.documents && appointment.documents.length > 0 ? (
                             <div className="space-y-3">
-                                {appointment.documents.map((document) => (
+                                {appointment.documents.map((doc) => (
                                     <div 
-                                        key={document.id}
+                                        key={doc.id}
                                         className="border border-gray-200 rounded-lg p-4 hover:border-[var(--theme-primary)] transition-colors"
                                     >
                                         <div className="flex items-start justify-between">
@@ -292,39 +292,39 @@ export default function AppointmentDetail() {
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <FileText className="w-5 h-5 text-gray-400" />
                                                     <h3 className="text-sm font-medium text-gray-900">
-                                                        {document.document_name}
+                                                        {doc.document_name}
                                                     </h3>
-                                                    {document.document_type && (
+                                                    {doc.document_type && (
                                                         <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                                                            {document.document_type}
+                                                            {doc.document_type}
                                                         </span>
                                                     )}
                                                 </div>
-                                                {document.notes && (
-                                                    <p className="text-sm text-gray-600 mb-2">{document.notes}</p>
+                                                {doc.notes && (
+                                                    <p className="text-sm text-gray-600 mb-2">{doc.notes}</p>
                                                 )}
                                                 <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                    {document.file_name && (
-                                                        <span>File: {document.file_name}</span>
+                                                    {doc.file_name && (
+                                                        <span>File: {doc.file_name}</span>
                                                     )}
-                                                    {document.file_size_human && (
-                                                        <span>Size: {document.file_size_human}</span>
+                                                    {doc.file_size_human && (
+                                                        <span>Size: {doc.file_size_human}</span>
                                                     )}
-                                                    {document.uploaded_by && document.uploadedBy && (
-                                                        <span>Uploaded by: {document.uploadedBy.name || 'N/A'}</span>
+                                                    {doc.uploaded_by && doc.uploadedBy && (
+                                                        <span>Uploaded by: {doc.uploadedBy.name || 'N/A'}</span>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 ml-4">
                                                 <button
-                                                    onClick={() => handleViewDocument(document)}
+                                                    onClick={() => handleViewDocument(doc)}
                                                     className="p-2 text-gray-600 hover:text-[var(--theme-primary)] hover:bg-gray-100 rounded-lg transition-colors"
                                                     title="View Document"
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDownloadDocument(document)}
+                                                    onClick={() => handleDownloadDocument(doc)}
                                                     className="p-2 text-gray-600 hover:text-[var(--theme-primary)] hover:bg-gray-100 rounded-lg transition-colors"
                                                     title="Download Document"
                                                 >
