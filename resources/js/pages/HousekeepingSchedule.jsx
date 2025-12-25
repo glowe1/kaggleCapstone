@@ -335,10 +335,14 @@ const closeAssignmentModal = () => {
                                 setIsAreaModalOpen(true);
                             }}
                             disabled={!branchId && !currentUser?.facility_id}
-                            className="inline-flex items-center gap-1 rounded-xl border-2 bg-white px-3 py-1.5 text-xs font-bold transition-colors hover:bg-[var(--theme-primary-bg-light)] disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
-                            style={{ borderColor: 'var(--theme-primary-bg)', color: 'var(--theme-primary)' }}
+                            className="inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2 text-sm font-bold transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
+                            style={{ 
+                                borderColor: 'var(--theme-primary)', 
+                                backgroundColor: 'var(--theme-primary)', 
+                                color: 'var(--theme-text-on-primary)' 
+                            }}
                         >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-4 w-4" />
                             Area
                         </button>
                     </div>
