@@ -34,6 +34,7 @@ const tabs = [
 export default function AppointmentsDashboard() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
+    const toast = useToastContext();
     const [dateFilter, setDateFilter] = useState('upcoming');
     const [activeTab, setActiveTab] = useState('upcoming'); // 'today', 'upcoming', 'completed', 'this_month'
     const [search, setSearch] = useState('');
