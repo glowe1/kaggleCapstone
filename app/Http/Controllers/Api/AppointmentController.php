@@ -12,7 +12,7 @@ class AppointmentController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Appointment::with(['resident', 'healthcareProvider', 'appointmentType']);
+        $query = Appointment::with(['resident', 'healthcareProvider', 'appointmentType', 'documents']);
         $user = $request->user();
 
         // Apply facility filtering for non-super admins
@@ -92,7 +92,7 @@ class AppointmentController extends BaseApiController
 
     public function show($id): JsonResponse
     {
-        $appointment = Appointment::with(['resident', 'healthcareProvider', 'appointmentType'])
+        $appointment = Appointment::with(['resident', 'healthcareProvider', 'appointmentType', 'documents'])
             ->findOrFail($id);
 
         return response()->json($appointment);
@@ -231,12 +231,10 @@ class AppointmentController extends BaseApiController
         $appointment->save();
 
         // Handle document uploads if provided
-        // Check for documents in FormData format (documents[0][file], documents[0][document_name], etc.)
+        // Parse documents from FormData format (documents[0][file], documents[0][document_name], etc.)
         $documentCount = 0;
-        while ($request->has("documents.{$documentCount}.file") || $request->hasFile("documents.{$documentCount}.file")) {
-            $file = $request->hasFile("documents.{$documentCount}.file") 
-                ? $request->file("documents.{$documentCount}.file")
-                : null;
+        while ($request->hasFile("documents.{$documentCount}.file")) {
+            $file = $request->file("documents.{$documentCount}.file");
             
             if ($file && $file->isValid()) {
                 $documentName = $request->get("documents.{$documentCount}.document_name", 'Document');
@@ -262,7 +260,7 @@ class AppointmentController extends BaseApiController
             $documentCount++;
         }
 
-        return response()->json($appointment->load(['resident', 'healthcareProvider']));
+        return response()->json($appointment->load(['resident', 'healthcareProvider', 'documents']));
     }
 
     public function types(): JsonResponse
