@@ -465,10 +465,21 @@ function DocumentFormInline({ residentId, appointments, record, onClose, onSucce
                 return;
             }
 
+            let response;
             if (record) {
-                await api.put(`/resident-documents/${record.id}`, formDataToSend);
+                response = await api.put(`/resident-documents/${record.id}`, formDataToSend);
+                // Update the cache optimistically with the response data
+                queryClient.setQueryData(['resident-documents', residentId, search, typeFilter, currentPage], (oldData) => {
+                    if (!oldData) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.map(doc => 
+                            doc.id === record.id ? response.data : doc
+                        )
+                    };
+                });
             } else {
-                await api.post('/resident-documents', formDataToSend);
+                response = await api.post('/resident-documents', formDataToSend);
             }
             onSuccess();
         } catch (error) {
