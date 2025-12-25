@@ -147,9 +147,10 @@ export default function ResidentDocuments({ residentId }) {
                         onSuccess={async () => {
                             setShowForm(false);
                             setEditing(null);
-                            // Invalidate and refetch to ensure fresh data
-                            await queryClient.invalidateQueries(['resident-documents']);
-                            await refetch();
+                            // Invalidate and refetch all resident-documents queries
+                            await queryClient.invalidateQueries({ queryKey: ['resident-documents'] });
+                            // Force refetch all matching queries
+                            await queryClient.refetchQueries({ queryKey: ['resident-documents'] });
                         }}
                     />
                 </div>
