@@ -48,15 +48,12 @@ class MarkMissedMedications extends Command
                 return 1;
             }
         } else {
-            // Real-time mode: check today for past windows
+            // Real-time mode: check today for past windows, and also check yesterday
+            // to catch any missed medications that weren't caught by the end-of-day run
             $targetDate = $now->copy();
-            $this->info("Real-time mode: Checking missed medications for today's past windows");
+            $this->info("Real-time mode: Checking missed medications for today's past windows and yesterday");
         }
         
-        $dateStr = $targetDate->format('Y-m-d');
-        $dateStart = $targetDate->copy()->startOfDay();
-        $dateEnd = $targetDate->copy()->endOfDay();
-
         // Get system user (first admin user, or create a system user)
         $systemUser = User::whereIn('role', ['super_admin', 'administrator', 'admin'])->first();
         if (!$systemUser) {
@@ -66,56 +63,76 @@ class MarkMissedMedications extends Command
             $systemUserId = $systemUser->id;
         }
 
-        // Get all active medications that were active on the target date
-        $medications = Medication::where('is_active', true)
-            ->where(function ($q) use ($dateStr) {
-                $q->whereNull('start_date')->orWhere('start_date', '<=', $dateStr);
-            })
-            ->where(function ($q) use ($dateStr) {
-                $q->whereNull('end_date')->orWhere('end_date', '>=', $dateStr);
-            })
-            ->get();
-
         $count = 0;
+        
+        // In real-time mode, check both today and yesterday
+        // In other modes, check only the target date
+        $datesToCheck = [];
+        if (!$this->option('end-of-day') && !$this->option('date')) {
+            // Real-time mode: check today and yesterday
+            $datesToCheck = [
+                $targetDate->copy(), // Today
+                $targetDate->copy()->subDay(), // Yesterday
+            ];
+        } else {
+            // End-of-day or specific date: check only the target date
+            $datesToCheck = [$targetDate];
+        }
 
-        foreach ($medications as $medication) {
-            // Check each of the 4 possible time slots
-            for ($i = 1; $i <= 4; $i++) {
-                $timeField = "time_{$i}";
-                $scheduledTimeStr = $medication->$timeField;
+        foreach ($datesToCheck as $checkDate) {
+            $dateStr = $checkDate->format('Y-m-d');
+            $this->info("Checking date: {$dateStr}");
 
-                if (!$scheduledTimeStr) {
-                    continue;
-                }
+            // Get all active medications that were active on this date
+            $medications = Medication::where('is_active', true)
+                ->where(function ($q) use ($dateStr) {
+                    $q->whereNull('start_date')->orWhere('start_date', '<=', $dateStr);
+                })
+                ->where(function ($q) use ($dateStr) {
+                    $q->whereNull('end_date')->orWhere('end_date', '>=', $dateStr);
+                })
+                ->get();
 
-                // Parse scheduled time for the target date
-                try {
-                    // Parse time in H:i format
-                    $timeParts = explode(':', $scheduledTimeStr);
-                    if (count($timeParts) !== 2) {
-                        Log::error("Invalid time format for medication {$medication->id}: {$scheduledTimeStr}");
+            foreach ($medications as $medication) {
+                // Check each of the 4 possible time slots
+                for ($i = 1; $i <= 4; $i++) {
+                    $timeField = "time_{$i}";
+                    $scheduledTimeStr = $medication->$timeField;
+
+                    if (!$scheduledTimeStr) {
                         continue;
                     }
 
-                    $scheduledTime = $targetDate->copy();
-                    $scheduledTime->setTime((int)$timeParts[0], (int)$timeParts[1], 0);
-                } catch (\Exception $e) {
-                    Log::error("Error parsing time for medication {$medication->id}: {$scheduledTimeStr} - " . $e->getMessage());
-                    continue;
-                }
+                    // Parse scheduled time for the check date
+                    try {
+                        // Parse time in H:i format
+                        $timeParts = explode(':', $scheduledTimeStr);
+                        if (count($timeParts) !== 2) {
+                            Log::error("Invalid time format for medication {$medication->id}: {$scheduledTimeStr}");
+                            continue;
+                        }
 
-                // Calculate administration window (60 minutes before and after scheduled time)
-                $windowStart = $scheduledTime->copy()->subMinutes($windowMinutes);
-                $windowEnd = $scheduledTime->copy()->addMinutes($windowMinutes);
-
-                // In real-time mode, only check windows that have already closed
-                // In end-of-day mode, check all windows for the day
-                if (!$this->option('end-of-day') && !$this->option('date')) {
-                    // Real-time mode: only mark if window has passed
-                    if ($windowEnd->isFuture()) {
-                        continue; // Window hasn't closed yet, skip
+                        $scheduledTime = $checkDate->copy();
+                        $scheduledTime->setTime((int)$timeParts[0], (int)$timeParts[1], 0);
+                    } catch (\Exception $e) {
+                        Log::error("Error parsing time for medication {$medication->id}: {$scheduledTimeStr} - " . $e->getMessage());
+                        continue;
                     }
-                }
+
+                    // Calculate administration window (60 minutes before and after scheduled time)
+                    $windowStart = $scheduledTime->copy()->subMinutes($windowMinutes);
+                    $windowEnd = $scheduledTime->copy()->addMinutes($windowMinutes);
+
+                    // In real-time mode, only check windows that have already closed
+                    // In end-of-day mode, check all windows for the day
+                    // For yesterday (when checking in real-time mode), always check all windows
+                    $isYesterday = $checkDate->format('Y-m-d') === $now->copy()->subDay()->format('Y-m-d');
+                    if (!$this->option('end-of-day') && !$this->option('date') && !$isYesterday) {
+                        // Real-time mode for today: only mark if window has passed
+                        if ($windowEnd->isFuture()) {
+                            continue; // Window hasn't closed yet, skip
+                        }
+                    }
 
                 // Check if there's already an administration record for this medication
                 // within the administration window (60 minutes before and after scheduled time)
@@ -160,11 +177,12 @@ class MarkMissedMedications extends Command
                         }
                     }
                 }
+                }
             }
         }
 
-        $this->info("Completed. Marked {$count} medication doses as missed for {$dateStr}.");
-        Log::info("MarkMissedMedications command completed. Marked {$count} medication doses as missed for {$dateStr}.");
+        $this->info("Completed. Marked {$count} medication doses as missed.");
+        Log::info("MarkMissedMedications command completed. Marked {$count} medication doses as missed.");
 
         return 0;
     }
