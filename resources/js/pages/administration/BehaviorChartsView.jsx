@@ -69,6 +69,9 @@ export default function BehaviorChartsView() {
     const charts = chartsData?.data || [];
 
     const handleViewChart = (chart) => {
+        // Log chart data for debugging
+        console.log('Viewing chart:', chart);
+        console.log('Chart items:', chart.items);
         setSelectedChart(chart);
     };
 
@@ -383,7 +386,11 @@ export default function BehaviorChartsView() {
                                                     // Group items by category
                                                     const grouped = {};
                                                     selectedChart.items.forEach(item => {
-                                                        const categoryName = item.definition?.category?.name || 'Other';
+                                                        // Try multiple possible paths for category name
+                                                        const categoryName = item.definition?.category?.name || 
+                                                                             item.definition?.behavior_category?.name ||
+                                                                             item.category_name ||
+                                                                             'Other';
                                                         if (!grouped[categoryName]) {
                                                             grouped[categoryName] = [];
                                                         }
@@ -392,7 +399,7 @@ export default function BehaviorChartsView() {
 
                                                     return Object.entries(grouped).map(([catName, items]) =>
                                                         items.map((item, idx) => (
-                                                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                                                            <tr key={item.id || idx} className="border-b border-gray-100 hover:bg-gray-50/50">
                                                                 {idx === 0 && (
                                                                     <td 
                                                                         className="px-4 py-3 border-r border-gray-200 align-middle font-bold text-gray-900 bg-gray-50/30" 
@@ -402,7 +409,7 @@ export default function BehaviorChartsView() {
                                                                     </td>
                                                                 )}
                                                                 <td className="px-4 py-3 border-r border-gray-200 font-medium">
-                                                                    {item.definition?.name || 'Unknown'}
+                                                                    {item.definition?.name || item.name || 'Unknown'}
                                                                 </td>
                                                                 <td className="px-4 py-3">
                                                                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
