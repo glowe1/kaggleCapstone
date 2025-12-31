@@ -844,26 +844,41 @@ export default function AppointmentsDashboard() {
                                     </div>
 
                                     <div className="flex items-center gap-2 ml-4">
-                                        {isAdmin && appointment.status === 'scheduled' && (
+                                        {isAdmin && (
                                             <>
-                                                <button
-                                                    onClick={() => handleToggleComplete(appointment.id)}
-                                                    disabled={completeMutation.isPending}
-                                                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
-                                                    title="Mark as Complete"
-                                                >
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    Complete
-                                                </button>
-                                                <button
-                                                    onClick={() => handleCancel(appointment)}
-                                                    disabled={cancelMutation.isPending}
-                                                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
-                                                    title="Update Appointment Status"
-                                                >
-                                                    <CalendarClock className="w-4 h-4" />
-                                                    Update
-                                                </button>
+                                                {/* Complete button - only show on the day of the appointment */}
+                                                {appointment.status !== 'completed' && (() => {
+                                                    const appointmentDate = appointment.appointment_date 
+                                                        ? new Date(appointment.appointment_date).toDateString() 
+                                                        : null;
+                                                    const today = new Date().toDateString();
+                                                    const isToday = appointmentDate === today;
+                                                    
+                                                    return isToday && (appointment.status === 'scheduled' || appointment.status === 'rescheduled' || appointment.status === 'confirmed') ? (
+                                                        <button
+                                                            onClick={() => handleToggleComplete(appointment.id)}
+                                                            disabled={completeMutation.isPending}
+                                                            className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
+                                                            title="Mark as Complete"
+                                                        >
+                                                            <CheckCircle className="w-4 h-4" />
+                                                            Complete
+                                                        </button>
+                                                    ) : null;
+                                                })()}
+                                                
+                                                {/* Update button - always visible until appointment is completed */}
+                                                {appointment.status !== 'completed' && (
+                                                    <button
+                                                        onClick={() => handleCancel(appointment)}
+                                                        disabled={cancelMutation.isPending}
+                                                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
+                                                        title="Update Appointment Status"
+                                                    >
+                                                        <CalendarClock className="w-4 h-4" />
+                                                        Update
+                                                    </button>
+                                                )}
                                             </>
                                         )}
                                         <Link
@@ -877,7 +892,15 @@ export default function AppointmentsDashboard() {
                                 </div>
 
                                 {/* Expandable Completion Section */}
-                                {expandedAppointment === appointment.id && isAdmin && appointment.status === 'scheduled' && (
+                                {expandedAppointment === appointment.id && isAdmin && (() => {
+                                    const appointmentDate = appointment.appointment_date 
+                                        ? new Date(appointment.appointment_date).toDateString() 
+                                        : null;
+                                    const today = new Date().toDateString();
+                                    const isToday = appointmentDate === today;
+                                    
+                                    return isToday && (appointment.status === 'scheduled' || appointment.status === 'rescheduled' || appointment.status === 'confirmed');
+                                })() && (
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                         <div className="space-y-4">
                                             {/* Notes Section */}

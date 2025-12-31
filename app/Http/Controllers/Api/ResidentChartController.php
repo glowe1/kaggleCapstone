@@ -16,6 +16,57 @@ use Illuminate\Support\Facades\DB;
 class ResidentChartController extends BaseApiController
 {
     /**
+     * List all behavior charts with filters.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = BehaviorChart::with([
+            'resident', 
+            'caregiver', 
+            'items.definition.category',
+            'logs'
+        ])
+            ->where('status', 'submitted')
+            ->orderBy('chart_date', 'desc')
+            ->orderBy('submitted_at', 'desc');
+
+        // Filter by branch
+        if ($request->has('branch_id') && $request->branch_id) {
+            $query->whereHas('resident', function ($q) use ($request) {
+                $q->where('branch_id', $request->branch_id);
+            });
+        }
+
+        // Filter by resident
+        if ($request->has('resident_id') && $request->resident_id) {
+            $query->where('resident_id', $request->resident_id);
+        }
+
+        // Filter by date range
+        if ($request->has('date_from') && $request->date_from) {
+            $query->where('chart_date', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to') && $request->date_to) {
+            $query->where('chart_date', '<=', $request->date_to);
+        }
+
+        // Filter by month/year
+        if ($request->has('month') && $request->month) {
+            $query->whereMonth('chart_date', $request->month);
+        }
+
+        if ($request->has('year') && $request->year) {
+            $query->whereYear('chart_date', $request->year);
+        }
+
+        $perPage = $request->get('per_page', 15);
+        $charts = $query->paginate($perPage);
+
+        return response()->json($charts);
+    }
+
+    /**
      * Get the charting status and current record for a resident today.
      */
     public function show(Resident $resident): JsonResponse
