@@ -68,11 +68,17 @@ export default function BehaviorChartsView() {
 
     const charts = chartsData?.data || [];
 
-    const handleViewChart = (chart) => {
-        // Log chart data for debugging
-        console.log('Viewing chart:', chart);
-        console.log('Chart items:', chart.items);
-        setSelectedChart(chart);
+    const handleViewChart = async (chart) => {
+        // Always fetch full chart details to ensure we have all items and logs
+        try {
+            const response = await api.get(`/resident-charts/by-id/${chart.id}`);
+            const fullChart = response.data;
+            setSelectedChart(fullChart);
+        } catch (error) {
+            console.error('Error fetching chart details:', error);
+            // Fallback to using the chart data we already have
+            setSelectedChart(chart);
+        }
     };
 
     const handleCloseModal = () => {
@@ -253,60 +259,79 @@ export default function BehaviorChartsView() {
                     <p className="text-gray-600 font-medium">No behavior charts found for the selected filters</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {charts.map((chart) => (
-                        <div key={chart.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Calendar className="w-4 h-4 text-gray-400" />
-                                        <span className="text-sm font-medium text-gray-900">
-                                            {formatPacificDate(chart.chart_date)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <User className="w-4 h-4 text-gray-400" />
-                                        <span className="text-sm text-gray-700">
-                                            {chart.resident?.first_name} {chart.resident?.last_name}
-                                        </span>
-                                    </div>
-                                    {chart.caregiver && (
-                                        <p className="text-xs text-gray-500">
-                                            Submitted by: {chart.caregiver.name}
-                                        </p>
-                                    )}
-                                </div>
-                                {getStatusBadge(chart.status)}
-                            </div>
-
-                            <div className="space-y-2 mb-4">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Items:</span>
-                                    <span className="font-medium text-gray-900">{chart.items?.length || 0}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Logs:</span>
-                                    <span className="font-medium text-gray-900">{chart.logs?.length || 0}</span>
-                                </div>
-                                {chart.submitted_at && (
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">Submitted:</span>
-                                        <span className="font-medium text-gray-900">
-                                            {new Date(chart.submitted_at).toLocaleString()}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                onClick={() => handleViewChart(chart)}
-                                className="w-full px-4 py-2 bg-[var(--theme-primary)] text-white rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors flex items-center justify-center gap-2 text-sm font-medium"
-                            >
-                                <Eye className="w-4 h-4" />
-                                View Details
-                            </button>
-                        </div>
-                    ))}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Date</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Resident</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Chart Status</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Submitted By</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Items</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Logs</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200">Submitted At</th>
+                                    <th className="px-6 py-4 font-bold border-b border-gray-200 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-gray-700 divide-y divide-gray-100">
+                                {charts.map((chart) => (
+                                    <tr key={chart.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-gray-400" />
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {formatPacificDate(chart.chart_date)}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <User className="w-4 h-4 text-gray-400" />
+                                                <span className="text-sm text-gray-700">
+                                                    {chart.resident?.first_name} {chart.resident?.last_name}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {getStatusBadge(chart.status)}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm text-gray-700">
+                                                {chart.caregiver?.name || 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {chart.items?.length || 0}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {chart.logs?.length || 0}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm text-gray-700">
+                                                {chart.submitted_at 
+                                                    ? new Date(chart.submitted_at).toLocaleString()
+                                                    : '-'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => handleViewChart(chart)}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--theme-primary)] text-white rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors text-sm font-medium"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 

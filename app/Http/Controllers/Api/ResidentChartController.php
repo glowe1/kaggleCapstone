@@ -176,6 +176,21 @@ class ResidentChartController extends BaseApiController
     }
 
     /**
+     * Get a specific chart by ID with full details.
+     */
+    public function showChart($id): JsonResponse
+    {
+        $chart = BehaviorChart::with([
+            'resident',
+            'caregiver',
+            'items.definition.category',
+            'logs'
+        ])->findOrFail($id);
+
+        return response()->json($chart);
+    }
+
+    /**
      * Get charting history for a resident.
      */
     public function history(Resident $resident): JsonResponse
