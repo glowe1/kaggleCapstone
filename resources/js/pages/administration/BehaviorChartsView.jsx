@@ -376,17 +376,17 @@ export default function BehaviorChartsView() {
                             <div className="bg-gray-50 rounded-xl p-4">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-700 mb-1">Status</p>
+                                        <p className="text-base font-bold mb-1" style={{ color: '#111827' }}>Status</p>
                                         <div>{getStatusBadge(selectedChart.status)}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-700 mb-1">Submitted By</p>
+                                        <p className="text-base font-bold mb-1" style={{ color: '#111827' }}>Submitted By</p>
                                         <p className="text-sm font-medium text-gray-900">
                                             {selectedChart.caregiver?.name || 'N/A'}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-700 mb-1">Submitted On</p>
+                                        <p className="text-base font-bold mb-1" style={{ color: '#111827' }}>Submitted On</p>
                                         <p className="text-sm font-medium text-gray-900">
                                             {selectedChart.submitted_at 
                                                 ? new Date(selectedChart.submitted_at).toLocaleString()
@@ -394,7 +394,7 @@ export default function BehaviorChartsView() {
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-700 mb-1">Total Items</p>
+                                        <p className="text-base font-bold mb-1" style={{ color: '#111827' }}>Total Items</p>
                                         <p className="text-sm font-medium text-gray-900">
                                             {selectedChart.items?.length || 0}
                                         </p>
@@ -410,11 +410,11 @@ export default function BehaviorChartsView() {
                                 </h3>
                                 <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
                                     <table className="w-full text-left border-collapse">
-                                        <thead className="bg-gray-50 text-gray-700 text-xs uppercase tracking-wider">
+                                        <thead className="bg-gray-50 text-xs uppercase tracking-wider">
                                             <tr>
-                                                <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Category</th>
-                                                <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Behavior</th>
-                                                <th className="px-4 py-3 font-bold border-b border-gray-200">Status</th>
+                                                <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Category</th>
+                                                <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Behavior</th>
+                                                <th className="px-4 py-3 font-bold border-b border-gray-200" style={{ color: '#111827' }}>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody className="text-gray-700">
@@ -482,14 +482,14 @@ export default function BehaviorChartsView() {
                                     </h3>
                                     <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
                                         <table className="w-full text-left border-collapse min-w-[1000px]">
-                                            <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+                                            <thead className="bg-gray-50 text-xs uppercase tracking-wider">
                                                 <tr>
-                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Time Occurred</th>
-                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Behavior Description</th>
-                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Triggers</th>
-                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Intervention</th>
-                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200">Reported to Provider</th>
-                                                    <th className="px-4 py-3 font-bold border-b border-gray-200">Outcome</th>
+                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Time Occurred</th>
+                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Behavior Description</th>
+                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Triggers</th>
+                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Intervention</th>
+                                                    <th className="px-4 py-3 font-bold border-b border-gray-200 border-r border-gray-200" style={{ color: '#111827' }}>Reported to Provider</th>
+                                                    <th className="px-4 py-3 font-bold border-b border-gray-200" style={{ color: '#111827' }}>Outcome</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="text-gray-700">
