@@ -106,12 +106,6 @@ export default function PublicNavigation() {
             {/* Mobile Menu Overlay */}
             {mobileMenuOpen && (
                 <>
-                    {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-                        onClick={() => setMobileMenuOpen(false)}
-                    ></div>
-                    
                     {/* Mobile Menu */}
                     <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out md:hidden">
                         <div className="flex flex-col h-full">
