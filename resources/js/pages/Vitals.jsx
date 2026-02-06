@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
+import { offlinePost, offlinePut } from '../services/offlineApi';
 import { Activity, User, Heart, Plus, Thermometer, Droplet, Edit, Trash2, ChevronDown, X } from 'lucide-react';
 import { getLocalDateString } from '../utils/pacificTime';
 import { TableSkeleton, ListSkeleton } from '../components/ui/SkeletonLoader';
@@ -437,11 +438,19 @@ function VitalSignForm({ record, residents, branches = [], isFacilityAdmin = fal
             };
 
             if (record) {
-                await api.put(`/vitals/${record.id}`, payload);
-                toast.success('Success', 'Vital sign updated successfully', { isFormSubmission: true });
+                const result = await offlinePut(`/vitals/${record.id}`, payload);
+                if (result.online) {
+                    toast.success('Success', 'Vital sign updated successfully', { isFormSubmission: true });
+                } else {
+                    toast.success('Success', 'Vital sign saved offline - will sync when online', { isFormSubmission: true });
+                }
             } else {
-                await api.post('/vitals', payload);
-                toast.success('Success', 'Vital sign recorded successfully', { isFormSubmission: true });
+                const result = await offlinePost('/vitals', payload);
+                if (result.online) {
+                    toast.success('Success', 'Vital sign recorded successfully', { isFormSubmission: true });
+                } else {
+                    toast.success('Success', 'Vital sign saved offline - will sync when online', { isFormSubmission: true });
+                }
             }
             onSuccess();
         } catch (error) {

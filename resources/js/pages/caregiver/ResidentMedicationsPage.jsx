@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import { offlinePost } from '../../services/offlineApi';
 import {
     setPacificServerTime,
     getPacificDate,
@@ -1073,12 +1074,12 @@ function QuickAdminister({ medication, onSuccess }) {
                                         : `Medication ${statusLabel} recorded successfully.`;
                                     setSuccessMessage(successText);
                                     
-                                    // Make API call in background
+                                    // Make API call in background (with offline support)
                                     try {
                                         setSubmitting(true);
                                         setError('');
                                         
-                                        const response = await api.post('/medication-administrations', {
+                                        const result = await offlinePost('/medication-administrations', {
                                             medication_id: medication.id,
                                             resident_id: medication.resident_id,
                                             branch_id: medication.branch_id,
@@ -1088,8 +1089,16 @@ function QuickAdminister({ medication, onSuccess }) {
                                             notes: finalNotes,
                                         });
                                         
+                                        // Handle offline response
+                                        if (!result.online) {
+                                            // Show offline message
+                                            setSuccessMessage(successText + ' (Saved offline - will sync when online)');
+                                            onSuccess?.();
+                                            return;
+                                        }
+                                        
                                         // Replace optimistic update with real data
-                                        const realAdmin = response.data?.data || response.data;
+                                        const realAdmin = result.data?.data || result.data;
                                         
                                         queryClient.setQueryData(queryKey, (old) => {
                                             if (!old) return old;

@@ -8,6 +8,8 @@ import { ToastProvider } from './contexts/ToastContext';
 import ThemeWrapper from './components/ThemeWrapper';
 // Import CSS - Vite will handle it properly
 import '../css/app.css';
+// Register service worker for PWA
+import { registerServiceWorker } from './services/serviceWorker';
 
 // Suppress Cloudflare cookie warnings - after imports
 // This prevents these harmless errors from cluttering the console
@@ -149,6 +151,24 @@ function initApp() {
 // Initialize immediately - don't wait for DOMContentLoaded
 // This ensures React initializes as soon as the script loads
 console.log('app.jsx file loaded, readyState:', document.readyState);
+
+// Register service worker for PWA
+if (typeof window !== 'undefined') {
+    // Register after a short delay to not block app initialization
+    setTimeout(() => {
+        registerServiceWorker().catch((error) => {
+            console.warn('Service worker registration failed:', error);
+        });
+        
+        // Initialize background sync
+        import('./services/backgroundSync').then(({ registerBackgroundSync, setupOnlineSync }) => {
+            registerBackgroundSync().catch((error) => {
+                console.warn('Background sync registration failed:', error);
+            });
+            setupOnlineSync();
+        });
+    }, 1000);
+}
 
 // Try to initialize immediately
 try {

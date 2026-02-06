@@ -46,6 +46,8 @@ import { useToastContext } from '../contexts/ToastContext';
 import { useTheme } from '../contexts/ThemeContext';
 import CommandPalette from './ui/CommandPalette';
 import PageTransition from './PageTransition';
+import PWAInstallPrompt from './PWAInstallPrompt';
+import OfflineIndicator from './OfflineIndicator';
 import DropdownMenu, { DropdownMenuItem, DropdownMenuSeparator } from './ui/radix/DropdownMenu';
 import { filterNavigationByModuleAccess } from '../utils/moduleAccess';
 import { filterNavigationByPermissionAccess } from '../utils/permissionAccess';
@@ -789,6 +791,12 @@ export default function Layout() {
             
             {/* Command Palette */}
             <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+            
+            {/* PWA Install Prompt */}
+            <PWAInstallPrompt />
+            
+            {/* Offline Indicator */}
+            <OfflineIndicator />
         </div>
     );
 }

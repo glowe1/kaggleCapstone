@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import api from '../services/api';
+import { offlinePost } from '../services/offlineApi';
 import { 
     AlertTriangle, Plus, Edit, Trash2, Eye, X, 
     CheckCircle, Lock, Clock, User, MapPin, Calendar,
@@ -255,18 +256,45 @@ export default function Incidents() {
 
     const createMutation = useMutation({
         mutationFn: async (formDataToSend) => {
-            return await api.post('/incidents', formDataToSend, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            // Check if FormData has files (requires online)
+            const hasFiles = formDataToSend instanceof FormData && Array.from(formDataToSend.values()).some(v => v instanceof File);
+            
+            if (hasFiles) {
+                // File uploads require online connection
+                if (!navigator.onLine) {
+                    throw new Error('File uploads require an internet connection. Please connect to the internet and try again.');
+                }
+                return await api.post('/incidents', formDataToSend, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+            } else {
+                // Convert FormData to object for offline storage
+                const data = formDataToSend instanceof FormData 
+                    ? Object.fromEntries(formDataToSend.entries())
+                    : formDataToSend;
+                
+                const result = await offlinePost('/incidents', data);
+                if (!result.online) {
+                    // Return offline response
+                    return { data: result.data };
+                }
+                return result;
+            }
         },
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries(['incidents']);
             handleCloseForm();
-            toast.success('Incident created successfully', '', { isFormSubmission: true });
+            if (response.data?.offline) {
+                toast.success('Incident saved offline - will sync when online', '', { isFormSubmission: true });
+            } else {
+                toast.success('Incident created successfully', '', { isFormSubmission: true });
+            }
         },
         onError: (error) => {
             console.error('Error creating incident:', error);
-            if (error.response?.status === 413) {
+            if (error.message && error.message.includes('internet connection')) {
+                toast.error(error.message);
+            } else if (error.response?.status === 413) {
                 toast.error('File size too large. Maximum file size is 2MB per file, and total request size is 8MB. Please reduce file sizes and try again.');
             } else if (error.response?.status === 422) {
                 // Validation errors
