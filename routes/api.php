@@ -73,6 +73,7 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
         ->middleware('auth:sanctum')
         ->withoutMiddleware([\App\Http\Middleware\SetFacilityContext::class]);
     Route::put('/user/password', [AuthController::class, 'changePassword'])->middleware('auth:sanctum');
+    Route::put('/user/credentials', [AuthController::class, 'updateCredentials'])->middleware('auth:sanctum');
 
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats'])->middleware('auth:sanctum');

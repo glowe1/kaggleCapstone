@@ -15,6 +15,8 @@ export default function StaffClockInsView() {
     const [dateTo, setDateTo] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(1);
+    const controlClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]';
+    const iconInputClass = 'w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]';
 
     // Fetch all staff members (for filter dropdown)
     const { data: staffData } = useQuery({
@@ -150,17 +152,17 @@ export default function StaffClockInsView() {
                     <h1 className="text-2xl font-bold text-gray-900">Staff Clock-Ins</h1>
                     <p className="text-sm text-gray-600 mt-1">View and manage all staff clock-in/out records</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={exportData}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <Download className="w-4 h-4" />
                         Export
                     </button>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <Filter className="w-4 h-4" />
                         Filters
@@ -183,7 +185,7 @@ export default function StaffClockInsView() {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by name..."
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className={iconInputClass}
                                 />
                             </div>
                         </div>
@@ -198,7 +200,7 @@ export default function StaffClockInsView() {
                                     setSelectedStaff(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             >
                                 <option value="">All Staff</option>
                                 {staffData?.map((staff) => (
@@ -219,7 +221,7 @@ export default function StaffClockInsView() {
                                     setSelectedBranch(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             >
                                 <option value="">All Branches</option>
                                 {branchesData?.map((branch) => (
@@ -240,7 +242,7 @@ export default function StaffClockInsView() {
                                     setStatusFilter(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             >
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
@@ -259,7 +261,7 @@ export default function StaffClockInsView() {
                                     setDateFrom(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             />
                         </div>
 
@@ -274,7 +276,7 @@ export default function StaffClockInsView() {
                                     setDateTo(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             />
                         </div>
 
@@ -331,7 +333,7 @@ export default function StaffClockInsView() {
             <SectionCard>
                 {isLoading ? (
                     <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)] mx-auto"></div>
                         <p className="text-gray-600 mt-4">Loading clock-ins...</p>
                     </div>
                 ) : filteredClockIns.length === 0 ? (

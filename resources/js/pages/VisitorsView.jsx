@@ -14,6 +14,8 @@ export default function VisitorsView() {
     const [dateTo, setDateTo] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(1);
+    const controlClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]';
+    const iconInputClass = 'w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]';
 
     // Fetch all branches (for filter dropdown)
     const { data: branchesData } = useQuery({
@@ -156,17 +158,17 @@ export default function VisitorsView() {
                     <h1 className="text-2xl font-bold text-gray-900">All Visitors</h1>
                     <p className="text-sm text-gray-600 mt-1">View and manage all visitor check-in/out records</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={exportData}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <Download className="w-4 h-4" />
                         Export
                     </button>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <Filter className="w-4 h-4" />
                         Filters
@@ -192,7 +194,7 @@ export default function VisitorsView() {
                                         setPage(1);
                                     }}
                                     placeholder="Search by name, email, phone..."
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className={iconInputClass}
                                 />
                             </div>
                         </div>
@@ -207,7 +209,7 @@ export default function VisitorsView() {
                                     setSelectedBranch(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             >
                                 <option value="">All Branches</option>
                                 {branchesData?.map((branch) => (
@@ -228,7 +230,7 @@ export default function VisitorsView() {
                                     setStatusFilter(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             >
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
@@ -247,7 +249,7 @@ export default function VisitorsView() {
                                     setDateFrom(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             />
                         </div>
 
@@ -262,7 +264,7 @@ export default function VisitorsView() {
                                     setDateTo(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className={controlClass}
                             />
                         </div>
 
@@ -319,7 +321,7 @@ export default function VisitorsView() {
             <SectionCard>
                 {isLoading ? (
                     <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)] mx-auto"></div>
                         <p className="text-gray-600 mt-4">Loading visitors...</p>
                     </div>
                 ) : error ? (

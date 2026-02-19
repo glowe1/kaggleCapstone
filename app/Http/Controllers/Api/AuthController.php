@@ -265,6 +265,64 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateCredentials(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'email' => 'nullable|email|max:255',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect',
+            ], 422);
+        }
+
+        $newEmail = isset($validated['email']) ? strtolower(trim($validated['email'])) : null;
+        $hasEmailChange = $newEmail !== null && $newEmail !== '' && $newEmail !== $user->email;
+        $hasPasswordChange = !empty($validated['password']);
+
+        if (!$hasEmailChange && !$hasPasswordChange) {
+            return response()->json([
+                'message' => 'No credential changes were provided',
+            ], 422);
+        }
+
+        if ($hasEmailChange) {
+            $emailQuery = \App\Models\User::query()
+                ->where('email', $newEmail)
+                ->where('id', '!=', $user->id);
+
+            if ($user->facility_id) {
+                $emailQuery->where('facility_id', $user->facility_id);
+            } else {
+                $emailQuery->whereNull('facility_id');
+            }
+
+            if ($emailQuery->exists()) {
+                return response()->json([
+                    'message' => 'That email is already in use',
+                ], 422);
+            }
+
+            $user->email = $newEmail;
+        }
+
+        if ($hasPasswordChange) {
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Credentials updated successfully',
+            'user' => $this->transformUser($user->fresh()),
+        ]);
+    }
+
     /**
      * Attach application timezone metadata to the user payload.
      */

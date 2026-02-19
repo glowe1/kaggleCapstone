@@ -257,14 +257,14 @@ export default function MedicationDeliveries() {
     }
 
     return (
-        <div>
+        <div className="space-y-6">
             <SectionCard>
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Medication Deliveries</h2>
-                        <p className="text-gray-600">Track medication deliveries from pharmacy.</p>
+                        <h1 className="text-2xl font-bold text-gray-900">Medication Deliveries</h1>
+                        <p className="text-sm text-gray-600 mt-1">Track medication deliveries from pharmacy.</p>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                         <button
                             onClick={() => {
                                 setEditing(null);
@@ -523,14 +523,14 @@ export default function MedicationDeliveries() {
                                     <div className="flex items-center gap-2 ml-0 sm:ml-4 mt-3 sm:mt-0">
                                         <button
                                             onClick={() => handleEdit(delivery)}
-                                            className="flex-1 sm:flex-none p-2.5 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                            className="flex-1 sm:flex-none flex items-center justify-center p-2.5 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors shadow-md hover:shadow-lg"
                                             title="Edit"
                                         >
                                             <Edit className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(delivery.id)}
-                                            className="flex-1 sm:flex-none p-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                            className="flex-1 sm:flex-none flex items-center justify-center p-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors shadow-md hover:shadow-lg"
                                             title="Delete"
                                         >
                                             <Trash2 className="w-5 h-5" />
