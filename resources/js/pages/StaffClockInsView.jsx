@@ -133,10 +133,19 @@ export default function StaffClockInsView() {
         );
     };
 
+    const formatDateTime = (value) => {
+        if (!value) return 'N/A';
+        try {
+            return format(new Date(value), 'MM/dd/yyyy HH:mm');
+        } catch (_) {
+            return 'N/A';
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Staff Clock-Ins</h1>
                     <p className="text-sm text-gray-600 mt-1">View and manage all staff clock-in/out records</p>
@@ -333,7 +342,45 @@ export default function StaffClockInsView() {
                     />
                 ) : (
                     <>
-                        <div className="overflow-x-auto">
+                        <div className="md:hidden space-y-3">
+                            {filteredClockIns.map((clockIn) => (
+                                <div key={clockIn.id} className="border border-gray-200 rounded-xl p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{clockIn.staff?.name || 'N/A'}</p>
+                                            <p className="text-xs text-gray-500">{clockIn.branch?.name || 'N/A'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {getStatusBadge(clockIn.is_active)}
+                                            {getMethodBadge(clockIn.clock_method)}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Clock In</p>
+                                            <p className="text-gray-900">{formatDateTime(clockIn.clock_in_at)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Clock Out</p>
+                                            <p className="text-gray-900">{clockIn.clock_out_at ? formatDateTime(clockIn.clock_out_at) : '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Hours</p>
+                                            <p className="font-medium text-gray-900">
+                                                {clockIn.total_hours
+                                                    ? `${clockIn.total_hours} hrs`
+                                                    : clockIn.is_active
+                                                        ? 'In Progress'
+                                                        : 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-200">
@@ -361,16 +408,10 @@ export default function StaffClockInsView() {
                                                 {clockIn.branch?.name || 'N/A'}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-gray-600">
-                                                {clockIn.clock_in_at 
-                                                    ? format(new Date(clockIn.clock_in_at), 'MM/dd/yyyy HH:mm')
-                                                    : 'N/A'
-                                                }
+                                                {formatDateTime(clockIn.clock_in_at)}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-gray-600">
-                                                {clockIn.clock_out_at 
-                                                    ? format(new Date(clockIn.clock_out_at), 'MM/dd/yyyy HH:mm')
-                                                    : <span className="text-gray-400">-</span>
-                                                }
+                                                {clockIn.clock_out_at ? formatDateTime(clockIn.clock_out_at) : <span className="text-gray-400">-</span>}
                                             </td>
                                             <td className="py-3 px-4 text-sm font-medium text-gray-900">
                                                 {clockIn.total_hours 

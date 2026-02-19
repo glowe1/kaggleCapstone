@@ -463,7 +463,7 @@ export default function MedicationDeliveries() {
                                                     <div className="grid grid-cols-1 gap-3">
                                                         {deliveries.map((delivery) => (
                             <Card key={delivery.id} className="p-4">
-                                <div className="flex items-start justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
                                             <Truck className="w-5 h-5 text-[var(--theme-primary)]" />
@@ -490,7 +490,7 @@ export default function MedicationDeliveries() {
                                                 <option value="stored">Stored</option>
                                             </select>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
                                             <div>
                                                 <span className="font-medium">Branch:</span> {delivery.branch?.name || 'N/A'}
                                             </div>
@@ -520,17 +520,17 @@ export default function MedicationDeliveries() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 ml-4">
+                                    <div className="flex items-center gap-2 ml-0 sm:ml-4 mt-3 sm:mt-0">
                                         <button
                                             onClick={() => handleEdit(delivery)}
-                                            className="p-2.5 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                            className="flex-1 sm:flex-none p-2.5 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-hover)] rounded-lg transition-colors shadow-md hover:shadow-lg"
                                             title="Edit"
                                         >
                                             <Edit className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(delivery.id)}
-                                            className="p-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                            className="flex-1 sm:flex-none p-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors shadow-md hover:shadow-lg"
                                             title="Delete"
                                         >
                                             <Trash2 className="w-5 h-5" />

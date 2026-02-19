@@ -151,7 +151,7 @@ export default function VisitorsView() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">All Visitors</h1>
                     <p className="text-sm text-gray-600 mt-1">View and manage all visitor check-in/out records</p>
@@ -338,7 +338,57 @@ export default function VisitorsView() {
                     />
                 ) : (
                     <>
-                        <div className="overflow-x-auto">
+                        <div className="md:hidden space-y-3">
+                            {visitors.map((visitor) => (
+                                <div key={visitor.id} className="border border-gray-200 rounded-xl p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div>
+                                            <p className="font-semibold text-gray-900">
+                                                {visitor.first_name} {visitor.last_name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">{visitor.branch?.name || 'N/A'}</p>
+                                        </div>
+                                        {getStatusBadge(visitor.is_active)}
+                                    </div>
+
+                                    <div className="space-y-2 text-sm">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Contact</p>
+                                            <p className="text-gray-900">{visitor.email || '-'}</p>
+                                            <p className="text-gray-500">{visitor.phone || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Visiting</p>
+                                            <p className="text-gray-900">{visitor.visiting_resident?.name || visitor.visiting_staff?.name || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Purpose</p>
+                                            <p className="text-gray-900">{visitor.visit_purpose || '-'}</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div>
+                                                <p className="text-xs uppercase tracking-wide text-gray-500">Check In</p>
+                                                <p className="text-gray-900">
+                                                    {visitor.check_in_at ? format(new Date(visitor.check_in_at), 'MM/dd/yyyy HH:mm') : 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs uppercase tracking-wide text-gray-500">Check Out</p>
+                                                <p className="text-gray-900">
+                                                    {visitor.check_out_at ? format(new Date(visitor.check_out_at), 'MM/dd/yyyy HH:mm') : '-'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs uppercase tracking-wide text-gray-500">Duration</p>
+                                            <p className="font-medium text-gray-900">{getDuration(visitor)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-200">
