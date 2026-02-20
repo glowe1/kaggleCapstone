@@ -274,6 +274,7 @@ const closeAssignmentModal = () => {
                 currentUser={currentUser}
                 branches={branchesData?.data || []}
                 selectedBranchId={branchId}
+                selectedAreaId={selectedAreaId}
             />
         );
     }
@@ -628,7 +629,7 @@ const closeAssignmentModal = () => {
     );
 }
 
-function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, branches, selectedBranchId: propSelectedBranchId }) {
+function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, branches, selectedBranchId: propSelectedBranchId, selectedAreaId }) {
     // Determine initial branch_id - use area's branch if editing, or selected branch from parent, or current user's branch
     const getInitialBranchId = React.useCallback(() => {
         if (initialValues?.area?.branch_id) {
@@ -679,7 +680,9 @@ function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, bra
     const methods = useForm({
         defaultValues: {
             branch_id: initialBranchId,
-            cleaning_area_id: initialValues?.cleaning_area_id ? initialValues.cleaning_area_id.toString() : '',
+            cleaning_area_id: initialValues?.cleaning_area_id
+                ? initialValues.cleaning_area_id.toString()
+                : (selectedAreaId ? selectedAreaId.toString() : ''),
             title: initialValues?.title ?? '',
             instructions: initialValues?.instructions ?? '',
             frequency: initialValues?.frequency ?? 'daily',
@@ -702,6 +705,13 @@ function TaskForm({ onClose, onSubmit, initialValues, isSaving, currentUser, bra
             setValue('branch_id', propSelectedBranchId.toString());
         }
     }, [propSelectedBranchId, setValue, initialValues]);
+
+    // When creating from a selected area in the builder, preselect that area in the form.
+    React.useEffect(() => {
+        if (!initialValues?.cleaning_area_id && selectedAreaId) {
+            setValue('cleaning_area_id', selectedAreaId.toString());
+        }
+    }, [initialValues?.cleaning_area_id, selectedAreaId, setValue]);
 
     // Fetch all areas to find branch_id when editing (if area doesn't have branch_id in relationship)
     const shouldFetchAllAreas = Boolean(
