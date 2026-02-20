@@ -79,6 +79,8 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
         ->withoutMiddleware([\App\Http\Middleware\SetFacilityContext::class]);
     Route::put('/user/password', [AuthController::class, 'changePassword'])->middleware('auth:sanctum');
     Route::put('/user/credentials', [AuthController::class, 'updateCredentials'])->middleware('auth:sanctum');
+    Route::post('/token/refresh', [AuthController::class, 'refreshToken'])->middleware('auth:sanctum');
+    Route::post('/token/validate', [AuthController::class, 'validateToken'])->middleware('auth:sanctum');
 
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats'])->middleware('auth:sanctum');

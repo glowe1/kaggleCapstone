@@ -15,6 +15,7 @@ import {
     Filler
 } from 'chart.js';
 import { Download, Plus, MoreVertical, Calendar, User, Building2, ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
+import logger from '../utils/logger';
 
 ChartJS.register(
     CategoryScale,
@@ -264,7 +265,7 @@ export default function ViewVitals() {
             setOpenMenuId(null);
         },
         onError: (error) => {
-            console.error('Failed to update vital status:', error);
+            logger.error('Failed to update vital status:', error);
             alert('Failed to update vital status. Please try again.');
         },
     });
@@ -319,13 +320,10 @@ export default function ViewVitals() {
 
             try {
                 const response = await api.get('/vitals', { params });
-                console.log('Vitals API Response:', response.data);
-                console.log('Vitals data array:', response.data?.data);
-                console.log('Total vitals:', response.data?.total);
                 return response.data;
             } catch (err) {
-                console.error('Error fetching vitals:', err);
-                console.error('Error response:', err.response?.data);
+                logger.error('Error fetching vitals:', err);
+                logger.error('Error response:', err.response?.data);
                 throw err;
             }
         },
@@ -645,8 +643,7 @@ export default function ViewVitals() {
                         <div>
                             <button 
                                 onClick={() => {
-                                    console.log('Refetching vitals data...', { branchId, residentId, year, month, startDate, endDate });
-                                    refetch();
+                                                    refetch();
                                 }}
                                 className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-lg hover:bg-[var(--theme-primary-hover)] transition-colors mt-6"
                             >

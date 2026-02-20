@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import logger from '../utils/logger';
 
 const localizer = momentLocalizer(moment);
 
@@ -21,7 +22,7 @@ export default function CalendarView({ events, onSelectEvent, onSelectSlot, defa
                     end,
                 };
             } catch (err) {
-                console.error('Error formatting event:', err, event);
+                logger.error('Error formatting event:', err, event);
                 return null;
             }
         }).filter(Boolean);

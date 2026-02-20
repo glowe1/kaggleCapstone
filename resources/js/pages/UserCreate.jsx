@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import {
     ArrowLeft, Save, User, Mail, Phone, Calendar, Briefcase,
     Shield, MapPin, Award, Clock, Building2, Upload, X, Eye, EyeOff
@@ -682,7 +683,7 @@ function UserCreateContent({
             showToast('User created successfully!', 'success', { isFormSubmission: true });
             navigate(-1); // Go back
         } catch (error) {
-            console.error('Error creating user:', error);
+            logger.error('Error creating user:', error);
             const errorData = error.response?.data;
             if (errorData?.errors) {
                 setErrors(errorData.errors);

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { toast } from 'sonner';
 import { ShoppingCart, Plus, Search, Filter, Edit, Trash2, Calendar, Clock, CheckCircle, AlertCircle, Package, List, Grid, TrendingUp, X, Sparkles } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
@@ -36,7 +37,7 @@ export default function GroceryStatus() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -812,7 +813,7 @@ function GroceryStatusForm({ record, branches, templates = [], isCaregiver, care
 
             onSuccess();
         } catch (error) {
-            console.error('Error saving grocery status update:', error);
+            logger.error('Error saving grocery status update:', error);
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
             } else {

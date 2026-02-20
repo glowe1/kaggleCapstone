@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import logger from '../utils/logger';
 
 /**
  * Wrapper component that fetches user data and provides theme
@@ -17,7 +18,7 @@ export default function ThemeWrapper({ children }) {
             } catch (err) {
                 // Don't log 401 errors - they're expected when not logged in
                 if (err.response?.status !== 401) {
-                    console.error('Failed to fetch user for theme:', err);
+                    logger.error('Failed to fetch user for theme:', err);
                 }
                 return null;
             }
@@ -35,7 +36,7 @@ export default function ThemeWrapper({ children }) {
                 const response = await api.get('/system-settings/super-admin-theme');
                 return response.data.data;
             } catch (err) {
-                console.error('Failed to fetch super admin theme:', err);
+                logger.error('Failed to fetch super admin theme:', err);
                 return null;
             }
         },

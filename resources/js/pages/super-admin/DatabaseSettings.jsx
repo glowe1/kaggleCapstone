@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Database, Download, Upload, RefreshCw, HardDrive, Archive } from 'lucide-react';
 import api from '../../services/api';
+import logger from '../../utils/logger';
 import { useToastContext } from '../../contexts/ToastContext';
 
 export default function DatabaseSettings() {
@@ -197,7 +198,7 @@ export default function DatabaseSettings() {
       })
       .catch((error) => {
         toast.showToast(error.message || 'Failed to download backup', 'error');
-        console.error('Download error:', error);
+        logger.error('Download error:', error);
       });
   };
 

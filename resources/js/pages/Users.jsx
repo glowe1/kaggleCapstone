@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { Users, Plus, Edit, Trash2, Search, Filter, Upload, X, Eye, Mail, Phone, Calendar, Briefcase, MapPin, Award, Shield, Clock, User as UserIcon, AlertCircle, Building2 } from 'lucide-react';
 import EmptyState from '../components/ui/EmptyState';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
@@ -108,7 +109,7 @@ export default function UsersPage() {
             setEditing(response.data);
             setShowForm(true);
         } catch (error) {
-            console.error('Error fetching user details:', error);
+            logger.error('Error fetching user details:', error);
             // Fallback to using the user object from the list
             setEditing(user);
             setShowForm(true);
@@ -453,21 +454,10 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Track when formData.role changes
-    React.useEffect(() => {
-        console.log('formData.role changed to:', formData.role);
-    }, [formData.role]);
-
     // Update form when record changes (for editing)
     React.useEffect(() => {
         if (record) {
-            // Debug: Log the record to see what we're getting
-            console.log('UserForm record:', record);
-            console.log('Role from record.role:', record.role);
-            console.log('Role from record.roles:', record.roles);
-
             const roleValue = getRoleValue(record);
-            console.log('Setting role to:', roleValue);
 
             // Use functional update to ensure state is set correctly
             setFormData(prevFormData => {
@@ -493,7 +483,6 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
                     is_active: record.is_active ?? true,
                     notes: record.notes || '',
                 };
-                console.log('Setting formData with role:', roleValue, 'Full formData:', newFormData);
                 return newFormData;
             });
         } else {
@@ -604,9 +593,6 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
         setErrors({});
         setIsSubmitting(true);
 
-        console.log('Form submitted with data:', formData);
-        console.log('Is new user?', !record);
-
         try {
             // Auto-generate name from first, middle, last name
             const nameParts = [
@@ -654,20 +640,8 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
                 // Handle profile image
                 if (profileImage) {
                     formDataToSend.append('profile_image', profileImage);
-                    console.log('Profile image file added to FormData:', profileImage.name, profileImage.type, profileImage.size);
                 } else if (imageRemoved && record) {
                     formDataToSend.append('remove_profile_image', '1');
-                    console.log('Profile image removal requested');
-                }
-
-                // Debug: Log FormData contents
-                console.log('FormData contents:');
-                for (let pair of formDataToSend.entries()) {
-                    if (pair[0] === 'profile_image') {
-                        console.log(pair[0] + ': [File]', pair[1].name, pair[1].size, 'bytes');
-                    } else {
-                        console.log(pair[0] + ': ' + pair[1]);
-                    }
                 }
 
                 // Don't set Content-Type - let browser set it automatically for FormData
@@ -677,16 +651,13 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
                     // For file uploads with PUT, use POST with _method override (like residents)
                     formDataToSend.append('_method', 'PUT');
                     response = await api.post(`/users/${record.id}`, formDataToSend, config);
-                    console.log('User updated successfully (with FormData):', response.data);
                 } else {
                     if (!formData.password) {
                         setErrors({ password: ['Password is required for new users'] });
                         setIsSubmitting(false);
                         return;
                     }
-                    console.log('Creating new user...');
                     response = await api.post('/users', formDataToSend, config);
-                    console.log('User created successfully:', response.data);
                 }
             } else {
                 // No image, use JSON payload (like residents do)
@@ -718,20 +689,15 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
 
                 if (record) {
                     response = await api.put(`/users/${record.id}`, payload);
-                    console.log('User updated successfully (with JSON):', response.data);
                 } else {
                     if (!formData.password) {
                         setErrors({ password: ['Password is required for new users'] });
                         setIsSubmitting(false);
                         return;
                     }
-                    console.log('Creating new user...');
                     response = await api.post('/users', payload);
-                    console.log('User created successfully:', response.data);
                 }
             }
-
-            console.log('Profile image URL:', response.data?.profile_image_url);
 
             // Invalidate queries to refresh the user list BEFORE showing alert
             await queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -751,7 +717,7 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
             // Close form and refresh
             onSuccess();
         } catch (error) {
-            console.error('User creation/update error:', error);
+            logger.error('User creation/update error:', error);
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
                 // Scroll to top to show errors
@@ -1094,7 +1060,6 @@ function UserForm({ record, branches, roles, facilities, isSuperAdmin, onClose, 
                                 key={`role-select-${record?.id || 'new'}-${formData.role}`}
                                 value={formData.role || ''}
                                 onChange={(e) => {
-                                    console.log('Role changed to:', e.target.value);
                                     setFormData({ ...formData, role: e.target.value });
                                 }}
                                 required

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import logger from '../utils/logger';
 import {
     setPacificServerTime,
     getPacificDate,
@@ -160,7 +161,7 @@ export default function Medications() {
                 setCurrentUser(response.data);
                 setPacificServerTime(response.data?.app_current_time, response.data?.app_timezone_offset);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -1142,7 +1143,6 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
         if (!record && !formData.start_date) {
             // Set the default start date (will use server time if available, otherwise formatter)
             const today = getPacificISODate();
-            console.log('Setting default start_date to:', today);
             setFormData(prev => ({ ...prev, start_date: today }));
         }
     }, [record, formData.start_date]); // Run when record changes or if start_date is empty
@@ -1209,7 +1209,6 @@ function MedicationForm({ record, residents, branches, currentUser, isCaregiver,
         try {
             // Ensure dates are sent in YYYY-MM-DD format (no time component to avoid timezone shifts)
             const startDate = formData.start_date ? formData.start_date.split('T')[0] : formData.start_date;
-            console.log('Submitting start_date:', startDate, 'from formData:', formData.start_date);
 
             const payload = {
                 ...formData,
@@ -1474,16 +1473,6 @@ function MedicationTimeBadges({ medication }) {
                     per_page: 100,
                 },
             });
-            // Debug logging
-            console.log('Fetched administrations for medication', medication.id, 'on', today, ':', {
-                total: response.data?.data?.length || 0,
-                administrations: response.data?.data?.map(admin => ({
-                    id: admin.id,
-                    status: admin.status,
-                    administered_at: admin.administered_at,
-                    administered_at_parsed: formatPacificTime(new Date(admin.administered_at)),
-                })) || [],
-            });
             return response.data;
         },
     });
@@ -1493,9 +1482,6 @@ function MedicationTimeBadges({ medication }) {
 
     const getTimeStatus = (timeValue) => {
         if (!timeValue) return null;
-
-        // Debug: Log when getTimeStatus is called
-        console.log('getTimeStatus called for', timeValue, 'with', todayAdminData?.data?.length || 0, 'administrations');
 
         const now = getPacificNow();
 
@@ -1569,51 +1555,12 @@ function MedicationTimeBadges({ medication }) {
                     closestTimeDiff = minTimeDiff;
                 }
 
-                // Debug logging
-                console.log('Checking administration match:', {
-                    timeValue,
-                    adminId: admin.id,
-                    adminStatus: admin.status,
-                    adminAdministeredAtRaw: admin.administered_at,
-                    adminTimeRawISO: adminTimeRaw.toISOString(),
-                    adminTimeISO: adminTime.toISOString(),
-                    adminTimeFormatted: formatPacificTime(adminTime),
-                    scheduledTimeTodayISO: scheduledTimeToday?.toISOString(),
-                    scheduledTimeTodayFormatted: scheduledTimeToday ? formatPacificTime(scheduledTimeToday) : null,
-                    scheduledTimeYesterdayISO: scheduledTimeYesterday?.toISOString(),
-                    scheduledTimeYesterdayFormatted: scheduledTimeYesterday ? formatPacificTime(scheduledTimeYesterday) : null,
-                    timeDiffTodayMinutes: scheduledTimeToday ? (timeDiffToday / (60 * 1000)).toFixed(2) : null,
-                    timeDiffYesterdayMinutes: scheduledTimeYesterday ? (timeDiffYesterday / (60 * 1000)).toFixed(2) : null,
-                    minTimeDiffMinutes: (minTimeDiff / (60 * 1000)).toFixed(2),
-                    toleranceMinutes,
-                    withinTolerance: minTimeDiff <= toleranceMs,
-                    isClosest: minTimeDiff < closestTimeDiff,
-                });
             });
-        }
-
-        // Debug: Log the final result with clear markers
-        if (todayAdminData?.data && todayAdminData.data.length > 0) {
-            console.log('🔍 FINAL MATCHING RESULT for', timeValue, ':', {
-                matchingAdmin: matchingAdmin ? {
-                    id: matchingAdmin.id,
-                    status: matchingAdmin.status,
-                    administered_at: matchingAdmin.administered_at,
-                } : '❌ NO MATCH FOUND',
-                closestTimeDiffMinutes: closestTimeDiff !== Infinity ? (closestTimeDiff / (60 * 1000)).toFixed(2) + ' minutes' : 'N/A',
-                totalAdministrations: todayAdminData.data.length,
-                scheduledTime: scheduledTimeToday ? formatPacificTime(scheduledTimeToday) : 'N/A',
-            });
-        } else {
-            console.log('⚠️ NO ADMINISTRATIONS FOUND for', timeValue, '- todayAdminData is empty or undefined');
         }
 
         if (matchingAdmin) {
-            console.log('✅ RETURNING STATUS:', matchingAdmin.status, 'for', timeValue);
             return matchingAdmin.status;
         }
-
-        console.log('❌ NO MATCH - returning null for', timeValue);
 
         // Only mark as missed if today's scheduled time has passed and its window has closed
         // Don't mark future times as missed
@@ -1629,23 +1576,6 @@ function MedicationTimeBadges({ medication }) {
         // 1. The scheduled time for TODAY has already passed (not in the future)
         // 2. AND the administration window has closed (60 minutes after the scheduled time)
         const isMissed = scheduledTimeHasPassed && todayWindowClosed;
-
-        // Always log for debugging (remove after confirming it works)
-        console.log('getTimeStatus check:', {
-            timeValue,
-            scheduledTimeToday: scheduledTimeToday.toISOString(),
-            scheduledTimeTodayFormatted: formatPacificTime(scheduledTimeToday),
-            scheduledTimeYesterday: scheduledTimeYesterday?.toISOString(),
-            scheduledTimeYesterdayFormatted: scheduledTimeYesterday ? formatPacificTime(scheduledTimeYesterday) : null,
-            now: now.toISOString(),
-            nowFormatted: formatPacificTime(now),
-            windowEndTimeToday: new Date(windowEndTimeToday).toISOString(),
-            windowEndTimeTodayFormatted: formatPacificTime(new Date(windowEndTimeToday)),
-            scheduledTimeHasPassed,
-            todayWindowClosed,
-            isMissed,
-            timeDiff: scheduledTimeHasPassed ? ((now.getTime() - scheduledTimeToday.getTime()) / (60 * 1000)).toFixed(2) + ' minutes' : 'future'
-        });
 
         if (isMissed) {
             return 'missed';
@@ -2140,7 +2070,7 @@ function QuickAdminister({ medication, onSuccess }) {
                                     onSuccess();
                                 }
                             } catch (error) {
-                                console.error('Error logging missed/refused medication:', error);
+                                logger.error('Error logging missed/refused medication:', error);
                                 setError(error.response?.data?.message || 'Failed to log medication status');
                                 setStatus('completed'); // Reset on error
                             } finally {

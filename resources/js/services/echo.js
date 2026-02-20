@@ -5,6 +5,7 @@
 
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import logger from '../utils/logger';
 
 // Make Pusher available globally for Laravel Echo
 window.Pusher = Pusher;
@@ -35,7 +36,7 @@ export function initializeEcho() {
   }
 
   if (!pusherKey) {
-    console.warn('[Echo] Pusher key not configured. Real-time features will be disabled.');
+    logger.warn('[Echo] Pusher key not configured. Real-time features will be disabled.');
     return null;
   }
 
@@ -62,21 +63,21 @@ export function initializeEcho() {
 
     // Handle connection events
     echoInstance.connector.pusher.connection.bind('connected', () => {
-      console.log('[Echo] Connected to Pusher');
+      logger.debug('[Echo] Connected to Pusher');
     });
 
     echoInstance.connector.pusher.connection.bind('disconnected', () => {
-      console.log('[Echo] Disconnected from Pusher');
+      logger.debug('[Echo] Disconnected from Pusher');
     });
 
     echoInstance.connector.pusher.connection.bind('error', (error) => {
-      console.error('[Echo] Connection error:', error);
+      logger.error('[Echo] Connection error:', error);
     });
 
-    console.log('[Echo] Initialized successfully');
+    logger.debug('[Echo] Initialized successfully');
     return echoInstance;
   } catch (error) {
-    console.error('[Echo] Failed to initialize:', error);
+    logger.error('[Echo] Failed to initialize:', error);
     return null;
   }
 }
@@ -98,7 +99,7 @@ export function disconnectEcho() {
   if (echoInstance) {
     echoInstance.disconnect();
     echoInstance = null;
-    console.log('[Echo] Disconnected');
+    logger.debug('[Echo] Disconnected');
   }
 }
 

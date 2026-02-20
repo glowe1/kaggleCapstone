@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use App\Models\Scopes\FacilityScope;
 
 class Resident extends Model
 {
-    use Loggable;
+    use HasFactory, Loggable;
     use FormatsPhoneNumbers;
 
     protected static function booted()

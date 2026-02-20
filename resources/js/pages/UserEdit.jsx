@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useToastContext } from '../contexts/ToastContext';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
+import logger from '../utils/logger';
 
 // Shared form state context
 const FormContext = React.createContext();
@@ -35,7 +36,7 @@ function FormProvider({ children, initialData }) {
                     return `${year}-${month}-${day}`;
                 }
             } catch (e) {
-                console.warn('Failed to parse date (non-string):', dateString, e);
+                logger.warn('Failed to parse date (non-string):', dateString, e);
             }
             return '';
         }
@@ -63,7 +64,7 @@ function FormProvider({ children, initialData }) {
                 return `${year}-${month}-${day}`;
             }
         } catch (e) {
-            console.warn('Failed to parse date:', dateString, e);
+            logger.warn('Failed to parse date:', dateString, e);
         }
 
         return '';
@@ -124,14 +125,6 @@ function FormProvider({ children, initialData }) {
         if (initialData && Object.keys(initialData).length > 0) {
             const formattedDateOfBirth = initialData.date_of_birth ? formatDateForInput(initialData.date_of_birth) : '';
             const formattedDateEmployed = initialData.date_employed ? formatDateForInput(initialData.date_employed) : '';
-
-            console.log('UserEdit: Updating form data', {
-                hasInitialData: !!initialData,
-                date_of_birth_raw: initialData.date_of_birth,
-                date_of_birth_formatted: formattedDateOfBirth,
-                date_employed_raw: initialData.date_employed,
-                date_employed_formatted: formattedDateEmployed
-            });
 
             setFormData(prev => ({
                 ...prev,
@@ -669,14 +662,6 @@ export default function UserEditWrapper() {
         queryKey: ['roles-options'],
         queryFn: async () => {
             const response = await api.get('/roles', { params: { per_page: 100 } });
-            console.log('UserEdit: Full API Response:', JSON.stringify(response.data, null, 2));
-            console.log('UserEdit: Roles data array:', response.data?.data);
-            console.log('UserEdit: Total roles in response:', response.data?.data?.length || 0);
-            if (response.data?.data) {
-                const adminRole = response.data.data.find(r => r.name?.toLowerCase() === 'admin');
-                console.log('UserEdit: Admin role found:', adminRole ? 'YES' : 'NO', adminRole);
-                console.log('UserEdit: All role names:', response.data.data.map(r => r.name));
-            }
             return response.data;
         },
         staleTime: 0, // Always fetch fresh data
@@ -733,12 +718,6 @@ function UserEditContent({
 }) {
     const { formData, profileImage, imageRemoved } = React.useContext(FormContext);
     const [activeTab, setActiveTab] = useState('personal');
-
-    React.useEffect(() => {
-        if (roles && roles.length > 0) {
-            console.log('UserEdit: Available roles from API:', roles.map(r => `"${r.name}"`));
-        }
-    }, [roles]);
 
     const handleSubmit = async () => {
         setErrors({});
@@ -831,7 +810,7 @@ function UserEditContent({
             showToast('User updated successfully!', 'success', { isFormSubmission: true });
             navigate(-1); // Go back
         } catch (error) {
-            console.error('Error updating user:', error);
+            logger.error('Error updating user:', error);
             const errorData = error.response?.data;
             if (errorData?.errors) {
                 setErrors(errorData.errors);

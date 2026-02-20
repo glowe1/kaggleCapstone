@@ -7,6 +7,7 @@ import {
 import PublicNavigation from '../../components/PublicNavigation';
 import PublicFooter from '../../components/PublicFooter';
 import api from '../../services/api';
+import logger from '../../utils/logger';
 import { useToastContext } from '../../contexts/ToastContext';
 
 export default function RegisterFacility() {
@@ -161,7 +162,7 @@ export default function RegisterFacility() {
       showToast('Registration submitted successfully! Our team will review your request.', 'success');
       navigate('/register-facility/success');
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       
       if (error.response?.data?.errors) {
         const apiErrors = error.response.data.errors;

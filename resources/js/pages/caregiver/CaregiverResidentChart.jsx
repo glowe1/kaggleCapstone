@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import logger from '../../utils/logger';
 
 export default function CaregiverResidentChart() {
     const { residentId } = useParams();
@@ -51,7 +52,6 @@ export default function CaregiverResidentChart() {
                     }
                 } catch (error) {
                     // Chart doesn't exist, that's fine - we'll create a new one
-                    console.log('No existing chart found for this date');
                 }
             }
             
@@ -173,7 +173,7 @@ export default function CaregiverResidentChart() {
             queryClient.invalidateQueries(['behavior-charts']);
             if (status === 'submitted') navigate('/charts');
         } catch (error) {
-            console.error('Failed to save chart:', error);
+            logger.error('Failed to save chart:', error);
             const msg = error.response?.data?.message || 'Failed to save chart';
             toast.error(msg);
         } finally {

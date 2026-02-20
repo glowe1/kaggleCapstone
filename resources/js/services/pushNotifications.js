@@ -4,6 +4,7 @@
  */
 
 import api from './api';
+import logger from '../utils/logger';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
 
@@ -12,7 +13,7 @@ const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
  */
 export async function requestPermission() {
   if (!('Notification' in window)) {
-    console.warn('[PushNotifications] Notifications not supported');
+    logger.warn('[PushNotifications] Notifications not supported');
     return false;
   }
 
@@ -29,12 +30,12 @@ export async function requestPermission() {
  */
 export async function subscribeToPush() {
   if (!('serviceWorker' in navigator)) {
-    console.warn('[PushNotifications] Service Worker not supported');
+    logger.warn('[PushNotifications] Service Worker not supported');
     return null;
   }
 
   if (!('PushManager' in window)) {
-    console.warn('[PushNotifications] Push Manager not supported');
+    logger.warn('[PushNotifications] Push Manager not supported');
     return null;
   }
 
@@ -42,7 +43,7 @@ export async function subscribeToPush() {
     // Request permission first
     const hasPermission = await requestPermission();
     if (!hasPermission) {
-      console.warn('[PushNotifications] Permission denied');
+      logger.warn('[PushNotifications] Permission denied');
       return null;
     }
 
@@ -52,14 +53,14 @@ export async function subscribeToPush() {
     // Check if already subscribed (re-sync with backend in case it was lost)
     let subscription = await registration.pushManager.getSubscription();
     if (subscription) {
-      console.log('[PushNotifications] Already subscribed, syncing with backend');
+      logger.debug('[PushNotifications] Already subscribed, syncing with backend');
       await sendSubscriptionToBackend(subscription).catch(() => {});
       return subscription;
     }
 
     // Subscribe to push service
     if (!VAPID_PUBLIC_KEY) {
-      console.warn('[PushNotifications] VAPID public key not configured');
+      logger.warn('[PushNotifications] VAPID public key not configured');
       return null;
     }
 
@@ -68,14 +69,14 @@ export async function subscribeToPush() {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
 
-    console.log('[PushNotifications] Subscribed to push notifications');
+    logger.debug('[PushNotifications] Subscribed to push notifications');
 
     // Send subscription to backend (uses api so Bearer token is sent)
     await sendSubscriptionToBackend(subscription);
 
     return subscription;
   } catch (error) {
-    console.error('[PushNotifications] Failed to subscribe:', error);
+    logger.error('[PushNotifications] Failed to subscribe:', error);
     return null;
   }
 }
@@ -98,13 +99,13 @@ export async function unsubscribeFromPush() {
       // Remove from backend
       await removeSubscriptionFromBackend(subscription);
       
-      console.log('[PushNotifications] Unsubscribed from push notifications');
+      logger.debug('[PushNotifications] Unsubscribed from push notifications');
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error('[PushNotifications] Failed to unsubscribe:', error);
+    logger.error('[PushNotifications] Failed to unsubscribe:', error);
     return false;
   }
 }
@@ -122,7 +123,7 @@ export async function isSubscribed() {
     const subscription = await registration.pushManager.getSubscription();
     return subscription !== null;
   } catch (error) {
-    console.error('[PushNotifications] Failed to check subscription:', error);
+    logger.error('[PushNotifications] Failed to check subscription:', error);
     return false;
   }
 }
@@ -139,7 +140,7 @@ export async function getSubscription() {
     const registration = await navigator.serviceWorker.ready;
     return await registration.pushManager.getSubscription();
   } catch (error) {
-    console.error('[PushNotifications] Failed to get subscription:', error);
+    logger.error('[PushNotifications] Failed to get subscription:', error);
     return null;
   }
 }
@@ -158,9 +159,9 @@ async function sendSubscriptionToBackend(subscription) {
       },
       content_encoding: contentEncoding,
     });
-    console.log('[PushNotifications] Subscription saved to backend');
+    logger.debug('[PushNotifications] Subscription saved to backend');
   } catch (error) {
-    console.error('[PushNotifications] Failed to save subscription:', error);
+    logger.error('[PushNotifications] Failed to save subscription:', error);
     throw error;
   }
 }
@@ -173,9 +174,9 @@ async function removeSubscriptionFromBackend(subscription) {
     await api.delete('/push-subscriptions', {
       data: { endpoint: subscription.endpoint },
     });
-    console.log('[PushNotifications] Subscription removed from backend');
+    logger.debug('[PushNotifications] Subscription removed from backend');
   } catch (error) {
-    console.error('[PushNotifications] Failed to remove subscription:', error);
+    logger.error('[PushNotifications] Failed to remove subscription:', error);
     throw error;
   }
 }

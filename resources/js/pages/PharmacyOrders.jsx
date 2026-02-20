@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { ShoppingCart, Plus, Search, Edit, Trash2, Calendar, Package, CheckCircle, Clock, XCircle, Truck, X } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import Card from '../components/Card';
@@ -26,7 +27,7 @@ export default function PharmacyOrders() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -114,7 +115,7 @@ export default function PharmacyOrders() {
             queryClient.invalidateQueries(['pharmacy-orders']);
         },
         onError: (error) => {
-            console.error('Failed to update order status:', error);
+            logger.error('Failed to update order status:', error);
             alert(error.response?.data?.message || 'Failed to update order status. Please try again.');
         },
     });
@@ -131,7 +132,7 @@ export default function PharmacyOrders() {
             setReceivedQuantities({});
         },
         onError: (error) => {
-            console.error('Failed to update received quantities:', error);
+            logger.error('Failed to update received quantities:', error);
             alert(error.response?.data?.message || 'Failed to update received quantities. Please try again.');
         },
     });
@@ -156,7 +157,7 @@ export default function PharmacyOrders() {
             });
         },
         onError: (error) => {
-            console.error('Failed to create order:', error);
+            logger.error('Failed to create order:', error);
             alert(error.response?.data?.message || 'Failed to create order. Please try again.');
         },
     });

@@ -18,6 +18,7 @@ import {
 import api from '../../services/api';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import ResidentDocuments from '../../components/ResidentDocuments';
+import logger from '../../utils/logger';
 
 const tabs = [
     { id: 'profile', label: 'Profile Overview', icon: Users },
@@ -38,7 +39,7 @@ function formatDate(value, options = { dateStyle: 'medium' }) {
         const dateOptions = typeof options === 'string' ? { dateStyle: options } : options;
         return new Intl.DateTimeFormat('en-US', dateOptions).format(new Date(value));
     } catch (error) {
-        console.warn('Failed to format date', value, error);
+        logger.warn('Failed to format date', value, error);
         return value;
     }
 }
@@ -158,7 +159,7 @@ export default function ResidentDetailPage() {
                 const response = await api.put(`/residents/${residentId}`, data);
                 return response.data?.data || response.data;
             } catch (error) {
-                console.error('API Error:', error.response?.data || error.message);
+                logger.error('API Error:', error.response?.data || error.message);
                 throw error;
             }
         },
@@ -169,7 +170,7 @@ export default function ResidentDetailPage() {
             setEditingCarePlan(false);
         },
         onError: (error) => {
-            console.error('Failed to update care plan:', error);
+            logger.error('Failed to update care plan:', error);
             const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update care plan. Please try again.';
             alert(errorMessage);
         },

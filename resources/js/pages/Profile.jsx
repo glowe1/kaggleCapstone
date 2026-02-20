@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { subscribeToPush, unsubscribeFromPush, isSubscribed } from '../services/pushNotifications';
 import {
     User as UserIcon,
@@ -231,7 +232,7 @@ export default function Profile() {
             
             await updateMutation.mutateAsync(formDataToSend);
         } catch (error) {
-            console.error('Failed to update profile:', error);
+            logger.error('Failed to update profile:', error);
         }
     };
 

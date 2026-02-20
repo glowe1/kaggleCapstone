@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { 
     BarChart3, 
     Users, 
@@ -152,7 +153,7 @@ export default function Reports() {
                     pharmacy: pharmacyCount,
                 };
             } catch (error) {
-                console.error('Error fetching monthly stats:', error);
+                logger.error('Error fetching monthly stats:', error);
                 return {
                     appointments: 0,
                     vitals: 0,

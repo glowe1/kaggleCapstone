@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import api from '../services/api';
+import api, { setupProactiveRefresh } from '../services/api';
 import { 
     LayoutDashboard, 
     Calendar, 
@@ -59,6 +59,7 @@ import {
     formatPacificDate,
     getTimezoneDisplayParts,
 } from '../utils/pacificTime';
+import logger from '../utils/logger';
 
 const navigation = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', children: null },
@@ -225,7 +226,7 @@ export default function Layout() {
                 const response = await api.get('/user');
                 return response.data;
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
 
                 // If auth is no longer valid (common after idle timeout), force a clean logout.
                 if (err?.response?.status === 401) {
@@ -280,6 +281,11 @@ export default function Layout() {
         return () => window.clearInterval(interval);
     }, [currentUser?.app_current_time]);
 
+    useEffect(() => {
+        const cleanup = setupProactiveRefresh();
+        return cleanup;
+    }, []);
+
     // Handle automatic logout after inactivity
     useEffect(() => {
         const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes
@@ -295,7 +301,7 @@ export default function Layout() {
             try {
                 await api.post('/logout');
             } catch (err) {
-                console.error('Automatic logout error:', err);
+                logger.error('Automatic logout error:', err);
             } finally {
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('user_name');
@@ -790,7 +796,7 @@ export default function Layout() {
                                     try {
                                         await api.post('/logout');
                                     } catch (err) {
-                                        console.error('Logout error:', err);
+                                        logger.error('Logout error:', err);
                                     } finally {
                                         localStorage.removeItem('auth_token');
                                         localStorage.removeItem('user_name');

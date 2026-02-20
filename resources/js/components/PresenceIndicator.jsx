@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Users } from 'lucide-react';
 import { getEcho } from '../services/echo';
+import logger from '../utils/logger';
 
 /**
  * Presence Indicator Component
@@ -48,7 +49,7 @@ export default function PresenceIndicator({ facilityId, branchId }) {
         setCount((prev) => Math.max(0, prev - 1));
       })
       .error((error) => {
-        console.error('[Presence] Error:', error);
+        logger.error('[Presence] Error:', error);
       });
 
     return () => {

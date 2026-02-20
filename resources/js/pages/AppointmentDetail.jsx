@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { 
     ArrowLeft, 
     Calendar, 
@@ -90,7 +91,7 @@ export default function AppointmentDetail() {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Error downloading document:', error);
+            logger.error('Error downloading document:', error);
             alert(error.response?.data?.message || 'Failed to download document. Please try again.');
         }
     };

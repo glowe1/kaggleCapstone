@@ -6,6 +6,7 @@ import {
     ArrowLeft, Building2, MapPin, Phone, Mail, Globe, Key, Palette,
     CheckCircle, XCircle, Calendar, User, Copy, ExternalLink, Edit
 } from 'lucide-react';
+import logger from '../utils/logger';
 
 export default function FacilityView() {
     const { id } = useParams();
@@ -26,7 +27,7 @@ export default function FacilityView() {
             setCopiedField(fieldName);
             setTimeout(() => setCopiedField(null), 2000);
         } catch (err) {
-            console.error('Failed to copy:', err);
+            logger.error('Failed to copy:', err);
         }
     };
 

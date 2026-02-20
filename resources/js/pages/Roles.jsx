@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { Shield, Plus, Edit, Trash2 } from 'lucide-react';
 import FacilityPermissions from './FacilityPermissions';
+import logger from '../utils/logger';
 
 export default function Roles() {
   const queryClient = useQueryClient();
@@ -59,7 +60,7 @@ export default function Roles() {
         }
         return res;
       } catch (error) {
-        console.error('Error fetching facility:', error);
+        logger.error('Error fetching facility:', error);
         throw error;
       }
     },

@@ -21,6 +21,7 @@ import {
     MoreVertical
 } from 'lucide-react';
 import { formatPacificDate } from '../../utils/pacificTime';
+import logger from '../../utils/logger';
 
 export default function BehaviorChartsView() {
     const navigate = useNavigate();
@@ -74,7 +75,6 @@ export default function BehaviorChartsView() {
             if (branchId) params.branch_id = branchId;
             if (residentId) params.resident_id = residentId;
             const response = await api.get('/resident-charts', { params });
-            console.log('Fetched charts:', response.data);
             return response.data;
         },
         enabled: !!(branchId && residentId), // Only fetch when both filters are selected
@@ -97,13 +97,6 @@ export default function BehaviorChartsView() {
 
     const charts = chartsData?.data || [];
 
-    // Debug logging
-    React.useEffect(() => {
-        console.log('Charts data:', chartsData);
-        console.log('Charts array:', charts);
-        console.log('Filters:', { branchId, residentId, month, year });
-    }, [chartsData, charts, branchId, residentId, month, year]);
-
     const handleViewChart = async (chart) => {
         // Always fetch full chart details to ensure we have all items and logs
         try {
@@ -111,8 +104,7 @@ export default function BehaviorChartsView() {
             const fullChart = response.data;
             setSelectedChart(fullChart);
         } catch (error) {
-            console.error('Error fetching chart details:', error);
-            // Fallback to using the chart data we already have
+            logger.error('Error fetching chart details:', error);
             setSelectedChart(chart);
         }
     };
@@ -135,7 +127,7 @@ export default function BehaviorChartsView() {
             setReviewChart(fullChart);
             setReviewStatus(fullChart.status || 'pending');
         } catch (error) {
-            console.error('Error fetching chart details:', error);
+            logger.error('Error fetching chart details:', error);
             setReviewChart(chart);
             setReviewStatus(chart.status || 'pending');
         }
@@ -161,7 +153,7 @@ export default function BehaviorChartsView() {
 
             handleCloseReviewModal();
         } catch (error) {
-            console.error('Error updating chart status:', error);
+            logger.error('Error updating chart status:', error);
             alert('Failed to update chart status. Please try again.');
         } finally {
             setIsSubmittingReview(false);
@@ -277,7 +269,7 @@ export default function BehaviorChartsView() {
                                     queryClient.invalidateQueries(['behavior-charts']);
                                     await refetch();
                                 } catch (error) {
-                                    console.error('Error refreshing charts:', error);
+                                    logger.error('Error refreshing charts:', error);
                                 }
                             }}
                             disabled={isRefetching || !branchId || !residentId}

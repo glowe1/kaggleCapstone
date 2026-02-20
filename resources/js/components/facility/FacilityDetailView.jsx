@@ -3,6 +3,7 @@ import {
     Building2, MapPin, Phone, Mail, Globe, Key, Palette,
     CheckCircle, XCircle, Calendar, User, Copy, ExternalLink
 } from 'lucide-react';
+import logger from '../../utils/logger';
 
 /**
  * FacilityDetailView Component
@@ -17,7 +18,7 @@ export default function FacilityDetailView({ facility, onEdit, onClose }) {
             setCopiedField(fieldName);
             setTimeout(() => setCopiedField(null), 2000);
         } catch (err) {
-            console.error('Failed to copy:', err);
+            logger.error('Failed to copy:', err);
         }
     };
 

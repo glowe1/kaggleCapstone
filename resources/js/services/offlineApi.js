@@ -5,6 +5,7 @@
 
 import api from './api';
 import { addToQueue, getQueue, removeFromQueue, updateQueueItem, STORES } from './indexedDB';
+import logger from '../utils/logger';
 
 /**
  * Check if device is online
@@ -29,7 +30,7 @@ async function addToSyncQueue(type, method, endpoint, data, originalId = null) {
       retries: 0,
     });
   } catch (error) {
-    console.error('[OfflineAPI] Failed to add to sync queue:', error);
+    logger.error('[OfflineAPI] Failed to add to sync queue:', error);
   }
 }
 
@@ -45,7 +46,7 @@ export async function offlinePost(endpoint, data, queueStore = null) {
     } catch (error) {
       // Network error, fall back to offline
       if (!error.response && error.message.includes('Network')) {
-        console.log('[OfflineAPI] Network error, saving offline');
+        logger.debug('[OfflineAPI] Network error, saving offline');
         return await saveOffline(endpoint, 'POST', data, queueStore);
       }
       throw error;
@@ -66,7 +67,7 @@ export async function offlinePut(endpoint, data, queueStore = null) {
       return { success: true, data: response.data, online: true };
     } catch (error) {
       if (!error.response && error.message.includes('Network')) {
-        console.log('[OfflineAPI] Network error, saving offline');
+        logger.debug('[OfflineAPI] Network error, saving offline');
         return await saveOffline(endpoint, 'PUT', data, queueStore);
       }
       throw error;
@@ -86,7 +87,7 @@ export async function offlineDelete(endpoint, queueStore = null) {
       return { success: true, data: response.data, online: true };
     } catch (error) {
       if (!error.response && error.message.includes('Network')) {
-        console.log('[OfflineAPI] Network error, saving offline');
+        logger.debug('[OfflineAPI] Network error, saving offline');
         return await saveOffline(endpoint, 'DELETE', null, queueStore);
       }
       throw error;
@@ -145,7 +146,7 @@ async function saveOffline(endpoint, method, data, queueStore) {
       offlineId: id,
     };
   } catch (error) {
-    console.error('[OfflineAPI] Failed to save offline:', error);
+    logger.error('[OfflineAPI] Failed to save offline:', error);
     return {
       success: false,
       error: error.message,
@@ -173,7 +174,7 @@ export async function clearOfflineQueue(storeName, itemId) {
       detail: { store: storeName, type: 'cleared', count: -1 },
     }));
   } catch (error) {
-    console.error('[OfflineAPI] Failed to clear queue item:', error);
+    logger.error('[OfflineAPI] Failed to clear queue item:', error);
   }
 }
 
@@ -184,7 +185,7 @@ export async function markQueueItemSyncing(storeName, itemId) {
   try {
     await updateQueueItem(storeName, itemId, { status: 'syncing' });
   } catch (error) {
-    console.error('[OfflineAPI] Failed to mark item as syncing:', error);
+    logger.error('[OfflineAPI] Failed to mark item as syncing:', error);
   }
 }
 
@@ -199,7 +200,7 @@ export async function markQueueItemSynced(storeName, itemId) {
       removeFromQueue(storeName, itemId);
     }, 1000);
   } catch (error) {
-    console.error('[OfflineAPI] Failed to mark item as synced:', error);
+    logger.error('[OfflineAPI] Failed to mark item as synced:', error);
   }
 }
 
@@ -215,7 +216,7 @@ export async function markQueueItemError(storeName, itemId, errorMessage) {
     });
     return item;
   } catch (error) {
-    console.error('[OfflineAPI] Failed to mark item as error:', error);
+    logger.error('[OfflineAPI] Failed to mark item as error:', error);
   }
 }
 

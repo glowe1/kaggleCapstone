@@ -3,6 +3,8 @@
  * Handles service worker registration, updates, and activation
  */
 
+import logger from '../utils/logger';
+
 const SW_VERSION = '1.0.0';
 const SW_PATH = '/sw.js';
 
@@ -11,7 +13,7 @@ const SW_PATH = '/sw.js';
  */
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
-    console.log('Service Worker not supported');
+    logger.debug('Service Worker not supported');
     return null;
   }
 
@@ -20,7 +22,7 @@ export async function registerServiceWorker() {
       scope: '/',
     });
 
-    console.log('Service Worker registered:', registration.scope);
+    logger.debug('Service Worker registered:', registration.scope);
 
     // Handle updates
     registration.addEventListener('updatefound', () => {
@@ -30,7 +32,7 @@ export async function registerServiceWorker() {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             // New service worker available
-            console.log('New service worker available');
+            logger.debug('New service worker available');
             showUpdateNotification(registration);
           }
         });
@@ -44,7 +46,7 @@ export async function registerServiceWorker() {
 
     return registration;
   } catch (error) {
-    console.error('Service Worker registration failed:', error);
+    logger.error('Service Worker registration failed:', error);
     return null;
   }
 }
@@ -86,7 +88,7 @@ export async function unregisterServiceWorker() {
     const registration = await navigator.serviceWorker.ready;
     const success = await registration.unregister();
     if (success) {
-      console.log('Service Worker unregistered');
+      logger.debug('Service Worker unregistered');
     }
     return success;
   }
@@ -101,7 +103,7 @@ export async function getServiceWorkerRegistration() {
     try {
       return await navigator.serviceWorker.ready;
     } catch (error) {
-      console.error('Error getting service worker registration:', error);
+      logger.error('Error getting service worker registration:', error);
       return null;
     }
   }

@@ -265,6 +265,38 @@ class AuthController extends Controller
         ]);
     }
 
+    public function refreshToken(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $request->user()->currentAccessToken()->delete();
+
+        $newToken = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'token' => $newToken,
+            'token_issued_at' => now()->toIso8601String(),
+        ]);
+    }
+
+    public function validateToken(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['valid' => false], 401);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'user_id' => $user->id,
+        ]);
+    }
+
     public function updateCredentials(Request $request): JsonResponse
     {
         $validated = $request->validate([

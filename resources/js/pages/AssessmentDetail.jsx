@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { ArrowLeft, ClipboardList, Calendar, User, CheckCircle, AlertCircle } from 'lucide-react';
+import logger from '../utils/logger';
 
 export default function AssessmentDetail() {
     const { id } = useParams();
@@ -17,7 +18,6 @@ export default function AssessmentDetail() {
     const saveMutation = useMutation({
         mutationFn: async ({ questionId, value }) => {
             const response = await api.patch(`/assessments/${id}/questions/${questionId}`, { response_value: value });
-            console.log(`API Save Response for question ${questionId}:`, response.data);
             return response;
         },
         onMutate: async ({ questionId, value }) => {
@@ -38,7 +38,7 @@ export default function AssessmentDetail() {
             return { previous };
         },
         onError: (err, vars, context) => {
-            console.error(`Save error for question ${vars.questionId}:`, err);
+            logger.error(`Save error for question ${vars.questionId}:`, err);
             if (context?.previous) {
                 queryClient.setQueryData(['assessment-detail', id], context.previous);
             }
@@ -65,27 +65,18 @@ export default function AssessmentDetail() {
     React.useEffect(() => {
         // Only run if query is successful and data is loaded
         if (isLoading || !isSuccess) {
-            console.log('AssessmentDetail: Waiting for data to load', { isLoading, isSuccess });
             return;
         }
 
         if (!data || !data.resident || !data.sections) {
-            console.log('AssessmentDetail: Missing data, resident, or sections', { 
-                hasData: !!data, 
-                hasResident: !!data?.resident, 
-                hasSections: !!data?.sections,
-                dataKeys: data ? Object.keys(data) : []
-            });
             return;
         }
 
         // Skip if we've already pre-filled this assessment
         if (hasPrefilledRef.current.has(data.id)) {
-            console.log('AssessmentDetail: Already pre-filled assessment', data.id);
             return;
         }
 
-        console.log('AssessmentDetail: Starting pre-fill for assessment', data.id, 'resident:', data.resident);
         const resident = data.resident;
         const questionsToPrefill = [];
 
@@ -108,7 +99,7 @@ export default function AssessmentDetail() {
                 }
                 return age;
             } catch (error) {
-                console.error('Error calculating age:', error);
+                logger.error('Error calculating age:', error);
                 return null;
             }
         };
@@ -117,7 +108,6 @@ export default function AssessmentDetail() {
         const getResidentValue = (questionText, questionType) => {
             if (!questionText) return null;
             const normalized = normalizeQuestionText(questionText);
-            console.log('AssessmentDetail: Matching question text:', questionText, 'normalized:', normalized);
             
             // Age calculation - check for age-related questions
             if (normalized.includes('age') || 
@@ -191,22 +181,13 @@ export default function AssessmentDetail() {
         };
 
         // Process each section
-        console.log('AssessmentDetail: Processing sections', data.sections.map(s => ({ 
-            type: s.section_type, 
-            title: s.title || s.section_title, 
-            questionCount: s.questions?.length || 0 
-        })));
-        
         data.sections.forEach((section) => {
             // Only process medical_history sections (skip demographic section entirely)
             const title = (section.title || section.section_title || '').toLowerCase();
             if (!section.questions || section.section_type !== 'medical_history' || title === 'demographic information') {
-                console.log('AssessmentDetail: Skipping section', section.section_type, 'questions:', section.questions?.length);
                 return;
             }
 
-            console.log('AssessmentDetail: Processing section', section.section_type, 'with', section.questions.length, 'questions');
-            
             section.questions.forEach((question) => {
                 const currentValue = question.response_value;
                 const isEmpty = !currentValue || 
@@ -216,72 +197,46 @@ export default function AssessmentDetail() {
                     String(currentValue).trim() === 'null' ||
                     String(currentValue).trim() === 'undefined';
                 
-                console.log('AssessmentDetail: Checking question', question.id, question.question_text, 'current value:', currentValue, 'isEmpty:', isEmpty);
-                
                 // Only pre-fill if question doesn't have a response value yet
                 if (isEmpty) {
                     const residentValue = getResidentValue(question.question_text, question.response_type);
-                    console.log('AssessmentDetail: Resident value for question', question.id, ':', residentValue, 'resident data:', {
-                        name: resident.name || `${resident.first_name} ${resident.last_name}`,
-                        date_of_birth: resident.date_of_birth,
-                        gender: resident.gender,
-                        emergency_contact_name: resident.emergency_contact_name,
-                        emergency_contact_phone: resident.emergency_contact_phone,
-                        diagnosis: resident.diagnosis,
-                        allergies: resident.allergies,
-                        medications: resident.medications,
-                        physician_name: resident.physician_name,
-                        pep_or_doctor: resident.pep_or_doctor,
-                    });
                     
                     if (residentValue !== null && residentValue !== undefined && String(residentValue).trim() !== '') {
                         questionsToPrefill.push({
                             questionId: question.id,
                             value: String(residentValue).trim(),
                         });
-                        console.log('AssessmentDetail: Added question to pre-fill list', question.id, question.question_text, 'with value:', residentValue);
-                    } else {
-                        console.log('AssessmentDetail: No resident value found for question', question.id, question.question_text, 'normalized text:', normalizeQuestionText(question.question_text));
                     }
-                } else {
-                    console.log('AssessmentDetail: Question already has value, skipping', question.id, currentValue);
                 }
             });
         });
 
         // Save all pre-filled questions
         if (questionsToPrefill.length > 0) {
-            console.log('AssessmentDetail: Pre-filling', questionsToPrefill.length, 'questions', questionsToPrefill);
-            hasPrefilledRef.current.add(data.id); // Mark as pre-filled to prevent re-running
+            hasPrefilledRef.current.add(data.id);
             
             // Save questions sequentially to avoid race conditions
             const saveQuestions = async () => {
                 for (const { questionId, value } of questionsToPrefill) {
                     try {
-                        console.log(`AssessmentDetail: Pre-filling question ${questionId} with value:`, value);
                         await saveMutation.mutateAsync({ questionId, value });
-                        console.log(`AssessmentDetail: Successfully saved question ${questionId}`);
                     } catch (err) {
-                        console.error(`AssessmentDetail: Failed to pre-fill question ${questionId}:`, err);
+                        logger.error(`AssessmentDetail: Failed to pre-fill question ${questionId}:`, err);
                         // Continue with other questions even if one fails
                     }
                 }
                 
-                // Wait a bit for all saves to propagate, then refresh
                 setTimeout(() => {
-                    console.log('AssessmentDetail: Refreshing assessment data after pre-fill');
                     queryClient.invalidateQueries(['assessment-detail', id]);
                 }, 500);
             };
             
             saveQuestions().catch(err => {
-                console.error('AssessmentDetail: Error in pre-fill process:', err);
+                logger.error('AssessmentDetail: Error in pre-fill process:', err);
                 // Remove from set so it can retry
                 hasPrefilledRef.current.delete(data.id);
             });
         } else {
-            console.log('AssessmentDetail: No questions to pre-fill');
-            // If no questions to pre-fill, mark as done anyway
             hasPrefilledRef.current.add(data.id);
         }
     }, [data, isLoading, isSuccess, saveMutation, queryClient, id]); // Dependencies - include isSuccess to ensure data is loaded
@@ -525,9 +480,8 @@ function QuestionInput({ question, onSave }) {
         setSaving(true);
         try {
             await onSave(normalizedValue);
-            console.log(`Saved question ${question.id}:`, normalizedValue);
         } catch (error) {
-            console.error(`Failed to save question ${question.id}:`, error);
+            logger.error(`Failed to save question ${question.id}:`, error);
             alert(`Failed to save answer. Please try again.`);
         } finally {
             setSaving(false);
@@ -641,7 +595,7 @@ function QuestionInput({ question, onSave }) {
                     try {
                         options = JSON.parse(question.response_options);
                     } catch (e) {
-                        console.error('Failed to parse response_options:', e);
+                        logger.error('Failed to parse response_options:', e);
                         options = [];
                     }
                 }

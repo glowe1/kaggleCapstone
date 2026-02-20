@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wifi, WifiOff, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { isOnline } from '../services/offlineApi';
 import { getQueueStats } from '../services/indexedDB';
+import logger from '../utils/logger';
 
 /**
  * Offline Status Indicator Component
@@ -60,7 +61,7 @@ export default function OfflineIndicator() {
       const stats = await getQueueStats();
       setQueueStats(stats);
     } catch (error) {
-      console.error('[OfflineIndicator] Failed to get queue stats:', error);
+      logger.error('[OfflineIndicator] Failed to get queue stats:', error);
     }
   };
 
@@ -79,7 +80,7 @@ export default function OfflineIndicator() {
       await updateQueueStats();
       setLastSync(new Date());
     } catch (error) {
-      console.error('[OfflineIndicator] Sync failed:', error);
+      logger.error('[OfflineIndicator] Sync failed:', error);
     } finally {
       setSyncing(false);
     }

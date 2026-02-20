@@ -1,3 +1,5 @@
+import logger from './logger';
+
 const PACIFIC_TIMEZONE = 'America/Los_Angeles';
 
 const pacificDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
@@ -168,7 +170,6 @@ export const getPacificISODate = (date) => {
             const month = referenceDate.getUTCMonth() + 1;
             const day = referenceDate.getUTCDate();
             const result = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            console.log('getPacificISODate (server ref):', result, 'UTC components:', { year, month, day });
             return result;
         }
         
@@ -185,7 +186,6 @@ export const getPacificISODate = (date) => {
         const month = lookup.month;
         const day = lookup.day;
         const result = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        console.log('getPacificISODate (formatter):', result, 'local now:', now, 'Pacific parts:', { year, month, day });
         return result;
     }
     
@@ -364,23 +364,6 @@ export const toPacificDateFromTime = (timeValue, { referenceDate, dayOffset = 0 
     // It will handle server reference dates correctly
     const referenceParts = getPacificParts(refDate);
     
-    // Debug logging
-    if (timeValue && typeof timeValue === 'string' && timeValue.match(/^\d{2}:\d{2}/)) {
-        console.log('toPacificDateFromTime:', {
-            timeValue,
-            refDateISO: refDate.toISOString(),
-            refDateFormatted: formatPacificTime(refDate),
-            referenceParts,
-            willCreate: {
-                year: referenceParts.year,
-                month: referenceParts.month,
-                day: referenceParts.day + dayOffset,
-                hour: timeValue.match(/^(\d{2}):(\d{2})/)?.[1],
-                minute: timeValue.match(/^(\d{2}):(\d{2})/)?.[2],
-            }
-        });
-    }
-    
     const resolveDayOffset = (date) => {
         if (dayOffset) {
             date.setUTCDate(date.getUTCDate() + dayOffset);
@@ -506,7 +489,7 @@ export const getTimezoneDisplayParts = (timeZone = PACIFIC_TIMEZONE) => {
         const normalizedOffset = offsetName.replace(/^GMT/, 'UTC');
         return { shortName, offset: normalizedOffset };
     } catch (error) {
-        console.error('Failed to compute timezone display parts', error);
+        logger.error('Failed to compute timezone display parts', error);
         return { shortName: '', offset: '' };
     }
 };

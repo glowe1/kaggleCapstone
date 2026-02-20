@@ -35,7 +35,6 @@ export default function ChartReports() {
     // Refetch data when dates change
     useEffect(() => {
         if (dateFrom && dateTo) {
-            console.log('ChartReports: Dates changed, invalidating query', { dateFrom, dateTo });
             queryClient.invalidateQueries(['chart-overview', dateFrom, dateTo]);
         }
     }, [dateFrom, dateTo, queryClient]);
@@ -43,15 +42,11 @@ export default function ChartReports() {
     const { data: stats, isLoading, refetch } = useQuery({
         queryKey: ['chart-overview', dateFrom, dateTo],
         queryFn: async () => {
-            console.log('ChartReports: Fetching data with dates', { dateFrom, dateTo });
             const [residents, vitals, appointments, sleep] = await Promise.all([
                 api.get('/charts/residents').then(r => r.data),
                 api.get('/charts/vitals').then(r => r.data),
                 api.get('/charts/appointments').then(r => r.data),
-                api.get('/charts/sleep', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => {
-                    console.log('ChartReports: Sleep data received', r.data);
-                    return r.data;
-                }),
+                api.get('/charts/sleep', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data),
             ]);
             return { residents, vitals, appointments, sleep };
         },
@@ -139,7 +134,6 @@ export default function ChartReports() {
                                             e.nativeEvent.stopImmediatePropagation();
                                         }
                                         const newDate = e.target.value;
-                                        console.log('ChartReports: DateFrom changed to', newDate);
                                         setDateFrom(newDate);
                                         // Force refetch when date changes
                                         setTimeout(() => {
@@ -179,7 +173,6 @@ export default function ChartReports() {
                                             e.nativeEvent.stopImmediatePropagation();
                                         }
                                         const newDate = e.target.value;
-                                        console.log('ChartReports: DateTo changed to', newDate);
                                         setDateTo(newDate);
                                         // Force refetch when date changes
                                         setTimeout(() => {

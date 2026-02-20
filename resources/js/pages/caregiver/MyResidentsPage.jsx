@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, MapPin, Calendar, Phone, Activity } from 'lucide-react';
 import api from '../../services/api';
+import logger from '../../utils/logger';
 
 const initialStats = [
     { key: 'active', label: 'Active Residents', icon: Users },
@@ -25,7 +26,7 @@ function formatDate(value) {
             year: 'numeric',
         }).format(new Date(value));
     } catch (err) {
-        console.warn('Failed to format date', value, err);
+        logger.warn('Failed to format date', value, err);
         return value;
     }
 }

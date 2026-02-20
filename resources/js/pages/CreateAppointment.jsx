@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { Calendar, Edit, ArrowLeft, CheckCircle, Stethoscope, MapPin, ChevronDown, X, List, Grid, Clock, TrendingUp, Search } from 'lucide-react';
 import CalendarView from '../components/CalendarView';
 
@@ -122,7 +123,7 @@ export default function CreateAppointment() {
             refetch();
         },
         onError: (error) => {
-            console.error('Error creating appointment:', error);
+            logger.error('Error creating appointment:', error);
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
             }
@@ -144,7 +145,7 @@ export default function CreateAppointment() {
             refetch();
         },
         onError: (error) => {
-            console.error('Error marking appointment as complete:', error);
+            logger.error('Error marking appointment as complete:', error);
             alert('Failed to mark appointment as complete. Please try again.');
         },
     });
@@ -476,7 +477,7 @@ export default function CreateAppointment() {
                                                 timeStr = `${hour12}:${minutes} ${ampm}`;
                                             }
                                         } catch (err) {
-                                            console.error('Error parsing appointment time:', err);
+                                            logger.error('Error parsing appointment time:', err);
                                         }
                                     }
 

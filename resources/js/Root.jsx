@@ -1,6 +1,7 @@
 import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import logger from './utils/logger';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ModuleProtectedRoute from './components/ModuleProtectedRoute';
@@ -28,13 +29,11 @@ function retryLazyImport(importFn, retries = 5, delay = 300) {
             caches.keys().then(cacheNames => {
                 cacheNames.forEach(cacheName => {
                     if (cacheName.includes('workbox') || cacheName.includes('vite')) {
-                        caches.delete(cacheName).then(() => {
-                            console.log('Cleared cache:', cacheName);
-                        });
+                        caches.delete(cacheName);
                     }
                 });
             }).catch(err => {
-                console.warn('Could not clear cache:', err);
+                logger.warn('Could not clear cache:', err);
             });
         }
 
@@ -61,26 +60,24 @@ function retryLazyImport(importFn, retries = 5, delay = 300) {
                         // Exponential backoff for retries
                         const retryNumber = retries - remainingRetries + 1;
                         const backoffDelay = Math.min(delay * Math.pow(2, retryNumber - 1), 2000);
-                        console.warn(`Failed to load module, retrying in ${backoffDelay}ms... (${retryNumber}/${retries})`, error.message);
+                        logger.warn(`Failed to load module, retrying in ${backoffDelay}ms... (${retryNumber}/${retries})`, error.message);
                         
                         setTimeout(() => attempt(remainingRetries - 1), backoffDelay);
                     } else if (remainingRetries > 0) {
                         // For non-module errors, retry with shorter delay
                         setTimeout(() => attempt(remainingRetries - 1), delay);
                     } else {
-                        console.error('Failed to load module after all retries:', error);
+                        logger.error('Failed to load module after all retries:', error);
                         // On final failure, try to reload the page only once
                         if (isModuleLoadError && !hasReloaded) {
-                            console.warn('Module load failed, attempting page reload with cache clear...');
+                            logger.warn('Module load failed, attempting page reload with cache clear...');
                             sessionStorage.setItem(reloadKey, 'true');
                             
                             // Clear service worker cache if available
                             if ('serviceWorker' in navigator) {
                                 navigator.serviceWorker.getRegistrations().then(registrations => {
                                     registrations.forEach(registration => {
-                                        registration.unregister().then(() => {
-                                            console.log('Service worker unregistered');
-                                        });
+                                        registration.unregister();
                                     });
                                 });
                             }
@@ -91,9 +88,8 @@ function retryLazyImport(importFn, retries = 5, delay = 300) {
                                 window.location.reload(true);
                             }, 500);
                         } else if (hasReloaded) {
-                            console.error('Module load failed even after reload. This may indicate a build or deployment issue.');
-                            // Try to redirect to a working page instead of showing error
-                            console.warn('Attempting to redirect to login page to avoid error screen...');
+                            logger.error('Module load failed even after reload. This may indicate a build or deployment issue.');
+                            logger.warn('Attempting to redirect to login page to avoid error screen...');
                             setTimeout(() => {
                                 if (window.location.pathname !== '/login') {
                                     window.location.href = '/login';

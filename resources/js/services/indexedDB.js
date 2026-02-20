@@ -4,6 +4,7 @@
  */
 
 import { openDB as idbOpenDB } from 'idb';
+import logger from '../utils/logger';
 
 const DB_NAME = 'HomeLogic360DB';
 const DB_VERSION = 1;
@@ -81,10 +82,10 @@ export async function openDB() {
       },
     });
 
-    console.log('[IndexedDB] Database opened:', DB_NAME);
+    logger.debug('[IndexedDB] Database opened:', DB_NAME);
     return dbInstance;
   } catch (error) {
-    console.error('[IndexedDB] Failed to open database:', error);
+    logger.error('[IndexedDB] Failed to open database:', error);
     throw error;
   }
 }
@@ -108,10 +109,10 @@ export async function addToQueue(storeName, data) {
     const id = await store.add(item);
     await tx.done;
 
-    console.log(`[IndexedDB] Added to ${storeName}:`, id);
+    logger.debug(`[IndexedDB] Added to ${storeName}:`, id);
     return id;
   } catch (error) {
-    console.error(`[IndexedDB] Failed to add to ${storeName}:`, error);
+    logger.error(`[IndexedDB] Failed to add to ${storeName}:`, error);
     throw error;
   }
 }
@@ -142,7 +143,7 @@ export async function getQueue(storeName, filters = {}) {
     await tx.done;
     return items;
   } catch (error) {
-    console.error(`[IndexedDB] Failed to get queue from ${storeName}:`, error);
+    logger.error(`[IndexedDB] Failed to get queue from ${storeName}:`, error);
     return [];
   }
 }
@@ -165,10 +166,10 @@ export async function updateQueueItem(storeName, id, updates) {
     await store.put(updatedItem);
     await tx.done;
 
-    console.log(`[IndexedDB] Updated item in ${storeName}:`, id);
+    logger.debug(`[IndexedDB] Updated item in ${storeName}:`, id);
     return updatedItem;
   } catch (error) {
-    console.error(`[IndexedDB] Failed to update item in ${storeName}:`, error);
+    logger.error(`[IndexedDB] Failed to update item in ${storeName}:`, error);
     throw error;
   }
 }
@@ -185,9 +186,9 @@ export async function removeFromQueue(storeName, id) {
     await store.delete(id);
     await tx.done;
 
-    console.log(`[IndexedDB] Removed from ${storeName}:`, id);
+    logger.debug(`[IndexedDB] Removed from ${storeName}:`, id);
   } catch (error) {
-    console.error(`[IndexedDB] Failed to remove from ${storeName}:`, error);
+    logger.error(`[IndexedDB] Failed to remove from ${storeName}:`, error);
     throw error;
   }
 }
@@ -204,9 +205,9 @@ export async function clearQueue(storeName) {
     await store.clear();
     await tx.done;
 
-    console.log(`[IndexedDB] Cleared ${storeName}`);
+    logger.debug(`[IndexedDB] Cleared ${storeName}`);
   } catch (error) {
-    console.error(`[IndexedDB] Failed to clear ${storeName}:`, error);
+    logger.error(`[IndexedDB] Failed to clear ${storeName}:`, error);
     throw error;
   }
 }
@@ -240,7 +241,7 @@ export async function getCache(key) {
 
     return null;
   } catch (error) {
-    console.error('[IndexedDB] Failed to get cache:', error);
+    logger.error('[IndexedDB] Failed to get cache:', error);
     return null;
   }
 }
@@ -261,9 +262,9 @@ export async function setCache(key, data) {
     });
 
     await tx.done;
-    console.log('[IndexedDB] Cached:', key);
+    logger.debug('[IndexedDB] Cached:', key);
   } catch (error) {
-    console.error('[IndexedDB] Failed to set cache:', error);
+    logger.error('[IndexedDB] Failed to set cache:', error);
   }
 }
 
@@ -279,7 +280,7 @@ export async function removeCache(key) {
     await store.delete(key);
     await tx.done;
   } catch (error) {
-    console.error('[IndexedDB] Failed to remove cache:', error);
+    logger.error('[IndexedDB] Failed to remove cache:', error);
   }
 }
 
@@ -289,9 +290,9 @@ export async function removeCache(key) {
 export async function clearAllCaches() {
   try {
     await clearQueue(STORES.CACHE);
-    console.log('[IndexedDB] All caches cleared');
+    logger.debug('[IndexedDB] All caches cleared');
   } catch (error) {
-    console.error('[IndexedDB] Failed to clear caches:', error);
+    logger.error('[IndexedDB] Failed to clear caches:', error);
   }
 }
 
@@ -315,7 +316,7 @@ export async function getQueueStats() {
       total: medications.length + vitals.length + incidents.length + syncQueue.length,
     };
   } catch (error) {
-    console.error('[IndexedDB] Failed to get queue stats:', error);
+    logger.error('[IndexedDB] Failed to get queue stats:', error);
     return {
       medications: 0,
       vitals: 0,

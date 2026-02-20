@@ -3,6 +3,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Upload, Trash2, FileText, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
+import logger from '../utils/logger';
 import FormInput from '../components/forms/FormInput';
 import FormTextarea from '../components/forms/FormTextarea';
 import FormSelect from '../components/forms/FormSelect';
@@ -177,7 +178,7 @@ export default function TLogForm({ tLog, onClose, onSuccess }) {
             onSuccess?.();
         },
         onError: (error) => {
-            console.error('Error creating T-Log:', error);
+            logger.error('Error creating T-Log:', error);
             toast.error(error.response?.data?.message || 'Failed to create T-Log');
         },
     });
@@ -194,7 +195,7 @@ export default function TLogForm({ tLog, onClose, onSuccess }) {
             onSuccess?.();
         },
         onError: (error) => {
-            console.error('Error updating T-Log:', error);
+            logger.error('Error updating T-Log:', error);
             toast.error(error.response?.data?.message || 'Failed to update T-Log');
         },
     });
@@ -210,7 +211,7 @@ export default function TLogForm({ tLog, onClose, onSuccess }) {
             setExistingAttachments(prev => prev.filter(a => a.id !== attachmentId));
         },
         onError: (error) => {
-            console.error('Error deleting attachment:', error);
+            logger.error('Error deleting attachment:', error);
             toast.error(error.response?.data?.message || 'Failed to delete attachment');
         },
     });

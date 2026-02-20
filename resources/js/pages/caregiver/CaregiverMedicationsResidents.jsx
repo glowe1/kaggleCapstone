@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, MapPin, Calendar, Pill, User } from 'lucide-react';
 import api from '../../services/api';
+import logger from '../../utils/logger';
 
 function getInitials(first = '', last = '') {
     return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase();
@@ -20,7 +21,7 @@ function formatDate(value) {
             year: 'numeric',
         }).format(new Date(value));
     } catch (err) {
-        console.warn('Failed to format date', value, err);
+        logger.warn('Failed to format date', value, err);
         return value;
     }
 }
@@ -46,7 +47,7 @@ export default function CaregiverMedicationsResidents() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();

@@ -34,8 +34,6 @@ export function useRealtimeUpdates(channels = [], options = {}) {
       // Listen to each event
       events.forEach((eventName) => {
         const listener = (data) => {
-          console.log(`[Realtime] Event received: ${eventName}`, data);
-
           // Call custom handler if provided
           if (onEvent) {
             onEvent(eventName, data, queryClient);
@@ -159,8 +157,6 @@ export function useUserNotifications(userId, options = {}) {
     const privateChannel = echo.private(`App.Models.User.${userId}`);
 
     const listener = (data) => {
-      console.log('[Realtime] Notification received:', data);
-
       // Invalidate notifications query
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
 

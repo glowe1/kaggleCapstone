@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { ArrowLeft, ClipboardList, Calendar, User, CheckCircle, FileText, TrendingUp, Award } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -13,23 +14,6 @@ export default function AssessmentReview() {
         queryKey: ['assessment-review', id],
         queryFn: async () => {
             const response = await api.get(`/assessments/${id}`);
-            console.log('Assessment Review Data:', response.data);
-            if (response.data?.sections) {
-                console.log('Sections count:', response.data.sections.length);
-                response.data.sections.forEach((section, idx) => {
-                    console.log(`Section ${idx + 1}:`, {
-                        id: section.id,
-                        title: section.title || section.section_title,
-                        questionsCount: section.questions?.length || 0,
-                        questions: section.questions?.map(q => ({
-                            id: q.id,
-                            question_text: q.question_text,
-                            response_value: q.response_value,
-                            response_type: q.response_type
-                        }))
-                    });
-                });
-            }
             return response.data;
         },
         refetchOnWindowFocus: true,
@@ -44,7 +28,7 @@ export default function AssessmentReview() {
             alert('Assessment marked as complete!');
         },
         onError: (error) => {
-            console.error('Failed to mark assessment as complete:', error);
+            logger.error('Failed to mark assessment as complete:', error);
             alert('Failed to mark assessment as complete. Please try again.');
         },
     });

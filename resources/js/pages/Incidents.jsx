@@ -15,6 +15,7 @@ import FormInput from '../components/forms/FormInput';
 import FormTextarea from '../components/forms/FormTextarea';
 import FormSelect from '../components/forms/FormSelect';
 import { toast } from 'sonner';
+import logger from '../utils/logger';
 
 const SEVERITY_COLORS = {
     critical: 'bg-red-100 text-red-800 border-red-300',
@@ -155,7 +156,7 @@ export default function Incidents() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -291,7 +292,7 @@ export default function Incidents() {
             }
         },
         onError: (error) => {
-            console.error('Error creating incident:', error);
+            logger.error('Error creating incident:', error);
             if (error.message && error.message.includes('internet connection')) {
                 toast.error(error.message);
             } else if (error.response?.status === 413) {
@@ -323,7 +324,7 @@ export default function Incidents() {
             toast.success('Incident updated successfully', '', { isFormSubmission: true });
         },
         onError: (error) => {
-            console.error('Error updating incident:', error);
+            logger.error('Error updating incident:', error);
             toast.error(error.response?.data?.message || 'Failed to update incident');
         },
     });
@@ -337,7 +338,7 @@ export default function Incidents() {
             toast.success('Incident deleted successfully');
         },
         onError: (error) => {
-            console.error('Error deleting incident:', error);
+            logger.error('Error deleting incident:', error);
             toast.error(error.response?.data?.message || 'Failed to delete incident');
         },
     });

@@ -4,6 +4,7 @@ import api from '../services/api';
 import { Clock, MapPin, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
 import { getUserLocation } from '../utils/location';
 import SectionCard from '../components/SectionCard';
+import logger from '../utils/logger';
 
 export default function StaffClock() {
     const queryClient = useQueryClient();
@@ -58,7 +59,7 @@ export default function StaffClock() {
                     setLocation(loc);
                 }
             } catch (err) {
-                console.warn('Failed to get location:', err);
+                logger.warn('Failed to get location:', err);
             } finally {
                 setLocationLoading(false);
             }

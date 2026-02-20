@@ -29,6 +29,7 @@ import {
     User,
 } from 'lucide-react';
 import Select from '../../components/ui/radix/Select';
+import logger from '../../utils/logger';
 
 const INSTRUCTION_DISPLAY_MAP = {
     'q.i.d': 'Four times a day',
@@ -126,7 +127,7 @@ export default function ResidentMedicationsPage() {
                 setCurrentUser(response.data);
                 setPacificServerTime(response.data?.app_current_time, response.data?.app_timezone_offset);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import {
     ArrowLeft, Save, Building2, Palette, Settings, Users,
     MapPin, Phone, Mail, Image as ImageIcon, CheckCircle, XCircle,
@@ -711,7 +712,7 @@ function FacilityCreateContent({ navigate, showToast, queryClient, isSubmitting,
 
             navigate('/super-admin/facilities');
         } catch (error) {
-            console.error('Error creating facility:', error);
+            logger.error('Error creating facility:', error);
             const errorData = error.response?.data;
             if (errorData?.errors) {
                 setErrors(errorData.errors);

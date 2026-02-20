@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { Sparkles, RefreshCcw, CalendarDays, CheckCircle2, XCircle, Clock3, ShieldCheck, FileText, User, Building2 } from 'lucide-react';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { getLocalDateString } from '../utils/pacificTime';
 import BranchSelector from '../components/BranchSelector';
 
@@ -71,10 +72,9 @@ export default function HousekeepingDashboard() {
             if (selectedBranchId) params.branch_id = selectedBranchId;
             try {
                 const response = await api.get('/cleaning/completion-report', { params });
-                console.log('Completion report response:', response.data);
                 return response.data;
             } catch (error) {
-                console.error('Error fetching completion report:', error);
+                logger.error('Error fetching completion report:', error);
                 throw error;
             }
         },

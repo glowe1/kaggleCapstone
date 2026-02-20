@@ -6,6 +6,7 @@ import api from '../services/api';
 import Card from '../components/Card';
 import { toast } from 'sonner';
 import TLogForm from './TLogForm';
+import logger from '../utils/logger';
 
 const NOTIFICATION_LEVEL_COLORS = {
     urgent: 'bg-red-100 text-red-800 border-red-300',
@@ -186,7 +187,7 @@ export default function TLogs() {
             toast.success('T-Log deleted successfully');
         },
         onError: (error) => {
-            console.error('Error deleting T-Log:', error);
+            logger.error('Error deleting T-Log:', error);
             toast.error(error.response?.data?.message || 'Failed to delete T-Log');
         },
     });
@@ -505,7 +506,7 @@ function ViewTLog({ tLog, onClose, onEdit }) {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Error downloading file:', error);
+            logger.error('Error downloading file:', error);
             toast.error('Failed to download file');
         }
     };

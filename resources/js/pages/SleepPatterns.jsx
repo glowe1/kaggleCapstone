@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { BarChart3, LineChart, Grid, Download, Edit, Moon, Calendar, User, Filter, HelpCircle, Eye, TrendingUp, List } from 'lucide-react';
 import { Bar, Line } from 'react-chartjs-2';
 import CalendarComponent from '../components/ui/Calendar';
@@ -75,7 +76,7 @@ export default function SleepPatterns() {
                     setBranchId((prev) => prev || String(user.assigned_branch_id));
                 }
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
 
@@ -148,14 +149,9 @@ export default function SleepPatterns() {
                         year: year,
                     }
                 });
-                console.log('Sleep Pattern API Response:', response.data);
-                console.log('Daily Data:', response.data?.daily_data);
-                console.log('Daily Data Length:', response.data?.daily_data?.length);
-                console.log('Pattern:', response.data?.pattern);
                 return response.data;
             } catch (err) {
-                console.error('Sleep Pattern API Error:', err);
-                console.error('Error details:', err.response?.data);
+                logger.error('Sleep Pattern API Error:', err);
                 const message = err.response?.status === 403
                     ? err.response?.data?.message || 'You do not have access to this resident.'
                     : err.response?.data?.message || err.message || 'Unable to load sleep pattern data.';

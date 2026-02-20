@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { Calendar, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 
@@ -18,7 +19,7 @@ export default function LeaveRequests() {
         const response = await api.get('/user');
         setCurrentUser(response.data);
       } catch (err) {
-        console.error('Failed to fetch current user:', err);
+        logger.error('Failed to fetch current user:', err);
       }
     };
     fetchUser();
@@ -283,19 +284,15 @@ function LeaveForm({ record, currentUser, isCaregiver, onClose, onSuccess }) {
     }
 
     try {
-      console.log('Submitting leave request:', form);
       let response;
       if (record) {
         response = await api.put(`/leave-requests/${record.id}`, form);
       } else {
         response = await api.post('/leave-requests', form);
       }
-      console.log('Leave request saved successfully:', response.data);
       onSuccess();
     } catch (e) {
-      console.error('Leave request error:', e);
-      console.error('Error response:', e.response);
-      console.error('Error data:', e.response?.data);
+      logger.error('Leave request error:', e);
       const errorData = e.response?.data;
 
       // Handle validation errors
@@ -316,7 +313,6 @@ function LeaveForm({ record, currentUser, isCaregiver, onClose, onSuccess }) {
         // Handle general errors
         const errorMessage = errorData?.message || e.message || 'Failed to save request. Please try again.';
         setErrors({ general: errorMessage });
-        console.error('Error message:', errorMessage);
       }
     } finally {
       setSubmitting(false);

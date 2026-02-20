@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, ClipboardList, Clock, Home, Info, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '../services/api';
+import api, { storeAuthToken } from '../services/api';
 import { useAnimateOnMount } from '../hooks/useAnimateOnMount';
 import { slideInLeft, slideInRight, fadeIn, shake, shouldAnimate } from '../utils/animationPresets';
 import { getUserLocation, formatDistance } from '../utils/location';
+import logger from '../utils/logger';
 
 export default function Login() {
     const navigate = useNavigate();
@@ -63,7 +64,7 @@ export default function Login() {
                             }
                             // Don't show error if it's a 401 (expected when token is invalid)
                             if (err.response?.status !== 401) {
-                                console.error('Token validation failed:', err);
+                                logger.error('Token validation failed:', err);
                             }
                         });
                 }
@@ -93,7 +94,7 @@ export default function Login() {
                 }
             } catch (err) {
                 // Silently fail - backend will use IP fallback
-                console.warn('Failed to get user location:', err);
+                logger.warn('Failed to get user location:', err);
             } finally {
                 setLocationLoading(false);
             }
@@ -156,10 +157,7 @@ export default function Login() {
                 null;
 
             if (token) {
-                // Store token and user info
-                localStorage.setItem('auth_token', token);
-                localStorage.setItem('token', token);
-                localStorage.setItem('access_token', token);
+                storeAuthToken(token);
                 if (response.data.user) {
                     localStorage.setItem('user_name', response.data.user.name || response.data.user.email);
                     localStorage.setItem('user_role', response.data.user.role || '');

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { Search, Users, Plus, Edit, XCircle, CheckCircle, Filter, Eye, X, Building2 } from 'lucide-react';
 import Select from '../components/ui/radix/Select';
 import ScrollReveal from '../components/ui/ScrollReveal';
@@ -28,7 +29,7 @@ export default function Residents() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user for residents view:', err);
+                logger.error('Failed to fetch current user for residents view:', err);
             }
         };
 
@@ -81,7 +82,7 @@ export default function Residents() {
                 const response = await api.get('/residents', { params });
                 return response.data;
             } catch (err) {
-                console.error('Error fetching residents:', err);
+                logger.error('Error fetching residents:', err);
                 throw err;
             }
         },
@@ -547,19 +548,10 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('=== FORM SUBMIT HANDLER CALLED ===');
         setErrors({});
         setSuccessMessage('');
         
         // Basic frontend validation
-        console.log('Checking validation...', { 
-            first_name: formData.first_name, 
-            last_name: formData.last_name, 
-            date_of_birth: formData.date_of_birth,
-            branch_id: formData.branch_id,
-            admission_date: formData.admission_date
-        });
-        
         const validationErrors = {};
         if (!formData.first_name || formData.first_name.trim() === '') {
             validationErrors.first_name = ['First name is required'];
@@ -579,12 +571,10 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
         }
         
         if (Object.keys(validationErrors).length > 0) {
-            console.log('Validation failed:', validationErrors);
             setErrors(validationErrors);
             return;
         }
         
-        console.log('Validation passed, proceeding with submission...');
         setIsSubmitting(true);
 
         // Helper to normalize date format (YYYY-MM-DD)
@@ -606,26 +596,16 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
                     return date.toISOString().split('T')[0];
                 }
             } catch (e) {
-                console.warn('Could not parse date:', dateValue);
+                logger.warn('Could not parse date:', dateValue);
             }
             return dateValue;
         };
-
-        console.log('Form submission started', { formData, profileImage: !!profileImage, record: !!record });
-        console.log('Auth token:', localStorage.getItem('auth_token') ? 'Present' : 'Missing');
 
         try {
             // Normalize dates before sending
             const normalizedDateOfBirth = normalizeDate(formData.date_of_birth);
             const normalizedAdmissionDate = normalizeDate(formData.admission_date);
             
-            console.log('Date normalization:', {
-                original_dob: formData.date_of_birth,
-                normalized_dob: normalizedDateOfBirth,
-                original_admission: formData.admission_date,
-                normalized_admission: normalizedAdmissionDate
-            });
-
             // Use FormData if there's an image, otherwise use JSON
             let response;
             if (profileImage) {
@@ -676,7 +656,6 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
                 } else {
                     response = await api.post('/residents', formDataToSend, config);
                 }
-                console.log('Resident saved successfully (with image):', response.data);
             } else {
                 // Clean up empty strings - convert to null for optional fields, but keep allergies/medical_conditions as strings
                 const payload = {};
@@ -714,10 +693,8 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
                 } else {
                     response = await api.post('/residents', payload);
                 }
-                console.log('Resident saved successfully:', response.data);
             }
             
-            console.log('Form submission successful');
             // Show success message
             setSuccessMessage(record ? 'Resident updated successfully!' : 'Resident created successfully!');
             
@@ -726,11 +703,7 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
             onSuccess();
             }, 1500);
         } catch (error) {
-            console.error('Error saving resident:', error);
-            console.error('Error response:', error.response);
-            console.error('Error status:', error.response?.status);
-            console.error('Error data:', error.response?.data);
-            console.error('Full error details:', JSON.stringify(error.response?.data, null, 2));
+            logger.error('Error saving resident:', error);
             setIsSubmitting(false);
             
             // Handle different error types
@@ -743,11 +716,9 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
                     }, 2000);
                 } else if (error.response.status === 422) {
                     // Validation errors - show detailed field errors
-                    console.log('422 Validation errors:', error.response.data);
                     if (error.response.data?.errors) {
-                        // Laravel validation errors format
                         const validationErrors = error.response.data.errors;
-                        console.log('Field validation errors:', validationErrors);
+
                         setErrors(validationErrors);
                         // Also show a general message
                         const errorMessages = Object.values(validationErrors).flat();
@@ -764,7 +735,7 @@ function ResidentForm({ record, branches, onClose, onSuccess, selectedBranchId }
                     }
                 } else if (error.response.status === 500) {
                     // Server error - show more details if available
-                    console.error('500 Server Error:', error.response.data);
+                    logger.error('500 Server Error:', error.response.data);
                     const errorMessage = error.response.data?.message || 
                                        error.response.data?.error || 
                                        'A server error occurred. Please check the server logs or try again later.';

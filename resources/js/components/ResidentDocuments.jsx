@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { FileText, Plus, Edit, Trash2, Search, Filter, Download, Calendar, AlertCircle, X } from 'lucide-react';
+import logger from '../utils/logger';
 
 const documentTypeOptions = {
     insurance: 'Insurance',
@@ -90,7 +91,7 @@ export default function ResidentDocuments({ residentId }) {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Error downloading document:', error);
+            logger.error('Error downloading document:', error);
             alert(error.response?.data?.message || 'Failed to download document. Please try again.');
         }
     };
@@ -112,7 +113,7 @@ export default function ResidentDocuments({ residentId }) {
                         e.preventDefault();
                         e.stopPropagation();
                         if (!residentId) {
-                            console.error('Cannot add document: residentId is missing!');
+                            logger.error('Cannot add document: residentId is missing!');
                             alert('Error: Resident ID is missing. Please refresh the page.');
                             return;
                         }
@@ -383,9 +384,8 @@ export default function ResidentDocuments({ residentId }) {
 function DocumentFormInline({ residentId, appointments, record, onClose, onSuccess, queryClient, search, typeFilter, currentPage }) {
     // Log and validate residentId
     useEffect(() => {
-        console.log('DocumentFormModal received residentId:', residentId, typeof residentId);
         if (!residentId) {
-            console.error('DocumentFormModal: residentId is missing or undefined!');
+            logger.error('DocumentFormModal: residentId is missing or undefined!');
         }
     }, [residentId]);
 
@@ -462,18 +462,6 @@ function DocumentFormInline({ residentId, appointments, record, onClose, onSucce
             }
             formDataToSend.append('notes', formData.notes || '');
             
-            // Debug: Log what we're sending
-            console.log('Sending document data:', {
-                resident_id: residentId,
-                resident_id_type: typeof residentId,
-                document_name: formData.document_name,
-                document_type: formData.document_type,
-                appointment_id: formData.appointment_id,
-                file: file?.name,
-                file_size: file?.size,
-                file_type: file?.type,
-            });
-
             if (file) {
                 formDataToSend.append('file_path', file);
             } else if (!record) {
@@ -486,8 +474,6 @@ function DocumentFormInline({ residentId, appointments, record, onClose, onSucce
             if (record) {
                 // Use POST for updates with FormData (file uploads)
                 response = await api.post(`/resident-documents/${record.id}/update`, formDataToSend);
-                console.log('Update response:', response);
-                console.log('Update response.data:', response.data);
                 
                 // The API returns the document directly in response.data
                 const updatedDoc = response.data;
@@ -495,21 +481,17 @@ function DocumentFormInline({ residentId, appointments, record, onClose, onSucce
                 // Update the cache optimistically with the response data
                 queryClient.setQueryData(['resident-documents', residentId, search, typeFilter, currentPage], (oldData) => {
                     if (!oldData || !oldData.data) {
-                        console.log('No oldData or oldData.data, cannot update cache');
                         return oldData;
                     }
-                    console.log('Updating cache, oldData:', oldData);
                     const newData = {
                         ...oldData,
                         data: oldData.data.map(doc => {
                             if (doc.id === record.id) {
-                                console.log('Replacing document:', doc.id, 'with:', updatedDoc);
                                 return updatedDoc;
                             }
                             return doc;
                         })
                     };
-                    console.log('New cache data:', newData);
                     return newData;
                 });
             } else {
@@ -517,14 +499,10 @@ function DocumentFormInline({ residentId, appointments, record, onClose, onSucce
             }
             onSuccess();
         } catch (error) {
-            console.error('Document upload error:', error);
-            console.error('Error response:', error.response?.data);
-            console.error('Error response errors:', error.response?.data?.errors);
-            console.error('Full error object:', JSON.stringify(error.response?.data, null, 2));
+            logger.error('Document upload error:', error);
             
             if (error.response?.data?.errors) {
                 const validationErrors = error.response.data.errors;
-                console.log('Setting validation errors:', validationErrors);
                 setErrors(validationErrors);
                 // Also show general message if available
                 if (error.response.data.message) {

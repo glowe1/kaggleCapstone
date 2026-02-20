@@ -14,6 +14,7 @@ import {
     Filler
 } from 'chart.js';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { useTheme } from '../contexts/ThemeContext';
 import { hexToRgb, addOpacity } from '../utils/colorUtils';
 import {
@@ -175,7 +176,7 @@ function ResidentVitalsTrendSection({ residents, defaultTrend }) {
             const response = await api.get(`/dashboard/resident-vitals/${residentId}`);
             setVitalsData(response.data);
         } catch (err) {
-            console.error('Failed to fetch vitals trend:', err);
+            logger.error('Failed to fetch vitals trend:', err);
         } finally {
             setIsLoading(false);
         }
@@ -229,7 +230,7 @@ export default function Dashboard() {
                 const response = await api.get('/user');
                 return response.data;
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
                 return null;
             }
         },
@@ -247,14 +248,12 @@ export default function Dashboard() {
         queryFn: async () => {
             try {
                 const response = await api.get('/dashboard/stats');
-                console.log('Dashboard stats response:', response.data);
                 if (response.data && response.data.data) {
                     return response.data.data;
                 }
                 return response.data;
             } catch (err) {
-                console.error('Dashboard API error:', err);
-                console.error('Error details:', err.response?.data);
+                logger.error('Dashboard API error:', err);
                 // Return null to show error state instead of zeros
                 return null;
             }
@@ -276,7 +275,7 @@ export default function Dashboard() {
                 });
                 return response.data;
             } catch (err) {
-                console.error('Daily activities API error:', err);
+                logger.error('Daily activities API error:', err);
                 return { data: [] };
             }
         },
@@ -296,7 +295,7 @@ export default function Dashboard() {
                 const response = await api.get('/charts/residents');
                 return response.data;
             } catch (err) {
-                console.error('Trends API error:', err);
+                logger.error('Trends API error:', err);
                 return null;
             }
         },
@@ -346,7 +345,7 @@ export default function Dashboard() {
                     fireDrills: getCount(fireDrillsRes),
                 };
             } catch (err) {
-                console.error('Module stats API error:', err);
+                logger.error('Module stats API error:', err);
                 return {
                     assessments: 0,
                     sleep: 0,
@@ -379,7 +378,7 @@ export default function Dashboard() {
                 });
                 return response.data;
             } catch (err) {
-                console.error('Fire drills API error:', err);
+                logger.error('Fire drills API error:', err);
                 return { data: [] };
             }
         },
@@ -724,8 +723,7 @@ export default function Dashboard() {
                         : drill.scheduled_date;
                     const drillDateTime = new Date(`${dateStr}T${timeStr}`);
                     if (isNaN(drillDateTime.getTime())) {
-                        console.warn('Invalid fire drill date:', drill);
-                        return;
+                            return;
                     }
                     tasks.push({
                         id: `fire-drill-${drill.id}`,
@@ -735,7 +733,7 @@ export default function Dashboard() {
                         link: '/fire-drills',
                     });
                 } catch (error) {
-                    console.error('Error processing fire drill task:', error, drill);
+                    logger.error('Error processing fire drill task:', error, drill);
                 }
             });
         }
@@ -788,7 +786,7 @@ export default function Dashboard() {
                 const response = await api.get('/dashboard/todays-schedule');
                 return response.data;
             } catch (err) {
-                console.error('Schedule API error:', err);
+                logger.error('Schedule API error:', err);
                 return [];
             }
         },
@@ -804,7 +802,7 @@ export default function Dashboard() {
                 const response = await api.get('/dashboard/upcoming-events');
                 return response.data;
             } catch (err) {
-                console.error('Upcoming events API error:', err);
+                logger.error('Upcoming events API error:', err);
                 return [];
             }
         },
@@ -942,7 +940,7 @@ export default function Dashboard() {
                                                     drillDate = new Date(drill.scheduled_date);
                                                     if (isNaN(drillDate.getTime())) return null;
                                                 } catch (error) {
-                                                    console.error('Invalid drill date:', drill);
+                                                    logger.error('Invalid drill date:', drill);
                                                     return null;
                                                 }
                                                 const today = new Date();
@@ -977,7 +975,7 @@ export default function Dashboard() {
                                                             timeStr = timeDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                                                         }
                                                     } catch (error) {
-                                                        console.error('Error formatting drill time:', error);
+                                                        logger.error('Error formatting drill time:', error);
                                                     }
                                                 }
 

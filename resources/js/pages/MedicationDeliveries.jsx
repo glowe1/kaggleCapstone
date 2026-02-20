@@ -6,6 +6,7 @@ import { Truck, Plus, Search, Filter, Edit, Trash2, Calendar, Package, User, X, 
 import SectionCard from '../components/SectionCard';
 import Card from '../components/Card';
 import Select from '../components/ui/radix/Select';
+import logger from '../utils/logger';
 
 export default function MedicationDeliveries() {
     const queryClient = useQueryClient();
@@ -31,7 +32,7 @@ export default function MedicationDeliveries() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -659,8 +660,7 @@ function MedicationDeliveryForm({ record, branches, residents, medications, phar
                 // API returns paginated data, so access response.data.data
                 return response.data;
             } catch (error) {
-                console.error('Error fetching pharmacy templates:', error);
-                // Return empty data structure if API fails
+                logger.error('Error fetching pharmacy templates:', error);
                 return { data: [] };
             }
         },
@@ -703,7 +703,7 @@ function MedicationDeliveryForm({ record, branches, residents, medications, phar
 
             onSuccess();
         } catch (error) {
-            console.error('Error saving medication delivery:', error);
+            logger.error('Error saving medication delivery:', error);
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
             } else {
@@ -1024,7 +1024,7 @@ function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacy
                         });
                         medsMap[delivery.resident_id] = response.data.data || [];
                     } catch (err) {
-                        console.error('Failed to fetch medications:', err);
+                        logger.error('Failed to fetch medications:', err);
                         medsMap[delivery.resident_id] = [];
                     }
                 }
@@ -1077,14 +1077,14 @@ function BulkMedicationDeliveryForm({ branches, residents, medications, pharmacy
             
             if (response.data.error_count > 0) {
                 alert(`${response.data.success_count} deliveries created, ${response.data.error_count} failed. Check console for details.`);
-                console.error('Bulk creation errors:', response.data.errors);
+                logger.error('Bulk creation errors:', response.data.errors);
             } else {
                 alert(`Successfully created ${response.data.success_count} delivery(ies)!`);
             }
             
             onSuccess();
         } catch (error) {
-            console.error('Bulk creation error:', error);
+            logger.error('Bulk creation error:', error);
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
             } else {

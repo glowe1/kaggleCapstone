@@ -7,6 +7,7 @@ import Card from '../components/Card';
 import SectionCard from '../components/SectionCard';
 import CalendarView from '../components/CalendarView';
 import BranchSelector from '../components/BranchSelector';
+import logger from '../utils/logger';
 
 // Profile Image Component with fallback
 function ProfileImage({ resident }) {
@@ -74,7 +75,7 @@ export default function Appointments() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -193,7 +194,7 @@ export default function Appointments() {
                 const response = await api.get('/appointments', { params });
                 return response.data;
             } catch (error) {
-                console.error('Error fetching appointments:', error);
+                logger.error('Error fetching appointments:', error);
                 throw error;
             }
         },
@@ -214,7 +215,7 @@ export default function Appointments() {
                     data: branches.filter(b => b.is_active !== false)
                 };
             } catch (error) {
-                console.error('Error fetching branches:', error);
+                logger.error('Error fetching branches:', error);
                 throw error;
             }
         },
@@ -232,7 +233,7 @@ export default function Appointments() {
                 }
                 return (await api.get('/residents', { params })).data;
             } catch (error) {
-                console.error('Error fetching residents:', error);
+                logger.error('Error fetching residents:', error);
                 throw error;
             }
         },
@@ -251,7 +252,7 @@ export default function Appointments() {
                 }
                 return (await api.get('/residents', { params })).data;
             } catch (error) {
-                console.error('Error fetching all residents:', error);
+                logger.error('Error fetching all residents:', error);
                 throw error;
             }
         },
@@ -285,7 +286,7 @@ export default function Appointments() {
 
             urlParamsProcessed.current = true;
         } catch (error) {
-            console.error('Error processing URL parameters:', error);
+            logger.error('Error processing URL parameters:', error);
             urlParamsProcessed.current = true;
         }
     }, []); // Only run once on mount
@@ -324,7 +325,7 @@ export default function Appointments() {
             // Cleanup function to clear timeout if component unmounts or dependencies change
             return () => clearTimeout(timeoutId);
         } catch (error) {
-            console.error('Error scrolling to appointment:', error);
+            logger.error('Error scrolling to appointment:', error);
         }
     }, [data, setSearchParams]);
 
@@ -348,7 +349,7 @@ export default function Appointments() {
             handleCloseForm();
         },
         onError: (error) => {
-            console.error('Error creating appointment:', error);
+            logger.error('Error creating appointment:', error);
         },
     });
 
@@ -392,7 +393,7 @@ export default function Appointments() {
             setCompletionDocuments([]);
             refetch();
         } catch (error) {
-            console.error('Failed to update appointment status:', error);
+            logger.error('Failed to update appointment status:', error);
             alert(error.response?.data?.message || 'Failed to complete appointment');
         }
     };
@@ -461,8 +462,6 @@ export default function Appointments() {
 
     // Handle opening appointment view for a specific resident
     const handleOpenAppointmentView = (residentId) => {
-        console.log('Navigating to appointment page for resident:', residentId);
-        // Navigate to the create appointment page
         window.location.href = `/appointments/create/${residentId}`;
     };
 
@@ -955,7 +954,7 @@ export default function Appointments() {
                                                             timeStr = `${hour12}:${minutes} ${ampm}`;
                                                         }
                                                     } catch (err) {
-                                                        console.error('Error parsing appointment time:', err);
+                                                        logger.error('Error parsing appointment time:', err);
                                                     }
                                                 }
 
@@ -974,7 +973,7 @@ export default function Appointments() {
                                                                     appointmentRowRefs.current[String(appointment.id)] = el;
                                                                 }
                                                             } catch (err) {
-                                                                console.error('Error setting ref:', err);
+                                                                logger.error('Error setting ref:', err);
                                                             }
                                                         }}
                                                         className={`hover:bg-gray-50 transition-all duration-500 ${isHighlighted

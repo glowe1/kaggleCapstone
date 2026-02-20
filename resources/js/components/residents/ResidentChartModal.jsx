@@ -3,6 +3,7 @@ import { X, Plus, AlertCircle, Save, CheckCircle2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import logger from '../../utils/logger';
 
 export default function ResidentChartModal({ isOpen, onClose, resident, initialChart = null }) {
     const queryClient = useQueryClient();
@@ -146,7 +147,7 @@ export default function ResidentChartModal({ isOpen, onClose, resident, initialC
             queryClient.invalidateQueries(['behavior-charts']); // Also invalidate the list
             if (status === 'submitted') onClose();
         } catch (error) {
-            console.error('Failed to save chart:', error);
+            logger.error('Failed to save chart:', error);
             const msg = error.response?.data?.message || 'Failed to save chart';
             toast.error(msg);
         } finally {

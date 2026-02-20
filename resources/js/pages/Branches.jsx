@@ -6,6 +6,7 @@ import SectionCard from '../components/SectionCard';
 import { getUserLocation } from '../utils/location';
 import { formatPhoneNumber, unformatPhoneNumber } from '../utils/phoneFormatter';
 import { useToastContext } from '../contexts/ToastContext';
+import logger from '../utils/logger';
 
 const COORDINATE_DECIMALS = 6;
 const normalizeCoordinateInput = (value) => {
@@ -305,8 +306,6 @@ function BranchForm({ record, facilities, currentUser, isSuperAdmin, isFacilityA
         submitData.longitude = parseFloat(longitudeRaw);
       }
 
-      console.log('Submitting branch data:', submitData);
-      
       if (record) {
         await api.put(`/branches/${record.id}`, submitData);
         toast.showToast('Branch updated successfully', 'success', { isFormSubmission: true });
@@ -316,7 +315,7 @@ function BranchForm({ record, facilities, currentUser, isSuperAdmin, isFacilityA
       }
       onSuccess();
     } catch (e) {
-      console.error('Branch save error:', e.response?.data);
+      logger.error('Branch save error:', e.response?.data);
       const errorData = e.response?.data;
       if (errorData?.errors) {
         // Handle Laravel validation errors format

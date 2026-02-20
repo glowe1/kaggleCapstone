@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 
@@ -26,7 +27,7 @@ export default function ChartData() {
             setCategories(filteredCategories);
             setLoading(false);
         } catch (error) {
-            console.error('Error fetching chart data:', error);
+            logger.error('Error fetching chart data:', error);
             toast.error('Failed to load chart data');
             setLoading(false);
         }
@@ -105,7 +106,7 @@ export default function ChartData() {
             setStagedChanges([]);
             await fetchData();
         } catch (error) {
-            console.error('Error saving chart data:', error);
+            logger.error('Error saving chart data:', error);
             toast.error('Failed to save changes');
         } finally {
             setSaving(false);

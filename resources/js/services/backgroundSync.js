@@ -11,13 +11,14 @@ import {
   STORES,
 } from './indexedDB';
 import api from './api';
+import logger from '../utils/logger';
 
 /**
  * Sync all pending items
  */
 export async function syncAll() {
   if (!isOnline()) {
-    console.log('[BackgroundSync] Offline, skipping sync');
+    logger.debug('[BackgroundSync] Offline, skipping sync');
     return { success: false, error: 'Offline' };
   }
 
@@ -48,7 +49,7 @@ export async function syncAll() {
       details: results,
     };
   } catch (error) {
-    console.error('[BackgroundSync] Sync failed:', error);
+    logger.error('[BackgroundSync] Sync failed:', error);
     return { success: false, error: error.message };
   }
 }
@@ -99,9 +100,9 @@ async function syncQueue(storeName, type) {
       }
 
       synced++;
-      console.log(`[BackgroundSync] Synced ${type} item:`, item.id);
+      logger.debug(`[BackgroundSync] Synced ${type} item:`, item.id);
     } catch (error) {
-      console.error(`[BackgroundSync] Failed to sync ${type} item:`, error);
+      logger.error(`[BackgroundSync] Failed to sync ${type} item:`, error);
 
       // Increment retries
       const retries = (item.retries || 0) + 1;
@@ -157,7 +158,7 @@ async function syncSyncQueue() {
 
       synced++;
     } catch (error) {
-      console.error('[BackgroundSync] Failed to sync queue item:', error);
+      logger.error('[BackgroundSync] Failed to sync queue item:', error);
 
       const retries = (item.retries || 0) + 1;
       await updateQueueItem(STORES.SYNC_QUEUE, item.id, {
@@ -184,7 +185,7 @@ async function syncSyncQueue() {
  */
 export async function registerBackgroundSync() {
   if (!('serviceWorker' in navigator) || !('sync' in ServiceWorkerRegistration.prototype)) {
-    console.log('[BackgroundSync] Background sync not supported');
+    logger.debug('[BackgroundSync] Background sync not supported');
     return;
   }
 
@@ -196,9 +197,9 @@ export async function registerBackgroundSync() {
     await registration.sync.register('sync-vitals');
     await registration.sync.register('sync-incidents');
 
-    console.log('[BackgroundSync] Background sync registered');
+    logger.debug('[BackgroundSync] Background sync registered');
   } catch (error) {
-    console.error('[BackgroundSync] Failed to register background sync:', error);
+    logger.error('[BackgroundSync] Failed to register background sync:', error);
   }
 }
 
@@ -207,13 +208,13 @@ export async function registerBackgroundSync() {
  */
 export function setupOnlineSync() {
   window.addEventListener('online', async () => {
-    console.log('[BackgroundSync] Online, triggering sync');
+    logger.debug('[BackgroundSync] Online, triggering sync');
     await syncAll();
   });
 
   // Also listen for manual sync requests
   window.addEventListener('manual-sync-request', async () => {
-    console.log('[BackgroundSync] Manual sync requested');
+    logger.debug('[BackgroundSync] Manual sync requested');
     await syncAll();
   });
 
@@ -230,7 +231,7 @@ if (typeof window !== 'undefined') {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'SYNC_REQUEST') {
-        console.log('[BackgroundSync] Sync requested by service worker:', event.data.tag);
+        logger.debug('[BackgroundSync] Sync requested by service worker:', event.data.tag);
         await syncAll();
       }
     });

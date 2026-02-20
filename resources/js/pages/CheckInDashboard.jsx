@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/ui/EmptyState';
 import { getUserLocation } from '../utils/location';
+import logger from '../utils/logger';
 
 // Helper function to calculate time difference in minutes
 const getTimeDifference = (startTime) => {
@@ -221,7 +222,7 @@ export default function CheckInDashboard() {
                     enableHighAccuracy: true,
                 });
             } catch (err) {
-                console.warn('Could not get location for clock-out:', err);
+                logger.warn('Could not get location for clock-out:', err);
             }
 
             const payload = {};

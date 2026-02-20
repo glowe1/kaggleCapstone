@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { ClipboardList, Plus, Search, Filter, Edit, Trash2, Calendar, User, CheckCircle, XCircle, Clock, FileText, AlertCircle, X } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import Card from '../components/Card';
@@ -26,7 +27,7 @@ export default function Assessments() {
                 const response = await api.get('/user');
                 return response.data;
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
                 return null;
             }
         },

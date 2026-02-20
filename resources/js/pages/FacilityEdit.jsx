@@ -952,8 +952,6 @@ function AccountsTab({ facilityId }) {
       const params = { facility_id: facilityId, per_page: 50 };
       if (search) params.search = search;
       const res = await api.get('/users', { params });
-      console.log('Facility Users API Response:', res.data);
-      console.log('Users count:', res.data?.data?.length || 0);
       return res.data;
     },
     refetchOnMount: true,

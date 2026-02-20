@@ -25,6 +25,7 @@ import {
 import Card from '../components/Card';
 import SectionCard from '../components/SectionCard';
 import BranchSelector from '../components/BranchSelector';
+import logger from '../utils/logger';
 
 const tabs = [
     { id: 'today', label: 'Today', icon: Calendar },
@@ -162,7 +163,7 @@ export default function AppointmentsDashboard() {
             }
         },
         onError: (error) => {
-            console.error('Error creating appointment:', error);
+            logger.error('Error creating appointment:', error);
             const errorMessage = error.response?.data?.message || 'Failed to create appointment';
             if (toast) {
                 toast.error('Error', errorMessage);
@@ -184,7 +185,7 @@ export default function AppointmentsDashboard() {
                 const response = await api.get('/appointments/statistics', { params });
                 return response.data;
             } catch (error) {
-                console.error('Error fetching statistics:', error);
+                logger.error('Error fetching statistics:', error);
                 throw error;
             }
         },
@@ -303,7 +304,7 @@ export default function AppointmentsDashboard() {
             }
         },
         onError: (error) => {
-            console.error('Complete error:', error);
+            logger.error('Complete error:', error);
             const errorMessage = error.response?.data?.message || 'Failed to complete appointment. Please try again.';
             if (toast) {
                 toast.error('Error', errorMessage);
@@ -393,7 +394,7 @@ export default function AppointmentsDashboard() {
             }
         },
         onError: (error) => {
-            console.error('Update error:', error);
+            logger.error('Update error:', error);
             const errorMessage = error.response?.data?.message || 'Failed to update appointment. Please try again.';
             if (toast) {
                 toast.error('Error', errorMessage);
@@ -406,13 +407,11 @@ export default function AppointmentsDashboard() {
     // Reschedule appointment mutation
     const rescheduleMutation = useMutation({
         mutationFn: async ({ id, appointment_date, appointment_time, reschedule_reason }) => {
-            console.log('Rescheduling appointment:', { id, appointment_date, appointment_time, reschedule_reason });
             const response = await api.put(`/appointments/${id}`, {
                 appointment_date,
                 appointment_time,
                 reschedule_reason: reschedule_reason || null,
             });
-            console.log('Reschedule response:', response);
             return response;
         },
         onSuccess: () => {
@@ -427,7 +426,7 @@ export default function AppointmentsDashboard() {
             }
         },
         onError: (error) => {
-            console.error('Reschedule error:', error);
+            logger.error('Reschedule error:', error);
             const errorMessage = error.response?.data?.message || 'Failed to reschedule appointment. Please try again.';
             if (toast) {
                 toast.error('Error', errorMessage);
@@ -500,12 +499,6 @@ export default function AppointmentsDashboard() {
             ? rescheduleFormData.appointment_time 
             : rescheduleFormData.appointment_time.substring(0, 5);
         
-        console.log('Submitting reschedule:', {
-            id: reschedulingAppointment.id,
-            appointment_date: rescheduleFormData.appointment_date,
-            appointment_time: timeFormatted,
-        });
-        
         rescheduleMutation.mutate({
             id: reschedulingAppointment.id,
             appointment_date: rescheduleFormData.appointment_date,
@@ -525,15 +518,11 @@ export default function AppointmentsDashboard() {
         this_month: 0,
     };
 
-    // Debug: Log statistics when they change
     useEffect(() => {
-        if (statistics) {
-            console.log('Appointments Statistics:', statistics);
-        }
         if (statsError) {
-            console.error('Statistics Error:', statsError);
+            logger.error('Statistics Error:', statsError);
         }
-    }, [statistics, statsError]);
+    }, [statsError]);
 
     // Handle tab click - sync filters with active tab
     const handleTabClick = (tabId) => {

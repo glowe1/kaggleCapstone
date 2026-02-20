@@ -3,6 +3,7 @@ import { RefreshCw, CheckCircle, AlertCircle, Clock, X } from 'lucide-react';
 import { getQueueStats } from '../services/indexedDB';
 import { syncAll } from '../services/backgroundSync';
 import { isOnline } from '../services/offlineApi';
+import logger from '../utils/logger';
 
 /**
  * Enhanced Sync Status Component
@@ -46,7 +47,7 @@ export default function SyncStatus({ onClose }) {
       const stats = await getQueueStats();
       setQueueStats(stats);
     } catch (error) {
-      console.error('[SyncStatus] Failed to get queue stats:', error);
+      logger.error('[SyncStatus] Failed to get queue stats:', error);
     }
   };
 

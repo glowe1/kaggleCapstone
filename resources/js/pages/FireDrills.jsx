@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, FormProvider } from 'react-hook-form';
 import api from '../services/api';
+import logger from '../utils/logger';
 import { toast } from 'sonner';
 import { Flame, Plus, Search, Filter, Edit, Trash2, Calendar, Clock, CheckCircle, XCircle, AlertTriangle, List, Grid, X, ArrowLeft, Loader2 } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
@@ -31,7 +32,7 @@ export default function FireDrills() {
                 const response = await api.get('/user');
                 setCurrentUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch current user:', err);
+                logger.error('Failed to fetch current user:', err);
             }
         };
         fetchUser();
@@ -551,7 +552,7 @@ function FireDrillForm({ record, branches, isCaregiver, caregiverBranchId, onClo
             toast.success(record ? 'Fire drill updated successfully' : 'Fire drill created successfully', '', { isFormSubmission: true });
             onSuccess();
         } catch (error) {
-            console.error('Error saving fire drill:', error);
+            logger.error('Error saving fire drill:', error);
             const errorMessage = error.response?.data?.message || 'Failed to save fire drill';
             toast.error(errorMessage);
         } finally {
