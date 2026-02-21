@@ -92,23 +92,21 @@ export default function CaregiverResidentChart() {
     }, [initData, isNew]);
 
     const checkTimeValidity = () => {
-        // Time validation disabled for testing
-        // const now = new Date();
-        // const hour = now.getHours();
-        // // 7:00 PM (19) to 9:59 PM (21)
-        // if (hour < 19 || hour > 21) {
-        //     setCurrentTimeError('Entries are only permitted between 7:00 PM and 9:59 PM.');
-        //     return false;
-        // }
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour < 19 || hour > 21) {
+            setCurrentTimeError('Entries are only permitted between 7:00 PM and 9:59 PM.');
+            return false;
+        }
         setCurrentTimeError(null);
         return true;
     };
 
-    // useEffect(() => {
-    //     checkTimeValidity();
-    //     const interval = setInterval(checkTimeValidity, 60000);
-    //     return () => clearInterval(interval);
-    // }, []);
+    useEffect(() => {
+        checkTimeValidity();
+        const interval = setInterval(checkTimeValidity, 60000);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleItemChange = (definitionId, newValue) => {
         setChartData(prev => ({
@@ -149,10 +147,10 @@ export default function CaregiverResidentChart() {
     };
 
     const handleSubmit = async (status) => {
-        // Time validation disabled for testing
-        // if (status === 'submitted' && !checkTimeValidity()) {
-        //     return;
-        // }
+        if (status === 'submitted' && !checkTimeValidity()) {
+            toast.error('Charts can only be submitted between 7:00 PM and 9:59 PM.');
+            return;
+        }
 
         setSaving(true);
         try {
@@ -237,16 +235,15 @@ export default function CaregiverResidentChart() {
                     </div>
                 </div>
 
-                {/* Time Warning - DISABLED FOR TESTING */}
-                {/* {currentTimeError && (
+                {currentTimeError && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
                         <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
                         <div className="text-sm text-amber-800">
                             <strong>Note:</strong> Final submissions are only allowed between <strong>7:00 PM</strong> and <strong>9:59 PM</strong>.
-                            Current progress can be saved as a draft.
+                            You can still save your progress as a draft at any time.
                         </div>
                     </div>
-                )} */}
+                )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
