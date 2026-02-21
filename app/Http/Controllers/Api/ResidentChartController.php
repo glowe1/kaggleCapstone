@@ -67,15 +67,17 @@ class ResidentChartController extends BaseApiController
     }
 
     /**
-     * Get the charting status and current record for a resident today.
+     * Get the charting status and current record for a resident for a given date (default: today).
      */
-    public function show(Resident $resident): JsonResponse
+    public function show(Request $request, Resident $resident): JsonResponse
     {
-        $today = Carbon::today()->toDateString();
-        
+        $date = $request->filled('date')
+            ? Carbon::parse($request->date)->toDateString()
+            : Carbon::today()->toDateString();
+
         $chart = BehaviorChart::with(['items', 'logs'])
             ->where('resident_id', $resident->id)
-            ->where('chart_date', $today)
+            ->where('chart_date', $date)
             ->first();
 
         // Also fetch all active behavior definitions to show in the "New Chart" modal
@@ -97,7 +99,9 @@ class ResidentChartController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $isDraft = $request->input('status') === 'draft';
+
+        $rules = [
             'resident_id' => 'required|exists:residents,id',
             'chart_date' => 'required|date',
             'status' => 'required|in:draft,submitted',
@@ -106,12 +110,14 @@ class ResidentChartController extends BaseApiController
             'items.*.value' => 'required|boolean',
             'logs' => 'nullable|array',
             'logs.*.occurred_at' => 'required|date',
-            'logs.*.behavior_description' => 'required|string',
             'logs.*.triggers' => 'nullable|string',
             'logs.*.caregiver_intervention' => 'nullable|string',
             'logs.*.reported_to_provider' => 'required|boolean',
             'logs.*.outcome' => 'nullable|string',
-        ]);
+        ];
+
+        $rules['logs.*.behavior_description'] = $isDraft ? 'nullable|string' : 'required|string';
+        $request->validate($rules);
 
         $user = $request->user();
         $chartDate = Carbon::parse($request->chart_date)->toDateString();
@@ -156,10 +162,10 @@ class ResidentChartController extends BaseApiController
                 foreach ($request->logs as $log) {
                     $chart->logs()->create([
                         'occurred_at' => $log['occurred_at'],
-                        'behavior_description' => $log['behavior_description'],
+                        'behavior_description' => $log['behavior_description'] ?? '',
                         'triggers' => $log['triggers'] ?? null,
                         'caregiver_intervention' => $log['caregiver_intervention'] ?? null,
-                        'reported_to_provider' => $log['reported_to_provider'],
+                        'reported_to_provider' => (bool) ($log['reported_to_provider'] ?? false),
                         'outcome' => $log['outcome'] ?? null,
                     ]);
                 }

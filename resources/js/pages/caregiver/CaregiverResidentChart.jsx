@@ -41,12 +41,12 @@ export default function CaregiverResidentChart() {
             ]);
             
             let chart = null;
-            // Only fetch existing chart if not creating a new one
             if (!isNew) {
                 try {
-                    const chartRes = await api.get(`/resident-charts/${residentId}`);
+                    const chartRes = await api.get(`/resident-charts/${residentId}`, {
+                        params: { date: selectedDate }
+                    });
                     const fetchedChart = chartRes.data.chart;
-                    // Only use the chart if it's for the selected date
                     if (fetchedChart && fetchedChart.chart_date === selectedDate) {
                         chart = fetchedChart;
                     }
