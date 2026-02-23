@@ -3,7 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, Clock3, Check, AlarmClockOff, Flame, Pill } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { formatPacificTime, getPacificNow } from '../utils/pacificTime';
+
+const PACIFIC_FORMATTER = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+});
 
 export default function ReminderPanel() {
     const [isOpen, setIsOpen] = useState(false);
@@ -58,19 +65,15 @@ export default function ReminderPanel() {
     const formatWhen = (value) => {
         if (!value) return '';
         const date = new Date(value);
-        return date.toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-        });
+        if (Number.isNaN(date.getTime())) return '';
+        return PACIFIC_FORMATTER.format(date);
     };
 
     const formatTimeUntilClose = (closeTime) => {
         if (!closeTime) return '';
-        const now = getPacificNow();
+        const now = Date.now();
         const close = new Date(closeTime);
-        const diffMs = close.getTime() - now.getTime();
+        const diffMs = close.getTime() - now;
         
         if (diffMs <= 0) return 'Closed';
         
