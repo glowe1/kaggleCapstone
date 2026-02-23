@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,6 +18,7 @@ import {
     Pill, AlertCircle, CheckCircle, Clock, TrendingUp,
     Users, ArrowRight, Activity, Package, XCircle,
     CalendarClock, Truck, Eye, BarChart3, RefreshCw,
+    ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import api from '../services/api';
 import SectionCard from '../components/SectionCard';
@@ -111,6 +112,35 @@ function DeliveryStatusBadge({ status }) {
     );
 }
 
+const PAGE_SIZE = 5;
+
+function MiniPagination({ page, totalPages, onPrev, onNext }) {
+    if (totalPages <= 1) return null;
+    return (
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
+            <span className="text-xs text-gray-400">
+                Page {page} of {totalPages}
+            </span>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={onPrev}
+                    disabled={page <= 1}
+                    className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                    onClick={onNext}
+                    disabled={page >= totalPages}
+                    className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function MedicationDashboard() {
     const navigate = useNavigate();
 
@@ -124,6 +154,10 @@ export default function MedicationDashboard() {
         retry: 2,
     });
 
+    const [upcomingPage, setUpcomingPage] = useState(1);
+    const [missedPage, setMissedPage] = useState(1);
+    const [activityPage, setActivityPage] = useState(1);
+
     const today = data?.today || {};
     const upcoming = data?.upcoming || [];
     const missedToday = data?.missed_today || [];
@@ -131,6 +165,15 @@ export default function MedicationDashboard() {
     const recentActivity = data?.recent_activity || [];
     const residentSummary = data?.resident_summary || [];
     const delivery = data?.delivery_status || {};
+
+    const upcomingPages = Math.ceil(upcoming.length / PAGE_SIZE) || 1;
+    const pagedUpcoming = upcoming.slice((upcomingPage - 1) * PAGE_SIZE, upcomingPage * PAGE_SIZE);
+
+    const missedPages = Math.ceil(missedToday.length / PAGE_SIZE) || 1;
+    const pagedMissed = missedToday.slice((missedPage - 1) * PAGE_SIZE, missedPage * PAGE_SIZE);
+
+    const activityPages = Math.ceil(recentActivity.length / PAGE_SIZE) || 1;
+    const pagedActivity = recentActivity.slice((activityPage - 1) * PAGE_SIZE, activityPage * PAGE_SIZE);
 
     const adherenceTrendChart = useMemo(() => {
         if (!trend.length) return null;
@@ -385,31 +428,39 @@ export default function MedicationDashboard() {
                             <p className="text-sm text-gray-500">No upcoming medications</p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {upcoming.map((item, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => navigate(`/medications/residents/${item.resident_id}`)}
-                                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors w-full text-left"
-                                >
-                                    <AvatarFallback name={item.resident_name} image={null} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900 truncate">{item.medication_name}</p>
-                                        <p className="text-xs text-gray-500 truncate">{item.resident_name}</p>
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <p className="text-sm font-semibold text-[var(--theme-primary)]">{item.scheduled_time}</p>
-                                        <p className="text-xs text-gray-400">
-                                            {item.minutes_until <= 0
-                                                ? 'Due now'
-                                                : item.minutes_until < 60
-                                                    ? `in ${item.minutes_until}m`
-                                                    : `in ${Math.floor(item.minutes_until / 60)}h ${item.minutes_until % 60}m`
-                                            }
-                                        </p>
-                                    </div>
-                                </button>
-                            ))}
+                        <div>
+                            <div className="space-y-2">
+                                {pagedUpcoming.map((item, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => navigate(`/medications/residents/${item.resident_id}`)}
+                                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors w-full text-left"
+                                    >
+                                        <AvatarFallback name={item.resident_name} image={null} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">{item.medication_name}</p>
+                                            <p className="text-xs text-gray-500 truncate">{item.resident_name}</p>
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                            <p className="text-sm font-semibold text-[var(--theme-primary)]">{item.scheduled_time}</p>
+                                            <p className="text-xs text-gray-400">
+                                                {item.minutes_until <= 0
+                                                    ? 'Due now'
+                                                    : item.minutes_until < 60
+                                                        ? `in ${item.minutes_until}m`
+                                                        : `in ${Math.floor(item.minutes_until / 60)}h ${item.minutes_until % 60}m`
+                                                }
+                                            </p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            <MiniPagination
+                                page={upcomingPage}
+                                totalPages={upcomingPages}
+                                onPrev={() => setUpcomingPage(p => Math.max(1, p - 1))}
+                                onNext={() => setUpcomingPage(p => Math.min(upcomingPages, p + 1))}
+                            />
                         </div>
                     )}
                 </SectionCard>
@@ -434,24 +485,32 @@ export default function MedicationDashboard() {
                             <p className="text-xs text-green-600 mt-1">Great work!</p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {missedToday.map((item, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => navigate(`/medications/residents/${item.resident_id}`)}
-                                    className="flex items-center gap-3 p-3 rounded-lg bg-red-50/50 hover:bg-red-50 transition-colors w-full text-left"
-                                >
-                                    <AvatarFallback name={item.resident_name} image={null} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900 truncate">{item.medication_name}</p>
-                                        <p className="text-xs text-gray-500 truncate">{item.resident_name}</p>
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <p className="text-sm font-medium text-red-600">{item.scheduled_time}</p>
-                                        <p className="text-xs text-red-400">Missed</p>
-                                    </div>
-                                </button>
-                            ))}
+                        <div>
+                            <div className="space-y-2">
+                                {pagedMissed.map((item, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => navigate(`/medications/residents/${item.resident_id}`)}
+                                        className="flex items-center gap-3 p-3 rounded-lg bg-red-50/50 hover:bg-red-50 transition-colors w-full text-left"
+                                    >
+                                        <AvatarFallback name={item.resident_name} image={null} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">{item.medication_name}</p>
+                                            <p className="text-xs text-gray-500 truncate">{item.resident_name}</p>
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                            <p className="text-sm font-medium text-red-600">{item.scheduled_time}</p>
+                                            <p className="text-xs text-red-400">Missed</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            <MiniPagination
+                                page={missedPage}
+                                totalPages={missedPages}
+                                onPrev={() => setMissedPage(p => Math.max(1, p - 1))}
+                                onNext={() => setMissedPage(p => Math.min(missedPages, p + 1))}
+                            />
                         </div>
                     )}
                 </SectionCard>
@@ -608,29 +667,37 @@ export default function MedicationDashboard() {
                                 <p className="text-sm text-gray-500">No recent activity</p>
                             </div>
                         ) : (
-                            <div className="space-y-1">
-                                {recentActivity.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
-                                    >
-                                        <AvatarFallback name={item.resident_name} image={null} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm text-gray-900">
-                                                <span className="font-medium">{item.medication_name}</span>
-                                                <span className="text-gray-400 mx-1">for</span>
-                                                <span className="font-medium">{item.resident_name}</span>
-                                            </p>
-                                            <p className="text-xs text-gray-400">
-                                                by {item.administered_by}
-                                                {item.administered_at && (
-                                                    <> &middot; {new Date(item.administered_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</>
-                                                )}
-                                            </p>
+                            <div>
+                                <div className="space-y-1">
+                                    {pagedActivity.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                            <AvatarFallback name={item.resident_name} image={null} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm text-gray-900">
+                                                    <span className="font-medium">{item.medication_name}</span>
+                                                    <span className="text-gray-400 mx-1">for</span>
+                                                    <span className="font-medium">{item.resident_name}</span>
+                                                </p>
+                                                <p className="text-xs text-gray-400">
+                                                    by {item.administered_by}
+                                                    {item.administered_at && (
+                                                        <> &middot; {new Date(item.administered_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</>
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <StatusBadge status={item.status} />
                                         </div>
-                                        <StatusBadge status={item.status} />
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                                <MiniPagination
+                                    page={activityPage}
+                                    totalPages={activityPages}
+                                    onPrev={() => setActivityPage(p => Math.max(1, p - 1))}
+                                    onNext={() => setActivityPage(p => Math.min(activityPages, p + 1))}
+                                />
                             </div>
                         )}
                     </SectionCard>
