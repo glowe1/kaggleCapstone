@@ -192,71 +192,48 @@ export default function Welcome() {
 
             </div>
 
-            {/* Right Column - Sophisticated Visual */}
-            <div className="hidden lg:block relative h-full flex items-center">
-              <div className="relative w-full">
-                {/* Main Dashboard Preview Card */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl">
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-white font-semibold text-sm">Dashboard</div>
-                        <div className="text-white/60 text-xs">Real-time Overview</div>
-                      </div>
-                    </div>
-                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                  </div>
-                  
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <Users className="w-5 h-5 text-white/60" />
-                        <span className="text-xs text-white/40">+12%</span>
-                      </div>
-                      <div className="text-2xl font-bold text-white">10K+</div>
-                      <div className="text-xs text-white/60 mt-1">Residents</div>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <Building2 className="w-5 h-5 text-white/60" />
-                        <span className="text-xs text-white/40">+5%</span>
-                      </div>
-                      <div className="text-2xl font-bold text-white">100+</div>
-                      <div className="text-xs text-white/60 mt-1">Facilities</div>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <Heart className="w-5 h-5 text-white/60" />
-                        <span className="text-xs text-green-400">99.9%</span>
-                      </div>
-                      <div className="text-2xl font-bold text-white">Active</div>
-                      <div className="text-xs text-white/60 mt-1">Uptime</div>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <Shield className="w-5 h-5 text-white/60" />
-                        <span className="text-xs text-white/40">100%</span>
-                      </div>
-                      <div className="text-2xl font-bold text-white">Secure</div>
-                      <div className="text-xs text-white/60 mt-1">HIPAA</div>
-                    </div>
-                  </div>
-                  
-                  {/* Activity Bar */}
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full w-3/4"></div>
-                      </div>
-                      <span className="text-xs text-white/60">75% Active</span>
-                    </div>
-                  </div>
-                </div>
+            {/* Right Column - Hero Image */}
+            <div className="hidden lg:flex items-center justify-center">
+              <div className="relative w-full max-w-lg">
+                <div className="absolute -inset-4 bg-white/10 rounded-3xl blur-xl"></div>
+                <img
+                  src="/images/slides/slide-3-hero.png"
+                  alt="HomeLogic360 Dashboard on laptop and tablet"
+                  className="relative w-full rounded-2xl shadow-2xl border border-white/20"
+                  draggable={false}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem Statement Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="order-2 lg:order-1">
+              <img
+                src="/images/slides/slide-1-problem.png"
+                alt="Managing care shouldn't be this hard"
+                className="w-full rounded-2xl shadow-lg"
+                draggable={false}
+              />
+            </div>
+            <div className="order-1 lg:order-2 space-y-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Managing Care Shouldn't Be <span className="text-blue-600">This Hard</span>
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Juggling paperwork, medication schedules, staff coordination, and compliance requirements overwhelms even the best care teams. HomeLogic360 eliminates the chaos.
+              </p>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/features')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all flex items-center gap-2"
+                >
+                  See How We Help <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -264,7 +241,7 @@ export default function Welcome() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Everything You Need</h2>
@@ -289,14 +266,56 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* Modules Section */}
+      {/* Resident Care Showcase */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Resident Care, <span className="text-cyan-600">Made Simple</span>
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                From resident profiles to medication tracking, vital sign monitoring to appointment calendars &mdash; everything is connected in one intuitive dashboard.
+              </p>
+              <ul className="space-y-3">
+                {['Comprehensive resident profiles', 'Automated medication scheduling', 'Real-time vital sign tracking', 'Family communication portal'].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle className="w-5 h-5 text-cyan-500 flex-shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <img
+                src="/images/slides/slide-6-features-resident.png"
+                alt="Resident care made simple"
+                className="w-full rounded-2xl shadow-lg"
+                draggable={false}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Modules Section with Image */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Complete Module Suite</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Access all the modules you need to run your facility efficiently
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-12">
+            <div>
+              <img
+                src="/images/slides/slide-7-features-operations.png"
+                alt="Streamline operations - every module you need"
+                className="w-full rounded-2xl shadow-lg"
+                draggable={false}
+              />
+            </div>
+            <div className="space-y-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Complete Module Suite</h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Access all the modules you need to run your facility efficiently &mdash; from staff check-ins and housekeeping to billing, analytics, and pharmacy management.
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {modules.map((module, index) => (
@@ -332,23 +351,94 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-500 to-cyan-500">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">Ready to Transform Your Facility?</h2>
-          <p className="text-xl text-white/90 mb-8">
+      {/* Analytics Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Smart Analytics, <span className="text-blue-600">Real-Time Insights</span>
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Make data-driven decisions with powerful analytics dashboards. Monitor key metrics, track trends, and receive intelligent alerts to keep your facility running at peak performance.
+              </p>
+              <ul className="space-y-3">
+                {['Real-time performance dashboards', 'Automated compliance reports', 'Trend analysis & forecasting', 'Custom alert thresholds'].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <img
+                src="/images/slides/slide-8-analytics.png"
+                alt="Smart analytics with real-time insights"
+                className="w-full rounded-2xl shadow-lg"
+                draggable={false}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Medication Tracking Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="order-2 lg:order-1">
+              <img
+                src="/images/slides/slide-5-features-care.png"
+                alt="Resident management and medication tracking"
+                className="w-full rounded-2xl shadow-lg"
+                draggable={false}
+              />
+            </div>
+            <div className="order-1 lg:order-2 space-y-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Connecting Care, <span className="text-cyan-600">Simplifying Life</span>
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                From resident management to medication tracking, HomeLogic360 connects every aspect of care delivery in one seamless platform. Never miss a dose, appointment, or critical update again.
+              </p>
+              <button
+                onClick={() => navigate('/register-facility')}
+                className="bg-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-cyan-700 transition-all flex items-center gap-2"
+              >
+                Get Started Today <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section with Background Image */}
+      <section className="relative py-24 overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/images/slides/slide-4-transform.png"
+            alt=""
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">Ready to Transform Your Facility?</h2>
+          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
             Join hundreds of care facilities already using HomeLogic360 to improve operations and care quality.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/register-facility')}
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all shadow-lg"
+              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
               Start Free Trial
             </button>
             <button
               onClick={() => navigate('/register-facility')}
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-all"
+              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-all"
             >
               Schedule Demo
             </button>

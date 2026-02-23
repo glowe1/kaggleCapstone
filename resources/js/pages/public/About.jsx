@@ -195,8 +195,32 @@ export default function About() {
         </div>
       </section>
 
+      {/* Problem Image Banner */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="order-2 lg:order-1">
+              <img
+                src="/images/slides/slide-2-struggle.png"
+                alt="Managing care shouldn't be this hard"
+                className="w-full rounded-2xl shadow-lg"
+                draggable={false}
+              />
+            </div>
+            <div className="order-1 lg:order-2 space-y-5">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                We Saw the <span className="text-blue-600">Problem</span>
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Care facility staff were drowning in paperwork, juggling medication schedules, and struggling with outdated systems. We built HomeLogic360 to change that &mdash; one facility at a time.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Mission & Vision Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Mission */}
@@ -343,9 +367,18 @@ export default function About() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-500 to-cyan-500">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* CTA Section with Background Image */}
+      <section className="relative py-24 overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/images/slides/slide-4-transform.png"
+            alt=""
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           <h2 className="text-4xl font-bold text-white mb-4">Join Our Growing Community</h2>
           <p className="text-xl text-white/90 mb-8">
             See why care facilities trust HomeLogic360 for their management needs. Start your free trial today.
@@ -353,13 +386,13 @@ export default function About() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/register-facility')}
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl"
+              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
               Start Free Trial
             </button>
             <button
               onClick={() => navigate('/contact')}
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-all"
+              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-all"
             >
               Schedule Demo
             </button>
