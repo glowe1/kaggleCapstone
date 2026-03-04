@@ -37,11 +37,21 @@ class PublicContactController extends Controller
         } catch (\Throwable $e) {
             Log::error('Contact form send failed', [
                 'error' => $e->getMessage(),
+                'exception' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return response()->json([
-                'message' => 'We could not send your message. Please try again later or email us directly.',
-            ], 500);
+
+            $message = 'We could not send your message. Please try again later or email us directly at ' . self::TO_EMAIL . '.';
+            $payload = ['message' => $message];
+
+            if (config('app.debug')) {
+                $payload['debug'] = [
+                    'error' => $e->getMessage(),
+                    'hint' => 'Check MAIL_MAILER, MAIL_FROM_ADDRESS, and AWS SES verification. See storage/logs/laravel.log for full trace.',
+                ];
+            }
+
+            return response()->json($payload, 500);
         }
 
         return response()->json([

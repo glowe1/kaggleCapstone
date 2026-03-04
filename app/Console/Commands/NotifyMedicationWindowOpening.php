@@ -51,7 +51,7 @@ class NotifyMedicationWindowOpening extends Command
         
         $this->info("Checking for medication administration windows opening...");
 
-        // Get all active medications
+        // Get active medications only for active residents in active branches of active (non-deleted) facilities
         $medications = Medication::where('is_active', true)
             ->where(function ($q) use ($now) {
                 $dateStr = $now->format('Y-m-d');
@@ -60,6 +60,15 @@ class NotifyMedicationWindowOpening extends Command
             ->where(function ($q) use ($now) {
                 $dateStr = $now->format('Y-m-d');
                 $q->whereNull('end_date')->orWhere('end_date', '>=', $dateStr);
+            })
+            ->whereHas('resident', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->whereHas('resident.branch', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->whereHas('resident.branch.facility', function ($q) {
+                $q->where('is_active', true);
             })
             ->with(['resident', 'drug', 'resident.branch'])
             ->get();
