@@ -163,6 +163,7 @@ const navigation = [
         path: '/administration', 
         children: [
             { name: 'Residents', path: '/administration/residents' },
+            { name: 'Family Portal (Contacts)', path: '/administration/resident-contacts' },
             // Facilities removed - only super admins can access
             { name: 'Branches', path: '/administration/branches' },
             { name: 'Email Notifications', path: '/administration/email-settings' },

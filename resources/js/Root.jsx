@@ -157,6 +157,7 @@ const EmployeeDocuments = lazyWithRetry(() => import('./pages/EmployeeDocuments'
 const Drugs = lazyWithRetry(() => import('./pages/Drugs'));
 const Profile = lazyWithRetry(() => import('./pages/Profile'));
 const ActivityLogs = lazyWithRetry(() => import('./pages/ActivityLogs'));
+const ResidentContacts = lazyWithRetry(() => import('./pages/administration/ResidentContacts'));
 const DeactivatedRecords = lazyWithRetry(() => import('./pages/DeactivatedRecords'));
 const Housekeeping = lazyWithRetry(() => import('./pages/Housekeeping'));
 const HousekeepingSchedule = lazyWithRetry(() => import('./pages/HousekeepingSchedule'));
@@ -379,6 +380,7 @@ function App() {
 
                 {/* Administration */}
                 <Route path="administration/residents" element={<Suspense fallback={<PageLoader />}><Residents /></Suspense>} />
+                <Route path="administration/resident-contacts" element={<Suspense fallback={<PageLoader />}><ResidentContacts /></Suspense>} />
                 {/* Facilities route removed - only accessible via /super-admin/facilities */}
                 <Route path="administration/branches" element={<Suspense fallback={<PageLoader />}><Branches /></Suspense>} />
                 <Route path="administration/vital-ranges" element={<Suspense fallback={<PageLoader />}><VitalRanges /></Suspense>} />
