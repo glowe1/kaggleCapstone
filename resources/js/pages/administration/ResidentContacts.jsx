@@ -34,16 +34,18 @@ export default function ResidentContacts() {
   });
   const branchesList = Array.isArray(branchesData?.data) ? branchesData.data : (branchesData?.data ?? []);
 
+  // Fetch all residents (no branch filter) so we always get the full list; filter by branch in the UI
   const { data: residentsResponse, isLoading: residentsLoading, error: residentsError } = useQuery({
-    queryKey: ['residents-list-contacts', branchId],
+    queryKey: ['residents-list-contacts'],
     queryFn: async () => {
-      const params = { per_page: 100, show_all: true };
-      if (branchId) params.branch_id = branchId;
-      const res = await api.get('/residents', { params });
+      const res = await api.get('/residents', { params: { per_page: 100, show_all: true } });
       return res.data;
     },
   });
-  const residents = extractResidentsList(residentsResponse);
+  const allResidents = extractResidentsList(residentsResponse);
+  const residents = branchId
+    ? allResidents.filter((r) => String(r.branch_id) === String(branchId))
+    : allResidents;
 
   const { data: contactsData, isLoading } = useQuery({
     queryKey: ['resident-contacts', residentId],
@@ -173,7 +175,7 @@ export default function ResidentContacts() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 bg-white text-gray-900 focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option value="">
-                {residentsLoading ? 'Loading residents...' : residentsError ? 'Failed to load residents' : residents.length === 0 ? 'No residents found' : 'Choose a resident...'}
+                {residentsLoading ? 'Loading residents...' : residentsError ? 'Failed to load residents' : residents.length === 0 ? (branchId ? 'No residents in this branch' : 'No residents found') : 'Choose a resident...'}
               </option>
               {residents.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
@@ -181,6 +183,9 @@ export default function ResidentContacts() {
             </select>
             {residentsError && (
               <p className="mt-1.5 text-sm text-red-600">{residentsError?.response?.data?.message || residentsError?.message || 'Could not load residents.'}</p>
+            )}
+            {!residentsLoading && !residentsError && residents.length === 0 && branchId && allResidents.length > 0 && (
+              <p className="mt-1.5 text-sm text-amber-700">No residents in this branch. Select &quot;All branches&quot; to see all residents.</p>
             )}
           </div>
         </div>
