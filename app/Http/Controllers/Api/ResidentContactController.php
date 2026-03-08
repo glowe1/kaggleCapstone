@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Mail\FamilyPortalInviteMail;
 use App\Models\ResidentContact;
 use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class ResidentContactController extends BaseApiController
@@ -126,13 +128,13 @@ class ResidentContactController extends BaseApiController
         $contact->invite_expires_at = now()->addDays(7);
         $contact->save();
 
-        // TODO: Send email with invite link via NotificationService/Mail
-        // For now we just return the link so staff can copy it
         $baseUrl = config('app.frontend_url', $request->getSchemeAndHttpHost());
         $inviteLink = rtrim($baseUrl, '/') . '/portal/accept-invite?token=' . $contact->invite_token;
 
+        Mail::to($contact->email)->send(new FamilyPortalInviteMail($contact, $inviteLink));
+
         return response()->json([
-            'message' => 'Invite created. Share the link with the family member.',
+            'message' => 'Invite sent to ' . $contact->email,
             'invite_link' => $inviteLink,
             'expires_at' => $contact->invite_expires_at->toIso8601String(),
         ]);

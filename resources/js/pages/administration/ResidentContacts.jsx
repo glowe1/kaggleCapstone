@@ -90,9 +90,12 @@ export default function ResidentContacts() {
   const handleSendInvite = async (contact) => {
     try {
       const res = await api.post(`/resident-contacts/${contact.id}/send-invite`);
+      const message = res.data?.message;
       const link = res.data?.invite_link;
-      if (link) {
-        setInviteLink({ link, name: contact.name });
+      if (message) {
+        setInviteLink({ link: link || '', name: contact.name, sentTo: contact.email });
+      } else if (link) {
+        setInviteLink({ link, name: contact.name, sentTo: null });
       } else {
         alert('Invite created but no link returned.');
       }
@@ -203,31 +206,48 @@ export default function ResidentContacts() {
         <>
           {inviteLink && (
             <SectionCard className="mb-6 border-green-200 bg-green-50/50">
-              <p className="text-sm font-medium text-green-800 mb-3">Invite link for {inviteLink.name}</p>
-              <div className="flex flex-wrap gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={inviteLink.link}
-                  className="flex-1 min-w-0 text-sm border border-green-300 rounded-lg px-3 py-2 bg-white text-gray-900"
-                />
-                <button
-                  type="button"
-                  onClick={copyLink}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInviteLink(null)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
-                >
+              <p className="text-sm font-medium text-green-800 mb-3">
+                {inviteLink.sentTo ? (
+                  <>Invite sent to {inviteLink.sentTo}</>
+                ) : (
+                  <>Invite link for {inviteLink.name}</>
+                )}
+              </p>
+              {inviteLink.link && (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={inviteLink.link}
+                      className="flex-1 min-w-0 text-sm border border-green-300 rounded-lg px-3 py-2 bg-white text-gray-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={copyLink}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInviteLink(null)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2">
+                    {inviteLink.sentTo ? 'They can use the link above to sign up. You can still copy it if needed.' : 'Send this link to the family member so they can sign up and access the portal.'}
+                  </p>
+                </>
+              )}
+              {!inviteLink.link && (
+                <button type="button" onClick={() => setInviteLink(null)} className="px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
                   Close
                 </button>
-              </div>
-              <p className="text-xs text-green-700 mt-2">Send this link to the family member so they can sign up and access the portal.</p>
+              )}
             </SectionCard>
           )}
 
@@ -324,10 +344,10 @@ export default function ResidentContacts() {
                       <button
                         type="button"
                         onClick={() => window.confirm('Remove this contact?') && deleteMutation.mutate(c.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 rounded-lg transition-colors"
                         title="Delete"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" strokeWidth={2} />
                       </button>
                     </div>
                   </li>
