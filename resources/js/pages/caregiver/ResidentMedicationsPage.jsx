@@ -31,7 +31,9 @@ import {
     ChevronRight,
     Search,
     Filter,
+    RefreshCw,
 } from 'lucide-react';
+
 
 import Select from '../../components/ui/radix/Select';
 import logger from '../../utils/logger';
@@ -195,7 +197,7 @@ export default function ResidentMedicationsPage() {
     });
 
     // Fetch medications for this resident
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, isFetching: isMedsFetching, refetch: refetchMeds } = useQuery({
         queryKey: ['resident-medications', residentId],
         queryFn: async () => {
             const response = await api.get('/medications', {
@@ -208,6 +210,17 @@ export default function ResidentMedicationsPage() {
         },
         enabled: !!residentId,
     });
+
+    const handleManualSync = async () => {
+        // Trigger refetch for the resident list and medications
+        await Promise.all([
+            refetchMeds(),
+            queryClient.invalidateQueries(['medication-administrations']),
+        ]);
+        // Also fire a global sync if available (app.js often handles this)
+        window.dispatchEvent(new Event('online')); 
+    };
+
 
     const medicationsList = React.useMemo(() => data?.data ?? [], [data?.data]);
     const resident = residentData;
@@ -543,11 +556,14 @@ export default function ResidentMedicationsPage() {
                     </div>
                     <div className="h-10 w-px bg-gray-100 hidden lg:block mx-1"></div>
                     <button
-                        onClick={() => queryClient.invalidateQueries(['resident-medications', residentId])}
-                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                        onClick={handleManualSync}
+                        disabled={isMedsFetching}
+                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
                     >
-                        Sync Data
+                        <RefreshCw className={`w-4 h-4 ${isMedsFetching ? 'animate-spin text-[var(--theme-primary)]' : 'text-gray-400'}`} />
+                        {isMedsFetching ? 'Syncing...' : 'Sync Data'}
                     </button>
+
                     <button
                         onClick={() => navigate('/medications/history?resident_id=' + residentId)}
                         className="px-4 py-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-lg text-sm font-bold hover:bg-[var(--theme-primary)]/20 transition-all"
