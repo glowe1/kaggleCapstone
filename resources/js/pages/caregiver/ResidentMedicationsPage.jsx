@@ -215,6 +215,22 @@ export default function ResidentMedicationsPage() {
         ? [resident.first_name, resident.middle_names, resident.last_name].filter(Boolean).join(' ') 
         : 'Resident';
 
+    const { activePeriodMedications, endedPeriodMedications } = React.useMemo(() => {
+        const now = getPacificNow();
+        const active = [];
+        const ended = [];
+
+        medicationsList.forEach((medication) => {
+            if (isMedicationPeriodActiveNow(medication, now)) {
+                active.push(medication);
+            } else {
+                ended.push(medication);
+            }
+        });
+
+        return { activePeriodMedications: active, endedPeriodMedications: ended };
+    }, [medicationsList]);
+
     const { scheduledMeds, amMeds, pmMeds, prnMeds } = React.useMemo(() => {
         const displayList = activeOnly ? activePeriodMedications : medicationsList;
         const filteredList = search 
