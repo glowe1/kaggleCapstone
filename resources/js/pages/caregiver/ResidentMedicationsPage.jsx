@@ -354,22 +354,24 @@ export default function ResidentMedicationsPage() {
 
                     {/* Medication Name */}
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-3 flex-wrap">
                             <h3 className="text-sm font-bold text-gray-900 truncate">
                                 {medName}
                             </h3>
+                            {/* Window Status Badge */}
+                            <MedicationWindowBadge medication={medication} />
+                            
                             {/* Type badges */}
-                            {typeBadges.map((badge, i) => (
-                                <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">
-                                    {badge}
-                                </span>
-                            ))}
-                            {/* Schedule type badge */}
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${isPrn ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-700'}`}>
-                                {isPrn ? 'PRN' : 'Scheduled'}
-                            </span>
+                            <div className="flex items-center gap-1">
+                                {typeBadges.map((badge, i) => (
+                                    <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">
+                                        {badge}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </div>
+
 
                     {/* Schedule Info */}
                     <div className="hidden md:flex items-center gap-4 flex-shrink-0">
@@ -1495,6 +1497,148 @@ function QuickAdminister({ medication, onSuccess }) {
         </div>
     );
 }
+
+// Medication Window Badge Component
+function MedicationWindowBadge({ medication }) {
+    const [status, setStatus] = useState({ isOpen: false, nextStart: null, label: '' });
+    const [countdown, setCountdown] = useState('');
+
+    const calculateStatus = React.useCallback(() => {
+        const instruction = (medication.instructions || '').toLowerCase().trim();
+        const isPrn = instruction.includes('prn') || instruction.includes('as needed');
+        const periodActive = isMedicationPeriodActiveNow(medication);
+
+        if (!periodActive) {
+            return { isOpen: false, nextStart: null, label: 'Period Ended' };
+        }
+
+        if (isPrn) {
+            return { isOpen: true, nextStart: null, label: 'PRN Open' };
+        }
+
+        const times = [
+            medication.time_1,
+            medication.time_2,
+            medication.time_3,
+            medication.time_4,
+        ].filter(Boolean);
+
+        if (times.length === 0) {
+            return { isOpen: false, nextStart: null, label: 'No Schedule' };
+        }
+
+        const now = getPacificNow();
+        let closestFutureWindow = null;
+        let isOpen = false;
+
+        times.forEach(timeValue => {
+            const scheduled = toPacificDateFromTime(timeValue, { referenceDate: now });
+            if (!scheduled) return;
+
+            const windowStart = new Date(scheduled.getTime() - 60 * 60 * 1000);
+            const windowEnd = new Date(scheduled.getTime() + 60 * 60 * 1000);
+
+            if (now >= windowStart && now <= windowEnd) {
+                isOpen = true;
+            } else if (now < windowStart) {
+                if (!closestFutureWindow || windowStart < closestFutureWindow.start) {
+                    closestFutureWindow = { start: windowStart, scheduled };
+                }
+            }
+        });
+
+        if (isOpen) {
+            return { isOpen: true, nextStart: null, label: 'Window Open' };
+        }
+
+        if (closestFutureWindow) {
+            return { isOpen: false, nextStart: closestFutureWindow.start, label: `Opens at ${formatPacificTime(closestFutureWindow.scheduled)}` };
+        }
+
+        // Check tomorrow's first window if no more windows today
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        let firstTomorrow = null;
+        
+        times.forEach(timeValue => {
+            const scheduled = toPacificDateFromTime(timeValue, { referenceDate: tomorrow });
+            if (!scheduled) return;
+            const windowStart = new Date(scheduled.getTime() - 60 * 60 * 1000);
+            if (!firstTomorrow || windowStart < firstTomorrow.start) {
+                firstTomorrow = { start: windowStart, scheduled };
+            }
+        });
+
+        if (firstTomorrow) {
+            return { isOpen: false, nextStart: firstTomorrow.start, label: `Tomorrow at ${formatPacificTime(firstTomorrow.scheduled)}` };
+        }
+
+        return { isOpen: false, nextStart: null, label: 'Closed' };
+    }, [medication]);
+
+    const updateCountdown = React.useCallback((nextStart) => {
+        if (!nextStart) {
+            setCountdown('');
+            return;
+        }
+
+        const diffMs = nextStart - getPacificNow();
+        if (diffMs <= 0) {
+            setCountdown('');
+            const newStatus = calculateStatus();
+            setStatus(newStatus);
+            return;
+        }
+
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+        if (hours > 0) {
+            setCountdown(`in ${hours}h ${minutes}m`);
+        } else if (minutes > 0) {
+            setCountdown(`in ${minutes}m`);
+        } else {
+            setCountdown('any moment');
+        }
+    }, [calculateStatus]);
+
+    React.useEffect(() => {
+        const initialStatus = calculateStatus();
+        setStatus(initialStatus);
+        updateCountdown(initialStatus.nextStart);
+
+        const interval = setInterval(() => {
+            const currentStatus = calculateStatus();
+            setStatus(currentStatus);
+            updateCountdown(currentStatus.nextStart);
+        }, 30000); // Update every 30 seconds
+
+        return () => clearInterval(interval);
+    }, [calculateStatus, updateCountdown]);
+
+    if (status.isOpen) {
+        return (
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold bg-green-500 text-white shadow-sm animate-pulse">
+                <Clock className="w-3 h-3" />
+                WINDOW OPEN
+            </span>
+        );
+    }
+
+    if (status.nextStart) {
+        const isVerySoon = (status.nextStart - getPacificNow()) < 30 * 60 * 1000;
+        return (
+            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold border ${isVerySoon ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                <Clock className="w-3 h-3" />
+                {isVerySoon ? 'DUE SOON: ' : 'Opens '} {countdown || status.label}
+            </span>
+        );
+    }
+
+    return null;
+}
+
 
 
 
