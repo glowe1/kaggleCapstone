@@ -16,6 +16,7 @@ use App\Mail\LeaveRequestNotification;
 use App\Mail\MedicationAdministrationNotification;
 use App\Mail\MedicationDeliveryNotification;
 use App\Mail\MedicationNotification;
+use App\Mail\MissedMedicationWindowAdminNotification;
 use App\Mail\PharmacyOrderNotification;
 use App\Mail\PharmacySupplierNotification;
 use App\Mail\ResidentSignOutNotification;
@@ -43,6 +44,7 @@ use App\Models\SleepRecord;
 use App\Models\StaffClockIn;
 use App\Models\User;
 use App\Models\Visitor;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -930,6 +932,75 @@ class NotificationService
                         'facility_id' => $facility?->id,
                     ]);
                 }
+            }
+        }
+    }
+
+    /**
+     * Notify facility/branch admins when the administration window has closed and the dose was not given.
+     * (Triggered when a missed administration record is created by medications:mark-missed.)
+     */
+    public function sendMissedMedicationWindowAdminEmail(Medication $medication, Carbon $scheduledTime): void
+    {
+        $facility = $this->mailConfigService->getFacilityFromResident($medication->resident);
+        if ($this->shouldSkipNotificationForFacility($facility)) {
+            Log::info('Missed medication window admin email skipped - facility missing or deleted', [
+                'medication_id' => $medication->id,
+            ]);
+            return;
+        }
+
+        if (!$medication->branch_id) {
+            Log::info('Missed medication window admin email skipped - medication has no branch', [
+                'medication_id' => $medication->id,
+            ]);
+            return;
+        }
+
+        $this->mailConfigService->configureForFacility($facility);
+
+        $facilityAdmins = User::where('facility_id', $facility->id)
+            ->whereIn('role', ['super_admin', 'administrator', 'admin'])
+            ->where('is_active', true)
+            ->get();
+
+        $branchAdmins = User::where('assigned_branch_id', $medication->branch_id)
+            ->whereIn('role', ['super_admin', 'administrator', 'admin'])
+            ->where('is_active', true)
+            ->get();
+
+        $admins = $facilityAdmins->merge($branchAdmins)->unique('id');
+
+        $recipientsToNotify = $this->emailPreferenceService->filterUsersForEmail(
+            $admins,
+            'missed_medication_window',
+            $facility
+        );
+
+        $windowMinutes = 60;
+        $windowEnd = $scheduledTime->copy()->addMinutes($windowMinutes);
+        $windowEndFormatted = $windowEnd->format('g:i A');
+
+        foreach ($recipientsToNotify as $recipient) {
+            if (!$recipient->email) {
+                continue;
+            }
+            try {
+                Mail::to($recipient->email)->send(
+                    new MissedMedicationWindowAdminNotification($medication, $scheduledTime, $windowEndFormatted)
+                );
+                Log::info('Missed medication window admin email sent', [
+                    'to' => $recipient->email,
+                    'medication_id' => $medication->id,
+                    'facility_id' => $facility->id,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send missed medication window admin email', [
+                    'to' => $recipient->email,
+                    'medication_id' => $medication->id,
+                    'error' => $e->getMessage(),
+                    'facility_id' => $facility->id,
+                ]);
             }
         }
     }

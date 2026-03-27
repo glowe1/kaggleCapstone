@@ -9,7 +9,7 @@ const api = axios.create({
     withCredentials: true,
 });
 
-const TOKEN_EXPIRY_MINUTES = 120;
+const TOKEN_EXPIRY_MINUTES = 240;
 const REFRESH_BUFFER_MINUTES = 10;
 
 const getStoredAuthToken = () => {

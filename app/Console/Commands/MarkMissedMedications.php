@@ -8,9 +8,15 @@ use App\Models\MedicationAdministration;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class MarkMissedMedications extends Command
 {
+    /**
+     * When false, missed-window admin emails are not sent (e.g. backfill).
+     */
+    protected bool $sendMissedWindowAdminEmails = true;
+
     /**
      * The name and signature of the console command.
      *
@@ -39,6 +45,8 @@ class MarkMissedMedications extends Command
         
         // Handle backfill mode
         if ($this->option('backfill')) {
+            $this->sendMissedWindowAdminEmails = false;
+
             return $this->handleBackfill();
         }
         
@@ -294,6 +302,21 @@ class MarkMissedMedications extends Command
                                 'administered_at' => $scheduledTime,
                                 'notes' => $notes,
                             ]);
+
+                            if ($this->sendMissedWindowAdminEmails && !$isHistoricalDate) {
+                                try {
+                                    $medication->loadMissing(['resident.branch.facility', 'drug']);
+                                    app(NotificationService::class)->sendMissedMedicationWindowAdminEmail(
+                                        $medication,
+                                        $scheduledTime
+                                    );
+                                } catch (\Exception $e) {
+                                    Log::error('Failed to send missed medication window admin email', [
+                                        'medication_id' => $medication->id,
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                }
+                            }
 
                             $this->info("Marked medication ID {$medication->id} ({$medication->name}) as missed for {$scheduledTime->format('Y-m-d H:i')}");
                             $count++;

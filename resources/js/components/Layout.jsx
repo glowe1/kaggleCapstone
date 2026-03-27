@@ -317,7 +317,7 @@ export default function Layout() {
 
     // Handle automatic logout after inactivity
     useEffect(() => {
-        const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes
+        const INACTIVITY_LIMIT = 4 * 60 * 60 * 1000; // 4 hours
         let inactivityTimeout = null;
         let isLoggingOut = false;
 

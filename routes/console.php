@@ -21,6 +21,5 @@ Schedule::command('medications:mark-missed')->everyFiveMinutes();
 // 2. End-of-day: Daily at 11:55 PM to catch any missed doses from the day
 Schedule::command('medications:mark-missed --end-of-day')->dailyAt('23:55');
 
-// Medications - Notify caregivers when administration windows open:
-// Run every 5 minutes to catch windows as they open
-Schedule::command('medications:notify-window-opening')->everyFiveMinutes();
+// Medications - Pre-window opening emails removed (too noisy). Admins are emailed when a dose is
+// missed after the window closes — see medications:mark-missed + NotificationService::sendMissedMedicationWindowAdminEmail.
