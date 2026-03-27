@@ -198,12 +198,15 @@ export default function ResidentMedicationsPage() {
 
     // Fetch medications for this resident
     const { data, isLoading, isFetching: isMedsFetching, refetch: refetchMeds } = useQuery({
-        queryKey: ['resident-medications', residentId],
+        queryKey: ['resident-medications', residentId, activeOnly],
         queryFn: async () => {
             const response = await api.get('/medications', {
                 params: {
                     resident_id: residentId,
                     per_page: 100,
+                    active_only: activeOnly ? 'true' : 'false',
+                    for_administration: 'true',
+                    hide_administered: activeOnly ? 'true' : 'false',
                 },
             });
             return response.data;

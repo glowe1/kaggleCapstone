@@ -293,6 +293,8 @@ export default function Medications() {
                     branch_id: branchFilter || undefined,
                     per_page: 20,
                     page: currentPage,
+                    for_administration: 'true',
+                    hide_administered: activeOnly ? 'true' : 'false',
                 },
             });
             return response.data;

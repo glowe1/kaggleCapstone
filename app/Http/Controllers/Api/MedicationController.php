@@ -9,6 +9,13 @@ use Illuminate\Http\JsonResponse;
 
 class MedicationController extends BaseApiController
 {
+    protected $medicationService;
+
+    public function __construct(\App\Services\MedicationService $medicationService)
+    {
+        $this->medicationService = $medicationService;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Medication::with(['resident', 'drug', 'branch', 'createdBy']);
@@ -31,13 +38,13 @@ class MedicationController extends BaseApiController
         // Search
         if ($request->has('search')) {
             $search = $request->get('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('instructions', 'like', "%{$search}%")
-                  ->orWhereHas('resident', function($q) use ($search) {
-                      $q->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('instructions', 'like', "%{$search}%")
+                    ->orWhereHas('resident', function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -46,6 +53,45 @@ class MedicationController extends BaseApiController
             $query->whereHas('resident', function ($q) {
                 $q->where('branch_id', auth()->user()->assigned_branch_id);
             });
+        }
+
+        // Administration-specific logic: Sorting and Visibility
+        if ($request->has('for_administration') && $request->get('for_administration') === 'true') {
+            // Load administrations for today to determine status
+            $today = \Carbon\Carbon::now(config('app.timezone'))->toDateString();
+            $query->with(['administrations' => function ($q) use ($today) {
+                $q->whereDate('administered_at', $today)
+                  ->whereIn('status', ['completed', 'refused', 'hospital_admission', 'pharmacy_administration_confirm']);
+            }]);
+
+            $perPage = (int) $request->get('per_page', 100);
+            $medications = $query->get();
+            $medications = $this->medicationService->getMedicationsWithStatus($medications);
+
+            // Filter out fully administered meds if requested
+            if ($request->get('hide_administered') === 'true') {
+                $medications = $medications->filter(function ($med) {
+                    return !$med->is_fully_administered_today;
+                });
+            }
+
+            // Custom Sorting:
+            $medications = $this->medicationService->sortMedicationsByPriority($medications);
+
+            // Simple pagination for the collection
+            $perPage = (int) $request->get('per_page', 20);
+            $page = (int) $request->get('page', 1);
+            $paginatedItems = $medications->forPage($page, $perPage);
+            
+            $result = new \Illuminate\Pagination\LengthAwarePaginator(
+                $paginatedItems,
+                $medications->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+
+            return response()->json($result);
         }
 
         $perPage = (int) $request->get('per_page', 20);
