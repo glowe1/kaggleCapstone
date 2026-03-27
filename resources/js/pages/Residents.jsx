@@ -12,6 +12,23 @@ import EmptyState from '../components/ui/EmptyState';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
 import BranchSelector from '../components/BranchSelector';
 import ResidentForm from '../components/ResidentForm';
+import { formatPacificDate, parsePacificDateString, getPacificParts } from '../utils/pacificTime';
+
+/** Age in full years using Pacific calendar dates (matches DOB display from YYYY-MM-DD). */
+function calculateResidentAge(dateOfBirth) {
+    if (!dateOfBirth) return null;
+    const birth = parsePacificDateString(dateOfBirth);
+    if (!birth) return null;
+    const birthYear = birth.getUTCFullYear();
+    const birthMonth = birth.getUTCMonth() + 1;
+    const birthDay = birth.getUTCDate();
+    const { year: todayY, month: todayM, day: todayD } = getPacificParts(new Date());
+    let age = todayY - birthYear;
+    if (todayM < birthMonth || (todayM === birthMonth && todayD < birthDay)) {
+        age -= 1;
+    }
+    return age;
+}
 
 export default function Residents() {
     const navigate = useNavigate();
@@ -122,6 +139,7 @@ export default function Residents() {
 
     const renderResidentCard = (resident) => {
         const isInactive = !isResidentActive(resident);
+        const ageYears = calculateResidentAge(resident.date_of_birth);
         return (
             <div
                 key={resident.id}
@@ -225,25 +243,19 @@ export default function Residents() {
                     <div className="flex justify-between">
                         <span className="text-gray-600">DOB:</span>
                         <span className="font-medium text-gray-900">
-                            {resident.date_of_birth
-                                ? new Date(resident.date_of_birth).toLocaleDateString('en-US', {
-                                      month: 'numeric',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                  })
-                                : 'N/A'}
+                            {resident.date_of_birth ? formatPacificDate(resident.date_of_birth) : 'N/A'}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Age:</span>
+                        <span className="font-medium text-gray-900">
+                            {ageYears !== null ? `${ageYears} yrs` : 'N/A'}
                         </span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-gray-600">Admission:</span>
                         <span className="font-medium text-gray-900">
-                            {resident.admission_date
-                                ? new Date(resident.admission_date).toLocaleDateString('en-US', {
-                                      month: 'numeric',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                  })
-                                : 'N/A'}
+                            {resident.admission_date ? formatPacificDate(resident.admission_date) : 'N/A'}
                         </span>
                     </div>
                     {resident.allergies && (

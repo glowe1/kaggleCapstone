@@ -486,6 +486,9 @@ export default function Medications() {
         const isExpanded = expandedRows.has(medication.uniqueId);
         const instruction = (medication.instructions || '').toLowerCase().trim();
         const isPrn = instruction.includes('prn') || instruction.includes('as needed');
+        const hasTimes = Boolean(
+            medication.time_1 || medication.time_2 || medication.time_3 || medication.time_4,
+        );
         const medName = (medication.name || medication.drug?.name || 'Medication').toUpperCase();
 
         // Determine type badges
@@ -600,7 +603,7 @@ export default function Medications() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            toggleRow(medication.id);
+                            toggleRow(medication.uniqueId);
                         }}
                         className="flex-shrink-0 hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-[var(--theme-primary)] rounded-md hover:bg-[var(--theme-primary-hover)] transition-colors shadow-sm"
                     >
