@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Medication;
 use App\Models\MedicationAdministration;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -57,10 +58,13 @@ class MedicationController extends BaseApiController
 
         // Administration-specific logic: Sorting and Visibility
         if ($request->has('for_administration') && $request->get('for_administration') === 'true') {
-            // Load administrations for today to determine status
-            $today = \Carbon\Carbon::now(config('app.timezone'))->toDateString();
-            $query->with(['administrations' => function ($q) use ($today) {
-                $q->whereDate('administered_at', $today)
+            // Load administrations for the facility's calendar "today" (app timezone).
+            // Avoid whereDate(administered_at): MySQL DATE() uses DB/UTC and can exclude rows that belong to "today" in app TZ.
+            $tz = config('app.timezone');
+            $todayStart = Carbon::now($tz)->startOfDay();
+            $todayEnd = Carbon::now($tz)->endOfDay();
+            $query->with(['administrations' => function ($q) use ($todayStart, $todayEnd) {
+                $q->whereBetween('administered_at', [$todayStart, $todayEnd])
                   ->whereIn('status', ['completed', 'refused', 'hospital_admission', 'pharmacy_administration_confirm']);
             }]);
 

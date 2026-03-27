@@ -37,13 +37,14 @@ class MedicationService
                 if ($timeStr) {
                     $totalSlots++;
                     try {
-                        $scheduledTime = Carbon::createFromFormat('Y-m-d H:i', "$targetDateStr $timeStr", $timezone);
+                        // TIME columns may be "08:00" or "08:00:00" — parse handles both (createFromFormat H:i fails on seconds).
+                        $scheduledTime = Carbon::parse(trim($targetDateStr . ' ' . $timeStr), $timezone);
                         
                         // Check if administered within ±60 mins window
                         // Important: check only those with matching status
                         $hasAdmin = $med->administrations->contains(function ($admin) use ($scheduledTime, $timezone) {
                             $adminAt = Carbon::parse($admin->administered_at)->setTimezone($timezone);
-                            return $adminAt->diffInMinutes($scheduledTime) <= 60 && 
+                            return abs($adminAt->diffInMinutes($scheduledTime)) <= 60 &&
                                    in_array($admin->status, ['completed', 'refused', 'hospital_admission', 'pharmacy_administration_confirm']);
                         });
 
