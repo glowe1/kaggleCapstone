@@ -42,8 +42,6 @@ import {
     parseAdminTimeToPacific,
     isMedicationSlotCoveredToday,
     isNoScheduledTimeRowCoveredToday,
-    mergeAdministrationIntoResidentMedicationsCaches,
-    administrationFromBroadcastPayload,
 } from '../../utils/medicationSchedule';
 
 const INSTRUCTION_DISPLAY_MAP = {
@@ -171,10 +169,6 @@ export default function ResidentMedicationsPage() {
                 ['medication-administrations', residentId],
                 ['medication-administrations', 'today', residentId],
             ],
-            onEvent: (_eventName, data, qc) => {
-                const admin = administrationFromBroadcastPayload(data);
-                if (admin) mergeAdministrationIntoResidentMedicationsCaches(qc, residentId, admin);
-            },
             showToast: true,
             getToastMessage: (eventName, data) => {
                 return `${data.medication?.name || 'Medication'} was administered to ${data.resident?.name || 'resident'}`;
@@ -576,15 +570,10 @@ export default function ResidentMedicationsPage() {
                 });
             });
             
-            const results = await Promise.all(promises);
-            for (const r of results) {
-                if (r?.success && r?.data?.medication_id) {
-                    mergeAdministrationIntoResidentMedicationsCaches(queryClient, residentId, r.data);
-                }
-            }
+            await Promise.all(promises);
             
             setSelectedMeds(new Set());
-            await queryClient.invalidateQueries({ queryKey: ['resident-medications', residentId] });
+            await queryClient.invalidateQueries({ queryKey: ['resident-medications'] });
             await queryClient.invalidateQueries({ queryKey: ['medication-administrations'] });
             await queryClient.refetchQueries({ queryKey: ['resident-medications', residentId, activeOnly] });
             

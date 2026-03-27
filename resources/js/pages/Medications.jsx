@@ -48,8 +48,6 @@ import {
     parseAdminTimeToPacific,
     isMedicationSlotCoveredToday,
     isNoScheduledTimeRowCoveredToday,
-    mergeAdministrationIntoMedicationsListCaches,
-    administrationFromBroadcastPayload,
 } from '../utils/medicationSchedule';
 
 const INSTRUCTION_DISPLAY_MAP = {
@@ -198,10 +196,6 @@ export default function Medications() {
                 ['medications'],
                 ['medication-administrations'],
             ],
-            onEvent: (_eventName, data, qc) => {
-                const admin = administrationFromBroadcastPayload(data);
-                if (admin) mergeAdministrationIntoMedicationsListCaches(qc, admin);
-            },
             showToast: true,
             getToastMessage: (_event, data) =>
                 `${data.medication?.name || 'Medication'} administered to ${data.resident?.name || 'resident'}`,
@@ -843,7 +837,7 @@ export default function Medications() {
                     ? toPacificDateFromTime(med.slotTime, { referenceDate: getPacificNow() }).toISOString()
                     : now;
 
-                const response = await api.post('/medication-administrations', {
+                await api.post('/medication-administrations', {
                     medication_id: med.id,
                     resident_id: med.resident_id,
                     branch_id: med.branch_id,
@@ -852,9 +846,6 @@ export default function Medications() {
                     dosage_given: med.quantity ? `${med.quantity} ${med.form || ''}` : 'As prescribed',
                     notes: `Bulk administered from medications list. Target slot: ${med.slotTime || 'N/A'}`,
                 });
-                if (response?.data?.medication_id) {
-                    mergeAdministrationIntoMedicationsListCaches(queryClient, response.data);
-                }
             }
             
             setSelectedMeds(new Set());

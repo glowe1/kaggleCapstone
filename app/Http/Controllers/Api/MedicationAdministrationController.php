@@ -302,8 +302,8 @@ class MedicationAdministrationController extends BaseApiController
                 $adminDate = $administeredAt->copy()->setTimezone($tz)->toDateString();
                 $toleranceSeconds = 2 * 60 * 60;
 
-                $dayStart = Carbon::parse($adminDate, $tz)->startOfDay();
-                $dayEnd = Carbon::parse($adminDate, $tz)->endOfDay();
+                $dayStart = $adminDate . ' 00:00:00';
+                $dayEnd   = $adminDate . ' 23:59:59';
                 $todayAdmins = MedicationAdministration::where('medication_id', $medication->id)
                     ->whereBetween('administered_at', [$dayStart, $dayEnd])
                     ->where('status', '!=', 'missed')
