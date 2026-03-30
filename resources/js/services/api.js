@@ -81,10 +81,11 @@ api.interceptors.request.use((config) => {
     
     const authToken = getStoredAuthToken();
     const path = typeof config.url === 'string' ? config.url : '';
+    // Never attach Bearer to auth endpoints — stale tokens after logout caused 401/500 confusion
     const skipBearer =
-        path.includes('/login') ||
-        path.includes('/forgot-password') ||
-        path.includes('/reset-password');
+        /(^|\/)(login|forgot-password|reset-password)(\/|$|\?)/.test(path) ||
+        path === 'login' ||
+        path.startsWith('login?');
     if (authToken && !skipBearer) {
         config.headers['Authorization'] = `Bearer ${authToken}`;
     }

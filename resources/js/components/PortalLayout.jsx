@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, FileText, MessageSquare, LogOut } from 'lucide-react';
-import api from '../services/api';
+import api, { clearStoredAuth } from '../services/api';
 import PortalResidentHeader from './portal/PortalResidentHeader';
 
 const nav = [
@@ -35,11 +35,7 @@ export default function PortalLayout() {
     try {
       await api.post('/logout');
     } catch (_) {}
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('user_role');
+    clearStoredAuth();
     window.location.href = '/login';
   };
 

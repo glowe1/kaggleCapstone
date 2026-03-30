@@ -149,10 +149,13 @@ class AuthController extends Controller
             if ($user->facility_id) {
                 $userFacility = Facility::find($user->facility_id);
                 if (!$userFacility || !$userFacility->is_active) {
+                    // Revoke tokens before clearing auth (after logout, $request->user() is null)
+                    $user->tokens()->delete();
                     Auth::logout();
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                    $request->user()->tokens()->delete();
+                    if ($request->hasSession()) {
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+                    }
 
                     return response()->json([
                         'message' => 'This facility is no longer active. Please contact an administrator.',
@@ -231,19 +234,26 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Automatically clock out the user if they're clocked in
         if ($user) {
             $this->autoClockOut($user, $request);
-            
+
             // Log logout before deleting tokens
             ActivityLogService::logout($user, [
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+
+            $user->tokens()->delete();
         }
-        
-        $request->user()->tokens()->delete();
+
+        // Clear web session guard so the next login does not inherit a stale session (avoids edge-case 500s)
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json([
             'message' => 'Logged out successfully',

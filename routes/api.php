@@ -81,7 +81,12 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])
         ->middleware('throttle:5,1')
         ->withoutMiddleware([\App\Http\Middleware\SetFacilityContext::class]);
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        'auth:sanctum',
+    ])->withoutMiddleware([\App\Http\Middleware\SetFacilityContext::class]);
     Route::get('/user', [AuthController::class, 'user'])
         ->middleware('auth:sanctum')
         ->withoutMiddleware([\App\Http\Middleware\SetFacilityContext::class]);

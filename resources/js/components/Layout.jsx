@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import api, { setupProactiveRefresh } from '../services/api';
+import api, { setupProactiveRefresh, clearStoredAuth } from '../services/api';
 import { 
     LayoutDashboard, 
     Calendar, 
@@ -245,9 +245,7 @@ export default function Layout() {
 
                 // If auth is no longer valid (common after idle timeout), force a clean logout.
                 if (err?.response?.status === 401) {
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('user_name');
-                    localStorage.removeItem('user_role');
+                    clearStoredAuth();
                     sessionStorage.setItem('session_expired', '1');
 
                     if (!sessionStorage.getItem('redirecting_to_login')) {
@@ -333,8 +331,7 @@ export default function Layout() {
             } catch (err) {
                 logger.error('Automatic logout error:', err);
             } finally {
-                localStorage.removeItem('auth_token');
-                localStorage.removeItem('user_name');
+                clearStoredAuth();
                 sessionStorage.setItem('session_expired', '1');
                 window.location.href = '/login?reason=session-expired';
             }
@@ -835,8 +832,7 @@ export default function Layout() {
                                         } catch (err) {
                                             logger.error('Logout error:', err);
                                         } finally {
-                                            localStorage.removeItem('auth_token');
-                                            localStorage.removeItem('user_name');
+                                            clearStoredAuth();
                                             window.location.href = '/login';
                                         }
                                     }}
