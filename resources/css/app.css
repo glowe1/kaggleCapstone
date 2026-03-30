@@ -18,6 +18,7 @@
     --color-brand-secondary-dark: #166534;
 }
 
+@import './modules/_interactive-cursors.css';
 @import './modules/_animations.css';
 @import './modules/_theme-utilities.css';
 @import './modules/_buttons.css';
