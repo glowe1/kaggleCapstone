@@ -17,11 +17,18 @@ export default function PortalLayout() {
     queryKey: ['current-user'],
     queryFn: async () => (await api.get('/user')).data,
   });
+  const isFamilyPortalRole = user && ['family', 'family_member'].includes(user.role);
+  const { data: careSummary } = useQuery({
+    queryKey: ['family-care-updates'],
+    queryFn: async () => (await api.get('/family/care-updates')).data,
+    staleTime: 60 * 1000,
+    enabled: !!isFamilyPortalRole,
+  });
   useEffect(() => {
-    if (user && user.role !== 'family') {
+    if (user && !isFamilyPortalRole) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, isFamilyPortalRole]);
 
   const handleLogout = async () => {
     try {
@@ -37,10 +44,19 @@ export default function PortalLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
-        <Link to="/portal" className="text-lg font-semibold text-gray-900">
-          Family Portal
-        </Link>
+      <header className="min-h-14 bg-white border-b border-gray-200 flex items-center justify-between gap-4 px-4 py-2 shrink-0">
+        <div className="min-w-0">
+          <Link to="/portal" className="text-lg font-semibold text-gray-900 block truncate">
+            Family Portal
+          </Link>
+          {careSummary?.residents?.length ? (
+            <p className="text-xs text-gray-500 truncate">
+              {(careSummary.residents.length === 1
+                ? careSummary.residents[0].name
+                : `${careSummary.residents.length} residents`)}
+            </p>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={handleLogout}

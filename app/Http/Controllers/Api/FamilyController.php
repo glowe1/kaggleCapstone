@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\MedicationAdministration;
 use App\Models\Resident;
 use App\Models\ResidentContact;
+use App\Models\Scopes\FacilityScope;
 use App\Models\TLog;
 use App\Models\VitalSign;
 use Illuminate\Http\JsonResponse;
@@ -55,6 +56,7 @@ class FamilyController extends Controller
         $residentIds = ResidentContact::where('user_id', $user->id)->pluck('resident_id')->unique()->values()->all();
         if (empty($residentIds)) {
             return response()->json([
+                'residents' => [],
                 't_logs' => [],
                 'medication_administrations' => [],
                 'appointments' => [],
@@ -66,6 +68,7 @@ class FamilyController extends Controller
         $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $tz = config('app.timezone');
+        $todayStr = Carbon::now($tz)->toDateString();
         // When the client omits date filters (family dashboard), keep T-logs on a 7-day window but
         // only show medications for the facility's "today" — same as the dashboard card label.
         // When date_from/date_to are sent (e.g. portal Care Updates), use that range for meds.
@@ -81,7 +84,10 @@ class FamilyController extends Controller
         $medStart = Carbon::parse($medDateFrom, $tz)->startOfDay();
         $medEnd = Carbon::parse($medDateTo, $tz)->endOfDay();
 
-        $tLogs = TLog::whereIn('resident_id', $residentIds)
+        // Family access is limited to resident_ids from ResidentContact; bypass FacilityScope so
+        // T-logs and medications still load when facility_id was missing or out of sync.
+        $tLogs = TLog::withoutGlobalScope(FacilityScope::class)
+            ->whereIn('resident_id', $residentIds)
             ->whereBetween(DB::raw('DATE(reported_on)'), [$dateFrom, $dateTo])
             ->orderByDesc('reported_on')
             ->limit(50)
@@ -96,7 +102,11 @@ class FamilyController extends Controller
                 ];
             });
 
-        $medicationAdministrations = MedicationAdministration::with(['medication:id,name'])
+        $medicationAdministrations = MedicationAdministration::with([
+            'medication' => function ($q) {
+                $q->withoutGlobalScope(FacilityScope::class)->select('id', 'name');
+            },
+        ])
             ->whereIn('resident_id', $residentIds)
             ->whereBetween('administered_at', [$medStart, $medEnd])
             ->orderBy('administered_at')
@@ -111,9 +121,10 @@ class FamilyController extends Controller
                 ];
             });
 
-        $appointments = Appointment::with('resident:id,name')
+        $appointments = Appointment::with(['resident:id,name', 'appointmentType:id,name'])
             ->whereIn('resident_id', $residentIds)
-            ->where('appointment_date', '>=', now()->toDateString())
+            ->where('appointment_date', '>=', $todayStr)
+            ->whereNotIn('status', ['cancelled'])
             ->orderBy('appointment_date')
             ->orderBy('appointment_time')
             ->limit(20)
@@ -123,31 +134,58 @@ class FamilyController extends Controller
                     'id' => $a->id,
                     'resident_id' => $a->resident_id,
                     'resident_name' => $a->resident?->name,
-                    'appointment_date' => $a->appointment_date,
+                    'title' => $a->title,
+                    'appointment_type' => $a->appointmentType?->name,
+                    'appointment_date' => $a->appointment_date?->format('Y-m-d'),
                     'appointment_time' => $a->appointment_time,
                     'provider_name' => $a->provider_name,
                     'location' => $a->location,
+                    'description' => $a->description,
+                    'status' => $a->status,
                 ];
             });
 
+        $vitalsSince = Carbon::now($tz)->subDays(14)->toDateString();
+
         $vitalsList = VitalSign::whereIn('resident_id', $residentIds)
-            ->where('recorded_at', '>=', now()->subDays(14))
-            ->orderByDesc('recorded_at')
+            ->where('measurement_date', '>=', $vitalsSince)
+            ->orderByDesc('measurement_date')
             ->limit(50)
             ->get()
             ->map(function ($v) {
                 return [
                     'resident_id' => $v->resident_id,
-                    'recorded_at' => $v->recorded_at?->toIso8601String(),
-                    'blood_pressure_systolic' => $v->blood_pressure_systolic,
-                    'blood_pressure_diastolic' => $v->blood_pressure_diastolic,
-                    'heart_rate' => $v->heart_rate,
+                    'recorded_at' => $v->measurement_date?->toIso8601String(),
+                    'blood_pressure_systolic' => $v->systolic,
+                    'blood_pressure_diastolic' => $v->diastolic,
+                    'heart_rate' => $v->pulse,
                     'temperature' => $v->temperature,
                     'notes' => $v->notes,
                 ];
             });
 
+        $residentsSummary = Resident::withoutGlobalScope(FacilityScope::class)
+            ->with('branch:id,name,facility_id')
+            ->whereIn('id', $residentIds)
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'name' => $r->name,
+                    'first_name' => $r->first_name,
+                    'last_name' => $r->last_name,
+                    'room' => $r->room,
+                    'room_number' => $r->room_number,
+                    'profile_image_url' => $r->profile_image_url,
+                    'admission_date' => $r->admission_date?->format('Y-m-d'),
+                    'branch_name' => $r->branch?->name,
+                    'dietary_restrictions' => $r->dietary_restrictions,
+                    'special_instructions' => $r->special_instructions,
+                ];
+            });
+
         return response()->json([
+            'residents' => $residentsSummary,
             't_logs' => $tLogs,
             'medication_administrations' => $medicationAdministrations,
             'appointments' => $appointments,

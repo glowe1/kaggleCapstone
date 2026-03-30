@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ResidentContact;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class FamilyInviteController extends Controller
@@ -21,10 +20,10 @@ class FamilyInviteController extends Controller
             ->where('invite_token', $token)
             ->first();
 
-        if (!$contact) {
+        if (! $contact) {
             return response()->json(['message' => 'Invalid or expired invite link.'], 404);
         }
-        if (!$contact->isInviteValid()) {
+        if (! $contact->isInviteValid()) {
             return response()->json(['message' => 'This invite link has expired.'], 410);
         }
 
@@ -49,15 +48,17 @@ class FamilyInviteController extends Controller
         ]);
 
         $contact = ResidentContact::with('resident.branch')->where('invite_token', $validated['invite_token'])->first();
-        if (!$contact) {
+        if (! $contact) {
             throw ValidationException::withMessages(['invite_token' => ['Invalid invite link.']]);
         }
-        if (!$contact->isInviteValid()) {
+        if (! $contact->isInviteValid()) {
             throw ValidationException::withMessages(['invite_token' => ['This invite link has expired.']]);
         }
 
         $email = $validated['email'];
         $user = User::where('email', $email)->first();
+
+        $facilityIdFromResident = $contact->resident->branch?->facility_id ?? null;
 
         if ($user) {
             if ($user->isFamily() && $user->residentContacts()->where('resident_id', $contact->resident_id)->exists()) {
@@ -65,17 +66,20 @@ class FamilyInviteController extends Controller
             }
             // Link existing user (must be family or we assign family role)
             $user->assignRole('family');
-            if (!$user->role || $user->role === '') {
+            if (! $user->role || $user->role === '') {
                 $user->update(['role' => 'family']);
             }
+            // Align facility with the resident's home so FacilityScope matches staff data (T-logs, medications).
+            if ($facilityIdFromResident) {
+                $user->update(['facility_id' => $facilityIdFromResident]);
+            }
         } else {
-            $facilityId = $contact->resident->branch?->facility_id ?? null;
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $email,
                 'password' => $validated['password'],
                 'role' => 'family',
-                'facility_id' => $facilityId,
+                'facility_id' => $facilityIdFromResident,
                 'is_active' => true,
             ]);
             $user->assignRole('family');
