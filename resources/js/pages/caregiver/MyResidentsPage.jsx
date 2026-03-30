@@ -127,9 +127,6 @@ export default function MyResidentsPage() {
                         <div className="flex flex-wrap items-start gap-3">
                             <ResidentAvatarInline resident={resident} className="h-10 w-10 text-xs" />
                             <div className="space-y-2">
-                                <span className="font-mono text-xs font-bold tracking-wide text-slate-500">
-                                    #{resident.id}
-                                </span>
                                 <div className="flex flex-wrap gap-1.5">
                                     <span
                                         className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${

@@ -3,37 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { CheckCircle, XCircle, Calendar, Plus, User, Stethoscope, MapPin, ChevronDown, Edit, List, Grid, Building2 } from 'lucide-react';
-import Card from '../components/Card';
 import SectionCard from '../components/SectionCard';
 import CalendarView from '../components/CalendarView';
 import BranchSelector from '../components/BranchSelector';
+import EntityCardShell, { EntityCardHeader } from '../components/ui/EntityCardShell';
+import ResidentAvatarInline from '../components/ui/ResidentAvatarInline';
+import DataPill, { DataPillSection } from '../components/ui/DataPill';
+import Tooltip from '../components/ui/Tooltip';
 import logger from '../utils/logger';
 import { toast } from 'sonner';
-
-// Profile Image Component with fallback
-function ProfileImage({ resident }) {
-    const [imageError, setImageError] = useState(false);
-
-    if (!resident.profile_image_url && !resident.profile_image || imageError) {
-        return (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${resident.gender?.toLowerCase() === 'male' ? 'bg-blue-500' : 'bg-pink-500'
-                }`}>
-                {resident.first_name?.[0]?.toUpperCase() || ''}{resident.last_name?.[0]?.toUpperCase() || ''}
-            </div>
-        );
-    }
-
-    return (
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
-            <img
-                src={resident.profile_image_url || `/storage/${resident.profile_image}`}
-                alt={`${resident.first_name} ${resident.last_name}`}
-                className="w-full h-full object-cover"
-                onError={() => setImageError(true)}
-            />
-        </div>
-    );
-}
 
 export default function Appointments() {
     const queryClient = useQueryClient();
@@ -544,65 +522,84 @@ export default function Appointments() {
                                     const age = calculateAge(resident.date_of_birth);
 
                                     return (
-                                        <div key={resident.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 overflow-hidden">
-                                            <div className="p-5">
-                                                {/* Resident Header */}
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="flex-1">
-                                                        <h4 className="text-lg font-semibold text-gray-900 mb-1">
-                                                            {resident.first_name} {resident.last_name}
-                                                        </h4>
-                                                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                                            {age !== 'N/A' && (
-                                                                <span className="flex items-center">
-                                                                    <User className="w-4 h-4 mr-1" />
-                                                                    {age} years
-                                                                </span>
-                                                            )}
-                                                            {resident.room_number && (
-                                                                <span className="flex items-center">
-                                                                    <MapPin className="w-4 h-4 mr-1" />
-                                                                    Room {resident.room_number}
-                                                                </span>
-                                                            )}
+                                        <EntityCardShell key={resident.id}>
+                                            <EntityCardHeader
+                                                left={
+                                                    <div className="flex min-w-0 items-start gap-3">
+                                                        <ResidentAvatarInline resident={resident} className="h-10 w-10 text-xs" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <h4 className="truncate text-lg font-semibold text-gray-900">
+                                                                {resident.first_name} {resident.last_name}
+                                                            </h4>
+                                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                                {age !== 'N/A' && (
+                                                                    <DataPill icon={User}>{age} years</DataPill>
+                                                                )}
+                                                                {resident.room_number && (
+                                                                    <DataPill icon={MapPin}>Room {resident.room_number}</DataPill>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <ProfileImage resident={resident} />
-                                                </div>
+                                                }
+                                                right={
+                                                    canCreate ? (
+                                                        <Tooltip content="Schedule appointment">
+                                                            <Link
+                                                                to={`/appointments/create/${resident.id}`}
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    window.location.href = `/appointments/create/${resident.id}`;
+                                                                }}
+                                                                className="inline-flex rounded-lg border border-[var(--theme-primary)]/40 bg-[var(--theme-primary-bg)] p-2 shadow-sm transition hover:border-[var(--theme-primary)]/60 hover:bg-[var(--theme-primary-bg)]/80 [&_svg]:!text-[var(--theme-primary)]"
+                                                                aria-label="Schedule appointment"
+                                                            >
+                                                                <Calendar className="h-4 w-4" strokeWidth={2.5} />
+                                                            </Link>
+                                                        </Tooltip>
+                                                    ) : null
+                                                }
+                                            />
 
-                                                {/* Resident Info */}
-                                                <div className="space-y-2 mb-4 text-sm">
+                                            {(resident.diagnosis || resident.allergies) && (
+                                                <div className="space-y-3">
                                                     {resident.diagnosis && (
-                                                        <div className="text-gray-600">
-                                                            <span className="font-medium">Diagnosis:</span> {resident.diagnosis}
-                                                        </div>
+                                                        <DataPillSection label="Diagnosis" className="!mt-0">
+                                                            {resident.diagnosis}
+                                                        </DataPillSection>
                                                     )}
                                                     {resident.allergies && (
-                                                        <div className="text-amber-600">
-                                                            <span className="font-medium">Allergies:</span> {resident.allergies}
-                                                        </div>
+                                                        <DataPillSection
+                                                            label="Allergies"
+                                                            className={resident.diagnosis ? '!mt-3' : '!mt-0'}
+                                                        >
+                                                            <span className="text-amber-800">{resident.allergies}</span>
+                                                        </DataPillSection>
                                                     )}
                                                 </div>
+                                            )}
 
-                                                {/* Next Appointment Info */}
-                                                {nextAppt && (
-                                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                <p className="text-xs text-blue-600 font-medium mb-1">Next Appointment</p>
-                                                                <p className="text-sm font-semibold text-blue-900">
-                                                                    {new Date(nextAppt.appointment_date).toLocaleDateString('en-US', {
-                                                                        month: 'short',
-                                                                        day: 'numeric',
-                                                                        year: 'numeric'
-                                                                    })}
-                                                                </p>
+                                            {nextAppt && (
+                                                <div className="mt-4 rounded-lg border border-slate-200/90 bg-slate-50/90 p-3">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="min-w-0">
+                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                                Next appointment
+                                                            </p>
+                                                            <DataPill icon={Calendar} className="mt-2 max-w-full">
+                                                                {new Date(nextAppt.appointment_date).toLocaleDateString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric',
+                                                                })}
                                                                 {nextAppt.appointment_time && (
-                                                                    <p className="text-xs text-blue-700">
+                                                                    <>
+                                                                        {' · '}
                                                                         {(() => {
                                                                             const timeParts = nextAppt.appointment_time.split(':');
                                                                             if (timeParts.length >= 2) {
-                                                                                const hours = parseInt(timeParts[0]) || 0;
+                                                                                const hours = parseInt(timeParts[0], 10) || 0;
                                                                                 const minutes = timeParts[1] || '00';
                                                                                 const hour12 = hours % 12 || 12;
                                                                                 const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -610,36 +607,25 @@ export default function Appointments() {
                                                                             }
                                                                             return '';
                                                                         })()}
-                                                                    </p>
+                                                                    </>
                                                                 )}
-                                                            </div>
-                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${nextAppt.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
-                                                                nextAppt.status === 'confirmed' ? 'bg-[var(--theme-primary-bg)] text-[var(--theme-primary)]' :
-                                                                    'bg-gray-100 text-gray-800'
-                                                                }`}>
-                                                                {nextAppt.status?.charAt(0).toUpperCase() + nextAppt.status?.slice(1)}
-                                                            </span>
+                                                            </DataPill>
                                                         </div>
+                                                        <span
+                                                            className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
+                                                                nextAppt.status === 'scheduled'
+                                                                    ? 'bg-amber-100 text-amber-800'
+                                                                    : nextAppt.status === 'confirmed'
+                                                                      ? 'bg-[var(--theme-primary-bg)] text-[var(--theme-primary)]'
+                                                                      : 'bg-gray-100 text-gray-800'
+                                                            }`}
+                                                        >
+                                                            {nextAppt.status?.charAt(0).toUpperCase() + nextAppt.status?.slice(1)}
+                                                        </span>
                                                     </div>
-                                                )}
-
-                                                {/* Appointment Button */}
-                                                {canCreate && (
-                                                    <Link
-                                                        to={`/appointments/create/${resident.id}`}
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            window.location.href = `/appointments/create/${resident.id}`;
-                                                        }}
-                                                        className="w-full bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-[var(--theme-text-on-primary)] px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 no-underline"
-                                                    >
-                                                        <Calendar className="w-4 h-4" />
-                                                        <span>Schedule Appointment</span>
-                                                    </Link>
-                                                )}
-                                            </div>
-                                        </div>
+                                                </div>
+                                            )}
+                                        </EntityCardShell>
                                     );
                                 })}
                             </div>
