@@ -13,6 +13,22 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TLogController extends BaseApiController
 {
+    /**
+     * Caregivers may create and view progress notes but not edit, delete, or change attachments.
+     */
+    private function rejectIfCaregiverModification(): ?JsonResponse
+    {
+        $user = auth()->user();
+        if ($user && ($user->isCaregiver() || $this->isCaregiver($user))) {
+            return $this->error(
+                'You do not have permission to change or delete progress notes. You can add new notes or view existing ones.',
+                403
+            );
+        }
+
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = TLog::with(['resident', 'branch', 'reporter', 'enteredBy', 'attachments']);
@@ -140,6 +156,10 @@ class TLogController extends BaseApiController
 
     public function update(Request $request, $id): JsonResponse
     {
+        if ($response = $this->rejectIfCaregiverModification()) {
+            return $response;
+        }
+
         $tLog = TLog::findOrFail($id);
 
         // Check branch access for caregivers
@@ -193,6 +213,10 @@ class TLogController extends BaseApiController
 
     public function destroy($id): JsonResponse
     {
+        if ($response = $this->rejectIfCaregiverModification()) {
+            return $response;
+        }
+
         $tLog = TLog::findOrFail($id);
 
         // Check branch access for caregivers
@@ -215,6 +239,10 @@ class TLogController extends BaseApiController
 
     public function uploadAttachment(Request $request, $id): JsonResponse
     {
+        if ($response = $this->rejectIfCaregiverModification()) {
+            return $response;
+        }
+
         $tLog = TLog::findOrFail($id);
 
         // Check branch access for caregivers
@@ -245,6 +273,10 @@ class TLogController extends BaseApiController
 
     public function deleteAttachment($id, $attachmentId): JsonResponse
     {
+        if ($response = $this->rejectIfCaregiverModification()) {
+            return $response;
+        }
+
         $tLog = TLog::findOrFail($id);
         $attachment = TLogAttachment::findOrFail($attachmentId);
 

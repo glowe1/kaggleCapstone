@@ -328,6 +328,7 @@ function App() {
                 <Route path="housekeeping/dashboard" element={<Suspense fallback={<PageLoader />}><HousekeepingDashboard /></Suspense>} />
                 <Route path="housekeeping/schedule" element={<Suspense fallback={<PageLoader />}><HousekeepingSchedule /></Suspense>} />
                 <Route path="sleep" element={<Suspense fallback={<PageLoader />}><Sleep /></Suspense>} />
+                <Route path="sleep-pattern" element={<Navigate to="/sleep-patterns" replace />} />
                 <Route path="sleep-patterns" element={<Suspense fallback={<PageLoader />}><SleepPatterns /></Suspense>} />
                 <Route path="leave-requests" element={<Suspense fallback={<PageLoader />}><LeaveRequests /></Suspense>} />
                 <Route path="check-in-dashboard" element={<Suspense fallback={<PageLoader />}><CheckInDashboard /></Suspense>} />

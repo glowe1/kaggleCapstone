@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, X, FileText, Calendar, User, Search, Filter, ArrowLeft, AlertTriangle, ExternalLink, Download } from 'lucide-react';
@@ -218,6 +218,18 @@ export default function TLogs() {
         }
     };
 
+    const canModifyProgressNotes = !isCaregiver;
+
+    // Caregivers must not open the edit form (defense if state gets out of sync)
+    useEffect(() => {
+        if (!showForm || !selectedTLog || !isCaregiver) {
+            return;
+        }
+        toast.error('You can add new progress notes or view existing ones, but not edit them.');
+        setShowForm(false);
+        setSelectedTLog(null);
+    }, [showForm, selectedTLog, isCaregiver]);
+
     const handleFilterChange = (key, value) => {
         const newFilters = { ...filters, [key]: value };
         setFilters(newFilters);
@@ -241,6 +253,7 @@ export default function TLogs() {
         return (
             <ViewTLog
                 tLog={selectedTLog}
+                canEdit={canModifyProgressNotes}
                 onClose={() => {
                     setShowViewModal(false);
                     setSelectedTLog(null);
@@ -439,20 +452,24 @@ export default function TLogs() {
                                     >
                                         <Eye className="w-5 h-5" />
                                     </button>
-                                    <button
-                                        onClick={() => handleOpenForm(tLog)}
-                                        className="p-2.5 border-2 border-[var(--theme-primary)] bg-white text-[var(--theme-primary)] hover:bg-[var(--theme-primary-bg)] hover:border-[var(--theme-primary-dark)] rounded-lg transition-all shadow-sm"
-                                        title="Edit"
-                                    >
-                                        <Edit className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(tLog.id)}
-                                        className="p-2.5 border-2 border-red-400 bg-white text-red-700 hover:bg-red-50 hover:border-red-500 rounded-lg transition-all shadow-sm"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
+                                    {canModifyProgressNotes && (
+                                        <>
+                                            <button
+                                                onClick={() => handleOpenForm(tLog)}
+                                                className="p-2.5 border-2 border-[var(--theme-primary)] bg-white text-[var(--theme-primary)] hover:bg-[var(--theme-primary-bg)] hover:border-[var(--theme-primary-dark)] rounded-lg transition-all shadow-sm"
+                                                title="Edit"
+                                            >
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(tLog.id)}
+                                                className="p-2.5 border-2 border-red-400 bg-white text-red-700 hover:bg-red-50 hover:border-red-500 rounded-lg transition-all shadow-sm"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </Card>
@@ -488,7 +505,7 @@ export default function TLogs() {
 }
 
 // View progress note (full page view)
-function ViewTLog({ tLog, onClose, onEdit }) {
+function ViewTLog({ tLog, onClose, onEdit, canEdit = true }) {
     const handleDownload = async (attachmentId, fileName) => {
         try {
             const response = await api.get(
@@ -533,13 +550,15 @@ function ViewTLog({ tLog, onClose, onEdit }) {
                                 <p className="text-white/90 mt-1">Comprehensive progress note information and documentation</p>
                             </div>
                         </div>
-                        <button
-                            onClick={onEdit}
-                            className="px-6 py-2 bg-white text-[var(--theme-primary)] rounded-lg hover:bg-gray-50 font-semibold transition-colors flex items-center gap-2"
-                        >
-                            <Edit className="w-4 h-4" />
-                            Edit progress note
-                        </button>
+                        {canEdit && (
+                            <button
+                                onClick={onEdit}
+                                className="px-6 py-2 bg-white text-[var(--theme-primary)] rounded-lg hover:bg-gray-50 font-semibold transition-colors flex items-center gap-2"
+                            >
+                                <Edit className="w-4 h-4" />
+                                Edit progress note
+                            </button>
+                        )}
                     </div>
                 </div>
 

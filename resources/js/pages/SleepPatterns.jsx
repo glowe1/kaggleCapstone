@@ -33,6 +33,20 @@ ChartJS.register(
     Filler
 );
 
+/** Coerce API values to arrays (objects like {} are truthy but break .map). */
+function ensureArray(value) {
+    if (Array.isArray(value)) {
+        return value;
+    }
+    if (value === null || value === undefined) {
+        return [];
+    }
+    if (typeof value === 'object') {
+        return Object.keys(value).length ? Object.values(value) : [];
+    }
+    return [];
+}
+
 export default function SleepPatterns() {
     const navigate = useNavigate();
     const [branchId, setBranchId] = useState('');
@@ -149,7 +163,13 @@ export default function SleepPatterns() {
                         year: year,
                     }
                 });
-                return response.data;
+                const raw = response.data;
+                return {
+                    ...raw,
+                    daily_data: ensureArray(raw?.daily_data),
+                    hourly_distribution: ensureArray(raw?.hourly_distribution),
+                    key_observations: ensureArray(raw?.key_observations),
+                };
             } catch (err) {
                 logger.error('Sleep Pattern API Error:', err);
                 const message = err.response?.status === 403
@@ -699,7 +719,7 @@ export default function SleepPatterns() {
                                             <Line data={chartData} options={chartOptions} />
                                         )}
                                         {chartType === 'heatmap' && (
-                                            <HourlyHeatmap data={patternData.hourly_distribution || []} />
+                                            <HourlyHeatmap data={ensureArray(patternData.hourly_distribution)} />
                                         )}
                                     </div>
                                 </div>
@@ -862,7 +882,9 @@ export default function SleepPatterns() {
 
 // Hourly Heatmap Component
 function HourlyHeatmap({ data }) {
-    if (!data || data.length === 0) {
+    const rows = ensureArray(data);
+
+    if (rows.length === 0) {
         return (
             <div className="text-center py-20 text-gray-500">
                 No hourly distribution data available
@@ -878,7 +900,7 @@ function HourlyHeatmap({ data }) {
     };
 
     // Get the maximum percentage for color scaling
-    const percentages = data.map(d => toNumber(d.percentage));
+    const percentages = rows.map(d => toNumber(d.percentage));
     const maxPercentage = Math.max(...percentages, 1);
 
     // Function to get color intensity based on percentage
@@ -937,7 +959,7 @@ function HourlyHeatmap({ data }) {
 
             {/* Heatmap Grid */}
             <div className="grid grid-cols-12 gap-2 mb-6">
-                {data.map((item, index) => {
+                {rows.map((item, index) => {
                     const hour = parseInt(item.hour) || 0;
                     const percentage = toNumber(item.percentage);
                     const isNewPeriod = hour % 6 === 0;
@@ -974,7 +996,7 @@ function HourlyHeatmap({ data }) {
             {/* Time Period Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 {timePeriods.map((period) => {
-                    const periodData = data.filter(item => {
+                    const periodData = rows.filter(item => {
                         const hour = parseInt(item.hour) || 0;
                         return period.hours.includes(hour);
                     });

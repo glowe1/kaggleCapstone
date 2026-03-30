@@ -166,6 +166,16 @@ export default function TLogForm({ tLog, onClose, onSuccess }) {
         }
     }, [tLog]);
 
+    useEffect(() => {
+        if (currentUser === undefined) {
+            return;
+        }
+        if (isCaregiver && tLog) {
+            toast.error('You can add new progress notes or view existing ones, but not edit them.');
+            onClose();
+        }
+    }, [currentUser, isCaregiver, tLog, onClose]);
+
     const createMutation = useMutation({
         mutationFn: async (formDataToSend) => {
             return await api.post('/t-logs', formDataToSend, {
