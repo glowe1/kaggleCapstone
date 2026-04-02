@@ -303,22 +303,38 @@ export default function DatabaseSettings() {
     } catch (error) {
       let message = 'Failed to download backup';
       const data = error.response?.data;
+      const status = error.response?.status;
+      const parseJsonPayload = (json) => {
+        if (json?.message && json.message !== 'An error occurred') {
+          return json.message;
+        }
+        if (json?.errors && typeof json.errors === 'object') {
+          const first = Object.values(json.errors).flat().find(Boolean);
+          if (first) return Array.isArray(first) ? first[0] : String(first);
+        }
+        return json?.message || null;
+      };
       if (data instanceof Blob) {
         try {
           const text = await data.text();
           const json = JSON.parse(text);
-          message = json.message || message;
+          message = parseJsonPayload(json) || message;
         } catch {
-          if (error.response?.status === 401) {
+          if (status === 401) {
             message = 'Unauthorized. Please log in again.';
-          } else if (error.response?.status === 403) {
+          } else if (status === 403) {
             message = 'You do not have permission to download this backup.';
-          } else if (error.response?.status === 404) {
+          } else if (status === 404) {
             message = 'Backup file not found.';
+          } else if (status === 422) {
+            message = 'Invalid download request (check facility and filename).';
+          } else if (status === 500) {
+            message =
+              'Server error while preparing the file. Check logs or try again. If this is a full-database backup, confirm ENABLE_FULL_DATABASE_MYSQLDUMP is enabled.';
           }
         }
       } else if (error.response?.data?.message) {
-        message = error.response.data.message;
+        message = parseJsonPayload(error.response.data) || error.response.data.message;
       } else if (error.message) {
         message = error.message;
       }

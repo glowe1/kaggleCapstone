@@ -273,19 +273,21 @@ class DatabaseManagementController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        // Query string params are strings; `integer`/`boolean` rules often 422 on GET ?facility_id=1&full_database=true
         $validated = $request->validate([
-            'filename' => 'required|string',
-            'facility_id' => 'nullable|integer|exists:facilities,id',
-            'full_database' => 'sometimes|boolean',
+            'filename' => ['required', 'string', 'max:512'],
+            'facility_id' => ['nullable', 'numeric', 'min:1'],
         ]);
 
         $filename = basename($validated['filename']);
-        if (! str_ends_with($filename, '.sql')) {
+        if (! preg_match('/\.sql$/i', $filename)) {
             return response()->json(['message' => 'Invalid backup file'], 400);
         }
 
+        $wantsFullDatabase = filter_var($request->query('full_database', false), FILTER_VALIDATE_BOOLEAN);
+
         try {
-            if ($request->boolean('full_database') && config('backup.enable_full_database_mysqldump', false)) {
+            if ($wantsFullDatabase && config('backup.enable_full_database_mysqldump', false)) {
                 if (! str_starts_with($filename, 'backup_')) {
                     return response()->json(['message' => 'Invalid backup file'], 400);
                 }
