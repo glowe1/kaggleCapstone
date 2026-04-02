@@ -242,12 +242,17 @@ class FacilitySqlExportService
             ['table' => 'cleaning_areas', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches()
                 ? DB::table('cleaning_areas')->whereIn('branch_id', $s->branchIds)
                 : null],
+            // Tasks belong to cleaning_areas (areas have branch_id), not branches directly.
             ['table' => 'cleaning_tasks', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches()
-                ? DB::table('cleaning_tasks')->whereIn('branch_id', $s->branchIds)
+                ? DB::table('cleaning_tasks')->whereIn('cleaning_area_id', function ($q) use ($s) {
+                    $q->select('id')->from('cleaning_areas')->whereIn('branch_id', $s->branchIds);
+                })
                 : null],
             ['table' => 'cleaning_task_assignments', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches() && FacilityTenantScopeResolver::tableExists('cleaning_tasks')
                 ? DB::table('cleaning_task_assignments')->whereIn('cleaning_task_id', function ($q) use ($s) {
-                    $q->select('id')->from('cleaning_tasks')->whereIn('branch_id', $s->branchIds);
+                    $q->select('id')->from('cleaning_tasks')->whereIn('cleaning_area_id', function ($q2) use ($s) {
+                        $q2->select('id')->from('cleaning_areas')->whereIn('branch_id', $s->branchIds);
+                    });
                 })
                 : null],
             ['table' => 'cleaning_task_logs', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches()
