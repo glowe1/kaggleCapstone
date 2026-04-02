@@ -433,7 +433,7 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
         Route::get('/stats', [DatabaseManagementController::class, 'stats']);
         Route::post('/backup', [DatabaseManagementController::class, 'createBackup']);
         Route::get('/backups', [DatabaseManagementController::class, 'recentBackups']);
-        Route::get('/backup/{filename}', [DatabaseManagementController::class, 'downloadBackup']);
+        Route::get('/backup/download', [DatabaseManagementController::class, 'downloadBackup']);
         Route::post('/restore', [DatabaseManagementController::class, 'restoreBackup']);
         Route::post('/refresh', [DatabaseManagementController::class, 'refreshData']);
     });

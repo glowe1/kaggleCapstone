@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Database, Download, Upload, RefreshCw, HardDrive, Archive, RotateCcw } from 'lucide-react';
 import api from '../../services/api';
@@ -11,8 +11,11 @@ export default function DatabaseSettings() {
   const toast = useToastContext();
   const queryClient = useQueryClient();
   const [restoreConfirmFile, setRestoreConfirmFile] = useState(null);
+  const [restoreDeleteConfirm, setRestoreDeleteConfirm] = useState('');
+  const [restoreIsFullDatabase, setRestoreIsFullDatabase] = useState(false);
+  const [backupFacilityId, setBackupFacilityId] = useState('');
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading: userLoading } = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
       const response = await api.get('/me');
@@ -25,14 +28,42 @@ export default function DatabaseSettings() {
       const stored = window.localStorage.getItem('super_admin_selected_facility_id');
       if (stored) return stored;
     }
-    return currentUser?.facility_id;
+    return currentUser?.facility_id != null ? String(currentUser.facility_id) : '';
   }, [currentUser]);
 
+  const { data: facilitiesPayload, isLoading: facilitiesLoading } = useQuery({
+    queryKey: ['facilities', 'database-settings'],
+    queryFn: async () => (await api.get('/facilities', { params: { per_page: 200 } })).data,
+    enabled: !!currentUser,
+  });
+
+  const facilities = useMemo(() => {
+    const raw = facilitiesPayload?.data ?? facilitiesPayload;
+    return Array.isArray(raw) ? raw : [];
+  }, [facilitiesPayload]);
+
+  useEffect(() => {
+    if (facilityId) {
+      setBackupFacilityId(String(facilityId));
+    }
+  }, [facilityId]);
+
+  useEffect(() => {
+    if (facilityId) return;
+    if (!facilities.length) return;
+    setBackupFacilityId((prev) => {
+      if (prev && facilities.some((f) => String(f.id) === prev)) return prev;
+      return String(facilities[0].id);
+    });
+  }, [facilities, facilityId]);
+
+  const settingsFacilityId = facilityId || backupFacilityId;
+
   const { data: settings, isLoading } = useQuery({
-    enabled: !!facilityId,
-    queryKey: ['facility-settings', facilityId, 'database'],
+    enabled: !!settingsFacilityId,
+    queryKey: ['facility-settings', settingsFacilityId, 'database'],
     queryFn: async () => {
-      const response = await api.get(`/facilities/${facilityId}/settings/database`);
+      const response = await api.get(`/facilities/${settingsFacilityId}/settings/database`);
       return response.data?.data || {};
     },
   });
@@ -56,12 +87,12 @@ export default function DatabaseSettings() {
         },
       };
 
-      const response = await api.put(`/facilities/${facilityId}/settings/database`, payload);
+      const response = await api.put(`/facilities/${settingsFacilityId}/settings/database`, payload);
       return response.data;
     },
     onSuccess: () => {
       toast.showToast('Database settings updated successfully.', 'success', { isFormSubmission: true });
-      queryClient.invalidateQueries(['facility-settings', facilityId, 'database']);
+      queryClient.invalidateQueries(['facility-settings', settingsFacilityId, 'database']);
     },
     onError: (error) => {
       toast.showToast(
@@ -82,7 +113,6 @@ export default function DatabaseSettings() {
     saveMutation.mutate(values);
   };
 
-  // Fetch database statistics
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['database-stats'],
     queryFn: async () => {
@@ -91,22 +121,28 @@ export default function DatabaseSettings() {
     },
   });
 
-  // Fetch recent backups
   const { data: backups, isLoading: backupsLoading, refetch: refetchBackups } = useQuery({
-    queryKey: ['database-backups'],
+    queryKey: ['database-backups', backupFacilityId],
     queryFn: async () => {
-      const response = await api.get('/database/backups');
+      const response = await api.get('/database/backups', {
+        params: {
+          facility_id: backupFacilityId,
+          include_full_database: true,
+        },
+      });
       return response.data?.data || [];
     },
+    enabled: !!backupFacilityId,
   });
 
-  // Create backup mutation
   const createBackupMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.post('/database/backup');
-      return response.data;
+    mutationFn: async ({ fullDatabase = false } = {}) => {
+      if (fullDatabase) {
+        return api.post('/database/backup', { full_database: true });
+      }
+      return api.post('/database/backup', { facility_id: Number(backupFacilityId) });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.showToast('Backup created successfully', 'success');
       refetchStats();
       refetchBackups();
@@ -119,15 +155,17 @@ export default function DatabaseSettings() {
     },
   });
 
-  // Restore backup mutation
   const restoreBackupMutation = useMutation({
-    mutationFn: async (filename) => {
-      const response = await api.post('/database/restore', { filename });
-      return response.data;
+    mutationFn: async ({ filename, facilityId: fid, fullDatabase }) => {
+      const body = fullDatabase
+        ? { filename, full_database: true, confirmation: 'DELETE' }
+        : { filename, facility_id: fid, confirmation: 'DELETE' };
+      return api.post('/database/restore', body);
     },
     onSuccess: () => {
       toast.showToast('Backup restored successfully', 'success');
       refetchStats();
+      refetchBackups();
     },
     onError: (error) => {
       const message = error.response?.data?.message || 'Failed to restore backup';
@@ -137,7 +175,6 @@ export default function DatabaseSettings() {
     },
   });
 
-  // Refresh data mutation
   const refreshDataMutation = useMutation({
     mutationFn: async () => {
       const response = await api.post('/database/refresh');
@@ -155,16 +192,47 @@ export default function DatabaseSettings() {
     },
   });
 
-  const handleConfirmRestore = () => {
-    if (!restoreConfirmFile) return;
-    restoreBackupMutation.mutate(restoreConfirmFile, { onSuccess: () => setRestoreConfirmFile(null) });
+  const openRestoreDialog = (filename, isFull) => {
+    setRestoreConfirmFile(filename);
+    setRestoreIsFullDatabase(!!isFull);
+    setRestoreDeleteConfirm('');
   };
 
-  const handleDownload = async (filename) => {
+  const closeRestoreDialog = () => {
+    if (!restoreBackupMutation.isPending) {
+      setRestoreConfirmFile(null);
+      setRestoreDeleteConfirm('');
+      setRestoreIsFullDatabase(false);
+    }
+  };
+
+  const handleConfirmRestore = () => {
+    if (!restoreConfirmFile) return;
+    if (restoreDeleteConfirm !== 'DELETE') {
+      toast.showToast('Type DELETE to confirm', 'error');
+      return;
+    }
+    const fid = Number(backupFacilityId);
+    restoreBackupMutation.mutate(
+      {
+        filename: restoreConfirmFile,
+        facilityId: fid,
+        fullDatabase: restoreIsFullDatabase,
+      },
+      { onSuccess: () => closeRestoreDialog() }
+    );
+  };
+
+  const handleDownload = async (backup) => {
+    const filename = backup.filename;
+    const isFull = backup.type === 'full_mysqldump';
     try {
-      const response = await api.get(`/database/backup/${encodeURIComponent(filename)}`, {
+      const params = isFull
+        ? { filename, full_database: true }
+        : { filename, facility_id: backup.facility_id ?? backupFacilityId };
+      const response = await api.get('/database/backup/download', {
+        params,
         responseType: 'blob',
-        // Large SQL dumps; avoid default axios timeout cutting off the transfer
         timeout: 600000,
         headers: {
           Accept: 'application/octet-stream, application/sql, */*',
@@ -230,12 +298,53 @@ export default function DatabaseSettings() {
     }
   };
 
-  if (!facilityId) {
+  const latestFacilityBackup = useMemo(() => {
+    if (!backups?.length) return null;
+    return (
+      backups.find(
+        (b) => b.type === 'facility' && String(b.facility_id) === String(backupFacilityId)
+      ) || null
+    );
+  }, [backups, backupFacilityId]);
+
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)]" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="p-6 bg-white rounded-xl shadow-sm">
+        <p className="text-sm text-gray-600">You must be signed in to manage database settings.</p>
+      </div>
+    );
+  }
+
+  if (!facilityId && facilitiesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)]" />
+      </div>
+    );
+  }
+
+  if (!facilityId && !facilitiesLoading && facilities.length === 0) {
     return (
       <div className="p-6 bg-white rounded-xl shadow-sm">
         <p className="text-sm text-gray-600">
-          Database settings are available once a facility is associated with your account.
+          No facilities found. Database settings and backups require at least one facility.
         </p>
+      </div>
+    );
+  }
+
+  if (!settingsFacilityId) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)]" />
       </div>
     );
   }
@@ -252,19 +361,36 @@ export default function DatabaseSettings() {
     <div className="space-y-6">
       <ConfirmDialog
         isOpen={restoreConfirmFile != null}
-        onClose={() => !restoreBackupMutation.isPending && setRestoreConfirmFile(null)}
+        onClose={closeRestoreDialog}
         onConfirm={handleConfirmRestore}
-        title="Restore database backup?"
+        title={restoreIsFullDatabase ? 'Restore full database backup?' : 'Restore facility backup?'}
         description={
           restoreConfirmFile
-            ? `Restore from ${restoreConfirmFile}? This will overwrite the current database.`
+            ? restoreIsFullDatabase
+              ? `Restore from ${restoreConfirmFile}? This replaces the entire application database. This cannot be undone.`
+              : `Restore from ${restoreConfirmFile}? All data for the selected facility will be replaced with this backup. Other facilities are not affected.`
             : ''
         }
         confirmLabel="Restore"
         cancelLabel="Cancel"
         variant="danger"
         isPending={restoreBackupMutation.isPending}
-      />
+      >
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-slate-700" htmlFor="restore-delete-confirm">
+            Type DELETE to confirm
+          </label>
+          <input
+            id="restore-delete-confirm"
+            type="text"
+            autoComplete="off"
+            value={restoreDeleteConfirm}
+            onChange={(e) => setRestoreDeleteConfirm(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30"
+            placeholder="DELETE"
+          />
+        </div>
+      </ConfirmDialog>
       <div className="bg-white rounded-xl shadow-sm p-6 flex items-center space-x-3">
         <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]">
           <Database className="w-5 h-5" strokeWidth={2.5} />
@@ -277,6 +403,32 @@ export default function DatabaseSettings() {
         </div>
       </div>
 
+      <div className="bg-white rounded-xl shadow-sm p-6 space-y-3">
+        <h2 className="text-lg font-semibold text-gray-900">Facility backup scope</h2>
+        <p className="text-sm text-gray-600">
+          Backups include only rows for the selected facility (shared database; isolation is row-based). Restoring
+          overwrites that facility&apos;s data only unless you use a full-database backup.
+        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <label htmlFor="backup-facility-select" className="text-sm font-medium text-gray-700 shrink-0">
+            Facility for backup / restore
+          </label>
+          <select
+            id="backup-facility-select"
+            value={backupFacilityId}
+            onChange={(e) => setBackupFacilityId(e.target.value)}
+            disabled={backupsLoading}
+            className="max-w-md border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+          >
+            {facilities.map((f) => (
+              <option key={f.id} value={String(f.id)}>
+                {f.name || `Facility ${f.id}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Data Management Overview */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Data Management Overview</h2>
@@ -286,7 +438,7 @@ export default function DatabaseSettings() {
               <Database className="w-5 h-5 text-gray-400" strokeWidth={2.5} />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">
-              {statsLoading ? '...' : (stats?.database_size || 'N/A')}
+              {statsLoading ? '...' : stats?.database_size || 'N/A'}
             </div>
             <div className="text-sm text-gray-500">Current database size</div>
           </div>
@@ -295,7 +447,7 @@ export default function DatabaseSettings() {
               <Archive className="w-5 h-5 text-gray-400" strokeWidth={2.5} />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">
-              {statsLoading ? '...' : (stats?.total_backups || 0)}
+              {statsLoading ? '...' : stats?.total_backups || 0}
             </div>
             <div className="text-sm text-gray-500">Available backups</div>
           </div>
@@ -304,7 +456,7 @@ export default function DatabaseSettings() {
               <HardDrive className="w-5 h-5 text-gray-400" strokeWidth={2.5} />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">
-              {statsLoading ? '...' : (stats?.storage_used || 'N/A')}
+              {statsLoading ? '...' : stats?.storage_used || 'N/A'}
             </div>
             <div className="text-sm text-gray-500">Total storage usage</div>
           </div>
@@ -314,16 +466,17 @@ export default function DatabaseSettings() {
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center space-x-3 mb-2">
               <Download className="w-5 h-5 text-[var(--theme-primary)]" strokeWidth={2.5} />
-              <h3 className="font-semibold text-gray-900">Create Backup</h3>
+              <h3 className="font-semibold text-gray-900">Facility backup</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-4">Create a new database backup</p>
+            <p className="text-sm text-gray-600 mb-4">Export SQL for the selected facility only</p>
             <button
-              onClick={() => createBackupMutation.mutate()}
-              disabled={createBackupMutation.isPending}
+              type="button"
+              onClick={() => createBackupMutation.mutate({ fullDatabase: false })}
+              disabled={createBackupMutation.isPending || !backupFacilityId}
               className="w-full px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm bg-[var(--theme-primary)] text-white rounded-lg hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
             >
               {createBackupMutation.isPending ? (
@@ -334,28 +487,56 @@ export default function DatabaseSettings() {
               ) : (
                 <>
                   <Download className="w-4 h-4" strokeWidth={2.5} />
-                  <span>Backup Now</span>
+                  <span>Backup now</span>
                 </>
               )}
             </button>
           </div>
 
+          {stats?.full_database_mysqldump_enabled ? (
+            <div className="p-4 border border-amber-200 bg-amber-50/40 rounded-lg">
+              <div className="flex items-center space-x-3 mb-2">
+                <Download className="w-5 h-5 text-amber-800" strokeWidth={2.5} />
+                <h3 className="font-semibold text-gray-900">Full database (hosting)</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">Entire MySQL schema — use for server-level recovery, not tenant-only.</p>
+              <button
+                type="button"
+                onClick={() => createBackupMutation.mutate({ fullDatabase: true })}
+                disabled={createBackupMutation.isPending}
+                className="w-full px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm bg-amber-700 text-white rounded-lg hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
+              >
+                {createBackupMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" strokeWidth={2.5} />
+                    <span>Full mysqldump</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : null}
+
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center space-x-3 mb-2">
               <Upload className="w-5 h-5 text-[var(--theme-primary)]" strokeWidth={2.5} />
-              <h3 className="font-semibold text-gray-900">Restore Backup</h3>
+              <h3 className="font-semibold text-gray-900">Restore latest facility backup</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-4">Restore from an existing backup</p>
+            <p className="text-sm text-gray-600 mb-4">Uses the newest facility-scoped file for this selection</p>
             <button
+              type="button"
               onClick={() => {
-                if (backups && backups.length > 0) {
-                  const latest = backups[0];
-                  setRestoreConfirmFile(latest.filename);
+                if (latestFacilityBackup) {
+                  openRestoreDialog(latestFacilityBackup.filename, false);
                 } else {
-                  toast.showToast('No backups available', 'error');
+                  toast.showToast('No facility backups for this facility yet', 'error');
                 }
               }}
-              disabled={restoreBackupMutation.isPending || !backups || backups.length === 0}
+              disabled={restoreBackupMutation.isPending || !latestFacilityBackup}
               className="w-full px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
             >
               {restoreBackupMutation.isPending ? (
@@ -379,6 +560,7 @@ export default function DatabaseSettings() {
             </div>
             <p className="text-sm text-gray-600 mb-4">Refresh cache and optimize data</p>
             <button
+              type="button"
               onClick={() => refreshDataMutation.mutate()}
               disabled={refreshDataMutation.isPending}
               className="w-full px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
@@ -402,17 +584,21 @@ export default function DatabaseSettings() {
       {/* Recent Backups */}
       {backups && backups.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Backups</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Backups for this list</h2>
           <div className="space-y-2">
-            {backups.slice(0, 5).map((backup, index) => (
+            {backups.slice(0, 15).map((backup) => (
               <div
-                key={index}
+                key={`${backup.type}-${backup.filename}`}
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-gray-900 truncate">{backup.filename}</span>
-                    {backup.is_automatic ? (
+                    {backup.type === 'full_mysqldump' ? (
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-900">
+                        Full DB
+                      </span>
+                    ) : backup.is_automatic ? (
                       <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800">
                         Auto
                       </span>
@@ -426,11 +612,11 @@ export default function DatabaseSettings() {
                     {new Date(backup.created_at).toLocaleString()} • {backup.size}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Tooltip content="Download backup" position="top">
                     <button
                       type="button"
-                      onClick={() => handleDownload(backup.filename)}
+                      onClick={() => handleDownload(backup)}
                       className="px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-1.5"
                       aria-label="Download backup"
                     >
@@ -438,10 +624,19 @@ export default function DatabaseSettings() {
                       Download
                     </button>
                   </Tooltip>
-                  <Tooltip content="Restore this backup (overwrites current database)" position="top">
+                  <Tooltip
+                    content={
+                      backup.type === 'full_mysqldump'
+                        ? 'Restores entire database (all tenants)'
+                        : 'Replaces this facility’s data only'
+                    }
+                    position="top"
+                  >
                     <button
                       type="button"
-                      onClick={() => setRestoreConfirmFile(backup.filename)}
+                      onClick={() =>
+                        openRestoreDialog(backup.filename, backup.type === 'full_mysqldump')
+                      }
                       disabled={restoreBackupMutation.isPending}
                       className="inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium text-red-800 bg-white border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       aria-label={`Restore backup ${backup.filename}`}
@@ -512,5 +707,3 @@ export default function DatabaseSettings() {
     </div>
   );
 }
-
-

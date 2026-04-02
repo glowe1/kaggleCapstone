@@ -95,6 +95,10 @@ export default function PharmacySuppliers() {
         setErrors({});
     };
 
+    const handleDelete = (id) => {
+        setDeleteConfirmId(id);
+    };
+
     const handleEdit = (supplier) => {
         setEditing(supplier);
         setFormData({

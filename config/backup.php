@@ -37,4 +37,15 @@ return [
      */
     'mysqldump_no_tablespaces' => filter_var(env('MYSQLDUMP_NO_TABLESPACES', true), FILTER_VALIDATE_BOOL),
 
+    /**
+     * When true, super admins may run legacy whole-database mysqldump/restore (hosting-style).
+     * Default false: backups are per-facility logical exports only.
+     */
+    'enable_full_database_mysqldump' => filter_var(env('ENABLE_FULL_DATABASE_MYSQLDUMP', false), FILTER_VALIDATE_BOOL),
+
+    /**
+     * When true, the scheduler runs {@see \App\Console\Commands\DatabaseBackupCommand} for each active facility.
+     */
+    'scheduled_facility_backups' => filter_var(env('SCHEDULED_FACILITY_BACKUPS', true), FILTER_VALIDATE_BOOL),
+
 ];

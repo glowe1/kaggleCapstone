@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DatabaseBackupService;
+use App\Services\FacilitySqlExportService;
+use App\Services\FacilitySqlImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +31,14 @@ class DatabaseManagementController extends Controller
         }
 
         return $user->hasRole('super_admin') || $user->hasRole('administrator');
+    }
+
+    /**
+     * Per-facility logical backup/restore (super admin only).
+     */
+    private function canManageFacilityBackup(?User $user): bool
+    {
+        return $user instanceof User && $user->isSuperAdmin();
     }
 
     /**
@@ -57,6 +67,7 @@ class DatabaseManagementController extends Controller
                     'database_size' => $dbSize,
                     'total_backups' => $backupCount,
                     'storage_used' => $storageUsed,
+                    'full_database_mysqldump_enabled' => (bool) config('backup.enable_full_database_mysqldump', false),
                 ],
             ]);
         } catch (\Exception $e) {
@@ -65,6 +76,7 @@ class DatabaseManagementController extends Controller
                     'database_size' => 'N/A',
                     'total_backups' => 0,
                     'storage_used' => 'N/A',
+                    'full_database_mysqldump_enabled' => (bool) config('backup.enable_full_database_mysqldump', false),
                     'auto_backup_enabled' => (bool) config('backup.scheduled_enabled', true),
                     'auto_backup_time' => config('backup.scheduled_time', '02:00'),
                     'auto_backup_keep' => (int) config('backup.scheduled_keep', 30),
@@ -77,69 +89,135 @@ class DatabaseManagementController extends Controller
     }
 
     /**
-     * Create a database backup (manual; filename prefix backup_, not pruned automatically)
+     * Create a facility-scoped logical backup (default), or legacy full mysqldump when enabled.
      */
     public function createBackup(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        if (! $this->canManageDatabase($user)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (! $this->canManageFacilityBackup($user)) {
+            return response()->json(['message' => 'Unauthorized. Super admin access required for database backup.'], 403);
         }
 
-        $result = app(DatabaseBackupService::class)->createBackup(false);
+        $validated = $request->validate([
+            'full_database' => 'sometimes|boolean',
+            'facility_id' => 'required_unless:full_database,true|nullable|integer|exists:facilities,id',
+        ]);
 
-        if (! ($result['success'] ?? false)) {
-            $status = ($result['message'] ?? '') === 'Database file not found' ? 404 : 500;
+        $fullDatabase = filter_var($validated['full_database'] ?? false, FILTER_VALIDATE_BOOL);
+
+        if ($fullDatabase) {
+            if (! config('backup.enable_full_database_mysqldump', false)) {
+                return response()->json([
+                    'message' => 'Full-database mysqldump is disabled. Set ENABLE_FULL_DATABASE_MYSQLDUMP=true if you need it.',
+                ], 403);
+            }
+
+            $result = app(DatabaseBackupService::class)->createBackup(false);
+
+            if (! ($result['success'] ?? false)) {
+                $status = ($result['message'] ?? '') === 'Database file not found' ? 404 : 500;
+
+                return response()->json([
+                    'message' => $result['message'] ?? 'Failed to create backup',
+                ], $status);
+            }
 
             return response()->json([
-                'message' => $result['message'] ?? 'Failed to create backup',
-            ], $status);
+                'message' => 'Full database backup created successfully',
+                'data' => [
+                    'filename' => $result['filename'],
+                    'size' => $result['size'],
+                    'created_at' => $result['created_at'],
+                    'type' => 'full_mysqldump',
+                ],
+            ]);
+        }
+
+        $facilityId = (int) $validated['facility_id'];
+        $result = app(FacilitySqlExportService::class)->export($facilityId, false);
+
+        if (! ($result['success'] ?? false)) {
+            return response()->json([
+                'message' => $result['message'] ?? 'Failed to create facility backup',
+            ], 500);
         }
 
         return response()->json([
-            'message' => 'Backup created successfully',
+            'message' => 'Facility backup created successfully',
             'data' => [
                 'filename' => $result['filename'],
+                'facility_id' => $facilityId,
                 'size' => $result['size'],
                 'created_at' => $result['created_at'],
+                'type' => 'facility',
             ],
         ]);
     }
 
     /**
-     * Get list of recent backups
+     * List backups for a facility (logical SQL) and optionally legacy full-database files.
      */
-    public function recentBackups(): JsonResponse
+    public function recentBackups(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        if (! $this->canManageDatabase($user)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (! $this->canManageFacilityBackup($user)) {
+            return response()->json(['message' => 'Unauthorized. Super admin access required.'], 403);
         }
 
+        $request->validate([
+            'facility_id' => 'required|integer|exists:facilities,id',
+            'include_full_database' => 'sometimes|boolean',
+        ]);
+
+        $facilityId = (int) $request->input('facility_id');
+        $backups = [];
+
         try {
-            $backupsDir = storage_path('app/backups');
-            $backups = [];
-
-            if (is_dir($backupsDir)) {
-                $files = glob($backupsDir.'/backup_*.sql');
-
+            $facilityDir = storage_path('app/backups/facilities/'.$facilityId);
+            if (is_dir($facilityDir)) {
+                $files = glob($facilityDir.'/*.sql') ?: [];
                 foreach ($files as $file) {
                     $filename = basename($file);
+                    if (! str_ends_with($filename, '.sql')) {
+                        continue;
+                    }
                     $backups[] = [
                         'filename' => $filename,
+                        'facility_id' => $facilityId,
                         'size' => $this->formatBytes(filesize($file)),
                         'created_at' => Carbon::createFromTimestamp(filemtime($file))->toIso8601String(),
-                        'is_automatic' => str_starts_with($filename, 'backup_auto_'),
+                        'is_automatic' => str_starts_with($filename, 'backup_auto_facility_'),
+                        'type' => 'facility',
                     ];
                 }
-
-                // Sort by creation date, newest first
-                usort($backups, function ($a, $b) {
-                    return strtotime($b['created_at']) - strtotime($a['created_at']);
-                });
             }
+
+            if ($request->boolean('include_full_database') && config('backup.enable_full_database_mysqldump', false)) {
+                $rootDir = storage_path('app/backups');
+                if (is_dir($rootDir)) {
+                    $legacy = glob($rootDir.'/backup_*.sql') ?: [];
+                    foreach ($legacy as $file) {
+                        if (str_contains($file, '/facilities/')) {
+                            continue;
+                        }
+                        $filename = basename($file);
+                        $backups[] = [
+                            'filename' => $filename,
+                            'facility_id' => null,
+                            'size' => $this->formatBytes(filesize($file)),
+                            'created_at' => Carbon::createFromTimestamp(filemtime($file))->toIso8601String(),
+                            'is_automatic' => str_starts_with($filename, 'backup_auto_'),
+                            'type' => 'full_mysqldump',
+                        ];
+                    }
+                }
+            }
+
+            usort($backups, function ($a, $b) {
+                return strtotime($b['created_at']) - strtotime($a['created_at']);
+            });
 
             return response()->json(['data' => $backups]);
         } catch (\Exception $e) {
@@ -148,25 +226,45 @@ class DatabaseManagementController extends Controller
     }
 
     /**
-     * Download a backup file
+     * Download a facility backup or legacy full-database backup.
      */
-    public function downloadBackup(Request $request, string $filename): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+    public function downloadBackup(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
     {
         $user = Auth::user();
 
-        if (! $this->canManageDatabase($user)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (! $this->canManageFacilityBackup($user)) {
+            return response()->json(['message' => 'Unauthorized. Super admin access required.'], 403);
+        }
+
+        $validated = $request->validate([
+            'filename' => 'required|string',
+            'facility_id' => 'nullable|integer|exists:facilities,id',
+            'full_database' => 'sometimes|boolean',
+        ]);
+
+        $filename = basename($validated['filename']);
+        if (! str_ends_with($filename, '.sql')) {
+            return response()->json(['message' => 'Invalid backup file'], 400);
         }
 
         try {
-            $backupPath = storage_path("app/backups/{$filename}");
-
-            // Security: backup_*.sql includes manual (backup_2026-...) and automatic (backup_auto_...)
-            if (! str_starts_with($filename, 'backup_') || ! str_ends_with($filename, '.sql')) {
-                return response()->json(['message' => 'Invalid backup file'], 400);
+            if ($request->boolean('full_database') && config('backup.enable_full_database_mysqldump', false)) {
+                if (! str_starts_with($filename, 'backup_')) {
+                    return response()->json(['message' => 'Invalid backup file'], 400);
+                }
+                $backupPath = storage_path('app/backups/'.$filename);
+            } else {
+                $facilityId = (int) ($validated['facility_id'] ?? 0);
+                if ($facilityId < 1) {
+                    return response()->json(['message' => 'facility_id is required for facility backups.'], 422);
+                }
+                if (! preg_match('/^backup_(auto_)?facility_\d+_/i', $filename)) {
+                    return response()->json(['message' => 'Invalid facility backup filename.'], 400);
+                }
+                $backupPath = storage_path('app/backups/facilities/'.$facilityId.'/'.$filename);
             }
 
-            if (!file_exists($backupPath)) {
+            if (! file_exists($backupPath)) {
                 return response()->json(['message' => 'Backup file not found'], 404);
             }
 
@@ -181,78 +279,138 @@ class DatabaseManagementController extends Controller
     }
 
     /**
-     * Restore from a backup
+     * Restore from a facility logical backup or legacy full mysqldump (when enabled).
      */
     public function restoreBackup(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        if (! $this->canManageDatabase($user)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (! $this->canManageFacilityBackup($user)) {
+            return response()->json(['message' => 'Unauthorized. Super admin access required.'], 403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'filename' => 'required|string',
+            'facility_id' => 'required_unless:full_database,true|nullable|integer|exists:facilities,id',
+            'full_database' => 'sometimes|boolean',
+            'confirmation' => 'required|string|in:DELETE',
         ]);
 
-        try {
-            $filename = $request->input('filename');
-            $backupPath = storage_path("app/backups/{$filename}");
+        $filename = basename($validated['filename']);
+        if (! str_ends_with($filename, '.sql')) {
+            return response()->json(['message' => 'Invalid backup file'], 400);
+        }
 
-            if (!file_exists($backupPath)) {
+        try {
+            $fullDatabase = filter_var($validated['full_database'] ?? false, FILTER_VALIDATE_BOOL);
+
+            if ($fullDatabase) {
+                if (! config('backup.enable_full_database_mysqldump', false)) {
+                    return response()->json([
+                        'message' => 'Full-database restore is disabled.',
+                    ], 403);
+                }
+
+                if (! str_starts_with($filename, 'backup_')) {
+                    return response()->json(['message' => 'Invalid backup file'], 400);
+                }
+
+                $backupPath = storage_path('app/backups/'.$filename);
+
+                if (! file_exists($backupPath)) {
+                    return response()->json(['message' => 'Backup file not found'], 404);
+                }
+
+                return $this->restoreFullMysqldumpFile($backupPath);
+            }
+
+            $facilityId = (int) $validated['facility_id'];
+            if (! preg_match('/^backup_(auto_)?facility_\d+_/i', $filename)) {
+                return response()->json(['message' => 'Invalid facility backup filename.'], 400);
+            }
+
+            $backupPath = storage_path('app/backups/facilities/'.$facilityId.'/'.$filename);
+
+            if (! file_exists($backupPath)) {
                 return response()->json(['message' => 'Backup file not found'], 404);
             }
 
-            // Get database connection details
             $connection = config('database.default');
-            $config = config("database.connections.{$connection}");
+            $driver = config("database.connections.{$connection}.driver");
 
-            if (in_array($config['driver'], ['mysql', 'mariadb'], true)) {
-                set_time_limit(0);
+            if (! in_array($driver, ['mysql', 'mariadb'], true)) {
+                return response()->json([
+                    'message' => 'Facility backup restore requires MySQL/MariaDB.',
+                ], 400);
+            }
 
-                $prepared = $this->prepareSqlDumpForRestore($backupPath);
-                if (! empty($prepared['error'])) {
-                    return response()->json([
-                        'message' => $prepared['error'],
-                    ], 422);
-                }
-                try {
-                    $restore = $this->runMysqlRestoreFromSqlFile($prepared['path'], $config);
-                } finally {
-                    if ($prepared['temp'] && is_file($prepared['path'])) {
-                        @unlink($prepared['path']);
-                    }
-                }
+            set_time_limit(0);
 
-                if (! $restore['ok']) {
-                    Log::warning('Database restore failed', [
-                        'detail' => $restore['detail'] ?? null,
-                    ]);
+            $import = app(FacilitySqlImportService::class)->importFromFile($backupPath, $facilityId);
 
-                    return response()->json([
-                        'message' => 'Failed to restore backup',
-                        'detail' => $restore['detail'] ?? 'Unknown error (check server logs).',
-                    ], 500);
-                }
-            } elseif ($config['driver'] === 'sqlite') {
-                // Handle both absolute paths and relative paths
-                $targetPath = $config['database'];
-                if (!str_starts_with($targetPath, '/')) {
-                    $targetPath = database_path($targetPath);
-                }
-                copy($backupPath, $targetPath);
-            } else {
-                return response()->json(['message' => 'Unsupported database driver'], 400);
+            if (! $import['ok']) {
+                return response()->json([
+                    'message' => 'Failed to restore facility backup',
+                    'detail' => $import['detail'] ?? null,
+                ], 500);
             }
 
             return response()->json([
-                'message' => 'Backup restored successfully',
+                'message' => 'Facility backup restored successfully',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to restore backup: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function restoreFullMysqldumpFile(string $backupPath): JsonResponse
+    {
+        $connection = config('database.default');
+        $config = config("database.connections.{$connection}");
+
+        if (in_array($config['driver'], ['mysql', 'mariadb'], true)) {
+            set_time_limit(0);
+
+            $prepared = $this->prepareSqlDumpForRestore($backupPath);
+            if (! empty($prepared['error'])) {
+                return response()->json([
+                    'message' => $prepared['error'],
+                ], 422);
+            }
+            $restore = ['ok' => false];
+            try {
+                $restore = $this->runMysqlRestoreFromSqlFile($prepared['path'], $config);
+            } finally {
+                if (! empty($prepared['temp']) && is_file($prepared['path'])) {
+                    @unlink($prepared['path']);
+                }
+            }
+
+            if (! $restore['ok']) {
+                Log::warning('Database restore failed', [
+                    'detail' => $restore['detail'] ?? null,
+                ]);
+
+                return response()->json([
+                    'message' => 'Failed to restore backup',
+                    'detail' => $restore['detail'] ?? 'Unknown error (check server logs).',
+                ], 500);
+            }
+        } elseif ($config['driver'] === 'sqlite') {
+            $targetPath = $config['database'];
+            if (! str_starts_with($targetPath, '/')) {
+                $targetPath = database_path($targetPath);
+            }
+            copy($backupPath, $targetPath);
+        } else {
+            return response()->json(['message' => 'Unsupported database driver'], 400);
+        }
+
+        return response()->json([
+            'message' => 'Backup restored successfully',
+        ]);
     }
 
     /**
@@ -467,11 +625,20 @@ class DatabaseManagementController extends Controller
     private function getBackupCount(): int
     {
         try {
-            $backupsDir = storage_path('app/backups');
-            if (is_dir($backupsDir)) {
-                return count(glob($backupsDir . '/backup_*.sql'));
+            $n = 0;
+            $facilitiesRoot = storage_path('app/backups/facilities');
+            if (is_dir($facilitiesRoot)) {
+                foreach (glob($facilitiesRoot.'/*/*.sql') ?: [] as $f) {
+                    if (is_file($f)) {
+                        $n++;
+                    }
+                }
             }
-            return 0;
+            if (config('backup.enable_full_database_mysqldump', false) && is_dir(storage_path('app/backups'))) {
+                $n += count(glob(storage_path('app/backups/backup_*.sql')) ?: []);
+            }
+
+            return $n;
         } catch (\Exception $e) {
             return 0;
         }
