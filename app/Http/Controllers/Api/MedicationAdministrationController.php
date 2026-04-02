@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MedicationAdministration;
 use App\Models\Medication;
+use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class MedicationAdministrationController extends BaseApiController
@@ -443,6 +446,130 @@ class MedicationAdministrationController extends BaseApiController
             'data' => $created,
             'count' => count($created),
         ], 201);
+    }
+
+    /**
+     * Permanently delete medication administration records for one or more residents (e.g. test data).
+     * Restricted to facility/branch admins or users with delete_medications; caregivers cannot use this.
+     */
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $isSuperAdmin = $user && ($user->role === 'super_admin' || $user->hasRole('super_admin'));
+        $isAdmin = $user && in_array($user->role, ['administrator', 'admin'], true);
+
+        if ($this->isCaregiver($user)) {
+            return response()->json([
+                'message' => 'Bulk delete is not available for caregiver accounts.',
+            ], 403);
+        }
+
+        if (!$isSuperAdmin && !$isAdmin) {
+            if ($error = $this->requirePermission('delete_medications')) {
+                return $error;
+            }
+        }
+
+        $validated = $request->validate([
+            'resident_ids' => 'required|array|min:1|max:100',
+            'resident_ids.*' => 'integer|exists:residents,id',
+            'date_from' => 'nullable|date_format:Y-m-d',
+            'date_to' => 'nullable|date_format:Y-m-d',
+            'confirmation' => 'required|string|in:DELETE',
+        ]);
+
+        $residentIds = array_values(array_unique(array_map('intval', $validated['resident_ids'])));
+
+        $allowedIds = $this->residentIdsAllowedForBulkDelete($request, $residentIds);
+        $rejected = array_values(array_diff($residentIds, $allowedIds));
+
+        if ($rejected !== []) {
+            return response()->json([
+                'message' => 'Some residents are not in your facility or branch, or could not be found.',
+                'invalid_resident_ids' => $rejected,
+            ], 422);
+        }
+
+        $dateFrom = $validated['date_from'] ?? null;
+        $dateTo = $validated['date_to'] ?? null;
+
+        if ($dateFrom && $dateTo) {
+            $from = Carbon::createFromFormat('Y-m-d', $dateFrom, config('app.timezone'))->startOfDay();
+            $to = Carbon::createFromFormat('Y-m-d', $dateTo, config('app.timezone'))->endOfDay();
+            if ($from->gt($to)) {
+                return response()->json(['message' => 'date_from must be on or before date_to.'], 422);
+            }
+        }
+
+        $startDate = $dateFrom
+            ? Carbon::createFromFormat('Y-m-d', $dateFrom, config('app.timezone'))->startOfDay()
+            : null;
+        $endDate = $dateTo
+            ? Carbon::createFromFormat('Y-m-d', $dateTo, config('app.timezone'))->endOfDay()
+            : null;
+
+        $query = MedicationAdministration::query()->whereIn('resident_id', $allowedIds);
+
+        if ($startDate) {
+            $query->where('administered_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('administered_at', '<=', $endDate);
+        }
+
+        $deletedCount = 0;
+
+        DB::transaction(function () use ($query, &$deletedCount, $user, $allowedIds, $dateFrom, $dateTo) {
+            $toRemove = (clone $query)->get(['id', 'document_path']);
+
+            foreach ($toRemove as $row) {
+                if ($row->document_path) {
+                    Storage::disk('public')->delete($row->document_path);
+                }
+            }
+
+            $deletedCount = (clone $query)->delete();
+
+            Log::info('Medication administrations bulk-deleted', [
+                'user_id' => $user->id,
+                'resident_ids' => $allowedIds,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'deleted_count' => $deletedCount,
+            ]);
+        });
+
+        return response()->json([
+            'message' => "Deleted {$deletedCount} medication administration record(s).",
+            'deleted_count' => $deletedCount,
+            'resident_ids' => $allowedIds,
+        ]);
+    }
+
+    /**
+     * @param  array<int>  $residentIds
+     * @return array<int>
+     */
+    private function residentIdsAllowedForBulkDelete(Request $request, array $residentIds): array
+    {
+        $user = $request->user();
+        if (!$user) {
+            return [];
+        }
+
+        $q = Resident::query()->whereIn('id', $residentIds);
+
+        if ($user->facility_id) {
+            $q->whereHas('branch', function ($b) use ($user) {
+                $b->where('facility_id', $user->facility_id);
+            });
+        }
+
+        if ($user->isBranchAdmin() && $user->assigned_branch_id) {
+            $q->where('branch_id', $user->assigned_branch_id);
+        }
+
+        return $q->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 
     public function update(Request $request, $id): JsonResponse
