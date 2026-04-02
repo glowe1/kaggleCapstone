@@ -134,9 +134,15 @@ class FacilitySqlExportService
             ['table' => 'payment_notification_preferences', 'query' => fn (FacilityTenantScope $s) => DB::table('payment_notification_preferences')->where('facility_id', $s->facilityId)],
             ['table' => 'email_templates', 'query' => fn (FacilityTenantScope $s) => DB::table('email_templates')->where('facility_id', $s->facilityId)],
             ['table' => 'email_notification_configs', 'query' => fn (FacilityTenantScope $s) => DB::table('email_notification_configs')->where('facility_id', $s->facilityId)],
-            ['table' => 'pharmacy_templates', 'query' => fn (FacilityTenantScope $s) => DB::table('pharmacy_templates')->where('facility_id', $s->facilityId)],
-            ['table' => 'fire_drill_templates', 'query' => fn (FacilityTenantScope $s) => DB::table('fire_drill_templates')->where('facility_id', $s->facilityId)],
-            ['table' => 'grocery_item_templates', 'query' => fn (FacilityTenantScope $s) => DB::table('grocery_item_templates')->where('facility_id', $s->facilityId)],
+            ['table' => 'pharmacy_templates', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches()
+                ? DB::table('pharmacy_templates')->whereIn('branch_id', $s->branchIds)
+                : null],
+            ['table' => 'fire_drill_templates', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches()
+                ? DB::table('fire_drill_templates')->whereIn('branch_id', $s->branchIds)
+                : null],
+            ['table' => 'grocery_item_templates', 'query' => fn (FacilityTenantScope $s) => $s->hasBranches()
+                ? DB::table('grocery_item_templates')->whereIn('branch_id', $s->branchIds)
+                : null],
             ['table' => 'users', 'query' => fn (FacilityTenantScope $s) => DB::table('users')->where(function ($q) use ($s) {
                 $q->where('facility_id', $s->facilityId);
                 if ($s->branchIds !== []) {
