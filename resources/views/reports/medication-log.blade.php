@@ -2,158 +2,371 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+@php
+    $primary = $primaryColor ?? '#1E3A5F';
+    $secondary = $secondaryColor ?? '#86EFAC';
+    $accent = $accentColor ?? '#FFFFFF';
+    $tint = $headerTint ?? '#f4f7fb';
+    $theadBg = $tableHeaderBg ?? '#f1f5f9';
+    $infoHead = $infoHeaderBg ?? '#f8fafc';
+    $legBg = $legendBg ?? '#f8fafc';
+    $bBorder = $brandBorder ?? '#cbd5e1';
+    $gBorder = $gridBorder ?? '#cbd5e1';
+    $labelMuted = '#475569';
+    $textBody = '#334155';
+@endphp
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #111; margin: 12px; }
-        h1 { font-size: 16px; margin: 0 0 4px 0; }
-        h2 { font-size: 11px; margin: 12px 0 6px 0; border-bottom: 1px solid #333; }
-        .muted { color: #444; font-size: 8px; }
-        .header-block { margin-bottom: 10px; }
-        table.meta { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        table.meta td { vertical-align: top; padding: 2px 6px; }
-        table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 6px; }
-        table.grid th, table.grid td { border: 1px solid #999; padding: 2px; text-align: center; font-size: 6px; word-wrap: break-word; }
-        table.grid th.time-col { width: 52px; text-align: left; font-size: 7px; }
-        .med-title { font-weight: bold; font-size: 10px; margin-top: 8px; }
-        .med-detail { font-size: 7px; margin: 2px 0; line-height: 1.3; }
-        .legend { font-size: 7px; margin: 10px 0; line-height: 1.35; }
-        .prn-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-        .prn-table th, .prn-table td { border: 1px solid #999; padding: 3px; font-size: 7px; }
-        .footer { margin-top: 12px; font-size: 7px; color: #555; }
-        .page-break { page-break-after: always; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 9px;
+            color: {{ $textBody }};
+            margin: 0;
+            padding: 14px 16px 20px;
+            background: #ffffff;
+        }
+        .identity-card {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid {{ $bBorder }};
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .identity-card td {
+            vertical-align: middle;
+            padding: 12px 14px;
+        }
+        .logo-cell { width: 22%; text-align: center; }
+        .center-cell { width: 56%; }
+        .photo-cell { width: 22%; text-align: center; }
+        .facility-logo {
+            max-height: 56px;
+            max-width: 150px;
+            height: auto;
+            width: auto;
+        }
+        .resident-photo {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid {{ $secondary }};
+        }
+        .avatar-fallback {
+            display: inline-block;
+            width: 72px;
+            height: 72px;
+            line-height: 72px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: {{ $primary }};
+            background: {{ $theadBg }};
+            border-radius: 8px;
+            border: 2px solid {{ $secondary }};
+        }
+        .doc-title {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            color: {{ $primary }};
+            margin: 0 0 4px 0;
+        }
+        .facility-line {
+            font-size: 10px;
+            font-weight: bold;
+            color: {{ $primary }};
+            margin: 0 0 2px 0;
+        }
+        .meta-line {
+            font-size: 8px;
+            color: {{ $labelMuted }};
+            margin: 0 0 2px 0;
+            line-height: 1.35;
+        }
+        .period-pill {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 4px 10px;
+            font-size: 8px;
+            font-weight: bold;
+            color: {{ $accent }};
+            border-radius: 4px;
+            border: 1px solid {{ $secondary }};
+            background: {{ $primary }};
+        }
+        .info-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            border: 1px solid {{ $bBorder }};
+            border-radius: 4px;
+        }
+        .info-grid td {
+            padding: 8px 10px;
+            vertical-align: top;
+            font-size: 8px;
+            line-height: 1.45;
+            border-bottom: 1px solid {{ $gBorder }};
+        }
+        .info-grid tr:last-child td { border-bottom: none; }
+        .info-grid .label {
+            font-weight: bold;
+            color: {{ $primary }};
+            width: 88px;
+        }
+        .info-grid .clinical {
+            font-size: 7.5px;
+            color: {{ $textBody }};
+        }
+        .section-title {
+            font-size: 11px;
+            margin: 14px 0 8px 0;
+            padding-bottom: 4px;
+            color: {{ $primary }};
+            border-bottom: 2px solid {{ $secondary }};
+        }
+        table.grid {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 10px;
+            font-size: 6.5px;
+        }
+        table.grid thead th {
+            background: {{ $theadBg }};
+            color: {{ $primary }};
+            font-weight: bold;
+        }
+        table.grid th, table.grid td {
+            border: 1px solid {{ $gBorder }};
+            padding: 3px 2px;
+            text-align: center;
+            word-wrap: break-word;
+        }
+        table.grid th.time-col {
+            width: 52px;
+            text-align: left;
+            font-size: 7px;
+        }
+        .med-title {
+            font-weight: bold;
+            font-size: 10px;
+            margin-top: 10px;
+            color: {{ $primary }};
+        }
+        .med-detail {
+            font-size: 7px;
+            margin: 2px 0;
+            line-height: 1.35;
+            color: {{ $labelMuted }};
+        }
+        .legend {
+            font-size: 7px;
+            margin: 12px 0;
+            line-height: 1.45;
+            padding: 8px 10px;
+            background: {{ $legBg }};
+            border: 1px solid {{ $bBorder }};
+            border-left: 3px solid {{ $secondary }};
+            border-radius: 4px;
+            color: {{ $labelMuted }};
+        }
+        .prn-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+        }
+        .prn-table thead th {
+            background: {{ $theadBg }};
+            color: {{ $primary }};
+            font-size: 7px;
+        }
+        .prn-table th, .prn-table td {
+            border: 1px solid {{ $gBorder }};
+            padding: 4px;
+            font-size: 7px;
+        }
+        .footer {
+            margin-top: 14px;
+            padding-top: 8px;
+            font-size: 7px;
+            color: {{ $labelMuted }};
+            border-top: 1px solid {{ $bBorder }};
+        }
+        .muted { color: #94a3b8; font-size: 7px; }
     </style>
 </head>
 <body>
-    <div class="header-block">
-        <h1>MEDICATION LOG</h1>
-        <div class="muted">{{ $facilityName }} @if(!empty($branchName)) — {{ $branchName }} @endif</div>
-        @if(!empty($facilityAddress))
-            <div class="muted">{{ $facilityAddress }}</div>
-        @endif
-        @if(!empty($facilityPhone))
-            <div class="muted">Phone: {{ $facilityPhone }}</div>
-        @endif
-        <div class="muted" style="margin-top:4px;">{{ $rangeLabel }}</div>
+
+<table class="identity-card" style="background: {{ $tint }}; border-left: 4px solid {{ $primary }};">
+    <tr>
+        <td class="logo-cell">
+            @if(!empty($facilityLogoDataUri))
+                <img class="facility-logo" src="{{ $facilityLogoDataUri }}" alt="Facility logo"/>
+            @else
+                <span style="font-size:9px;font-weight:bold;color:{{ $primary }};">{{ \Illuminate\Support\Str::limit($facilityName, 24) }}</span>
+            @endif
+        </td>
+        <td class="center-cell">
+            <p class="doc-title">MEDICATION ADMINISTRATION LOG</p>
+            <p class="facility-line">{{ $facilityName }}@if(!empty($branchName)) — {{ $branchName }}@endif</p>
+            @if(!empty($facilityAddress))
+                <p class="meta-line">{{ $facilityAddress }}</p>
+            @endif
+            @if(!empty($facilityPhone))
+                <p class="meta-line">Phone: {{ $facilityPhone }}</p>
+            @endif
+            <span class="period-pill">Report: {{ $rangeLabel }}</span>
+        </td>
+        <td class="photo-cell">
+            @if(!empty($residentPhotoDataUri))
+                <img class="resident-photo" src="{{ $residentPhotoDataUri }}" alt="Resident photo"/>
+            @else
+                <span class="avatar-fallback">{{ $residentInitials ?? '?' }}</span>
+            @endif
+            <div style="margin-top:6px;font-size:8px;font-weight:bold;color:{{ $primary }};">{{ $residentName }}</div>
+            @if(!empty($residentRoom))
+                <div class="meta-line" style="margin-top:2px;">Room {{ $residentRoom }}</div>
+            @endif
+        </td>
+    </tr>
+</table>
+
+<table class="info-grid">
+    <tr>
+        <td colspan="2" style="background: {{ $infoHead }}; border-bottom: 1px solid {{ $gBorder }};">
+            <span style="font-size:9px;font-weight:bold;color:{{ $primary }};">Resident &amp; clinical summary</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="label">DOB</td>
+        <td>{{ $residentDob ?: '—' }}</td>
+    </tr>
+    <tr>
+        <td class="label">Physician</td>
+        <td>{{ $physician ?: '—' }}</td>
+    </tr>
+    <tr>
+        <td class="label">Diagnosis</td>
+        <td class="clinical">{{ $diagnosis }}</td>
+    </tr>
+    <tr>
+        <td class="label">Allergies</td>
+        <td>{{ $allergies }}</td>
+    </tr>
+    <tr>
+        <td class="label">Diet</td>
+        <td>{{ $diet }}</td>
+    </tr>
+</table>
+
+<div class="section-title">Scheduled medications</div>
+@forelse($scheduledSections as $section)
+    <div class="med-title">{{ $section['title'] }}</div>
+    <div class="med-detail">
+        @if(!empty($section['strength'])){{ $section['strength'] }}@endif
+        @if(!empty($section['form_line'])) &nbsp;|&nbsp; {{ $section['form_line'] }} @endif
     </div>
+    <div class="med-detail">
+        @if(!empty($section['start_date'])){{ $section['start_date'] }}@endif
+        @if(!empty($section['quantity'])) &nbsp;|&nbsp; {{ $section['quantity'] }} @endif
+    </div>
+    @if(!empty($section['instructions']))
+        <div class="med-detail"><strong>Frequency / instructions:</strong> {{ $section['instructions'] }}
+            @if(!empty($section['instruction_display']) && $section['instruction_display'] !== $section['instructions'])
+                ({{ $section['instruction_display'] }})
+            @endif
+        </div>
+    @endif
+    @if(!empty($section['sig']))
+        <div class="med-detail"><strong>Notes:</strong> {{ $section['sig'] }}</div>
+    @endif
+    @if(!empty($section['diagnosis']))
+        <div class="med-detail"><strong>Diagnosis (medication):</strong> {{ $section['diagnosis'] }}</div>
+    @endif
 
-    <table class="meta">
+    <table class="grid">
+        <thead>
         <tr>
-            <td style="width:50%;">
-                <strong>Resident:</strong> {{ $residentName }}<br/>
-                <strong>DOB:</strong> {{ $residentDob ?: '—' }}<br/>
-                <strong>Physician:</strong> {{ $physician ?: '______________________________' }}
-            </td>
-            <td style="width:50%;">
-                <strong>Diagnosis:</strong> {{ $diagnosis }}<br/>
-                <strong>Allergies:</strong> {{ $allergies }}<br/>
-                <strong>Diet:</strong> {{ $diet }}
-            </td>
+            <th class="time-col">Time</th>
+            @foreach($days as $d)
+                <th>{{ $d['short'] ?? $d['dom'] }}</th>
+            @endforeach
         </tr>
+        </thead>
+        <tbody>
+        @foreach($section['rows'] as $row)
+            <tr>
+                <td class="time-col">{{ $row['time_label'] }}</td>
+                @foreach($days as $d)
+                    @php $k = $d['date']; @endphp
+                    <td>{{ $row['cells'][$k] ?? '—' }}</td>
+                @endforeach
+            </tr>
+        @endforeach
+        </tbody>
     </table>
+@empty
+    <p class="muted">No scheduled medications with administration times in this period.</p>
+@endforelse
 
-    <h2>Scheduled medications</h2>
-    @forelse($scheduledSections as $section)
-        <div class="med-title">{{ $section['title'] }}</div>
-        <div class="med-detail">
-            @if(!empty($section['strength'])){{ $section['strength'] }}@endif
-            @if(!empty($section['form_line'])) &nbsp;|&nbsp; {{ $section['form_line'] }} @endif
-        </div>
-        <div class="med-detail">
-            @if(!empty($section['start_date'])){{ $section['start_date'] }}@endif
-            @if(!empty($section['quantity'])) &nbsp;|&nbsp; {{ $section['quantity'] }} @endif
-        </div>
-        @if(!empty($section['instructions']))
-            <div class="med-detail"><strong>Frequency / instructions:</strong> {{ $section['instructions'] }}
-                @if(!empty($section['instruction_display']) && $section['instruction_display'] !== $section['instructions'])
-                    ({{ $section['instruction_display'] }})
-                @endif
-            </div>
-        @endif
-        @if(!empty($section['sig']))
-            <div class="med-detail"><strong>Notes:</strong> {{ $section['sig'] }}</div>
-        @endif
-        @if(!empty($section['diagnosis']))
-            <div class="med-detail"><strong>Diagnosis (medication):</strong> {{ $section['diagnosis'] }}</div>
-        @endif
+<div class="section-title">PRN medications</div>
+@forelse($prnSections as $prn)
+    <div class="med-title">{{ $prn['title'] }}</div>
+    <div class="med-detail">
+        @if(!empty($prn['strength'])) Strength: {{ $prn['strength'] }} @endif
+        @if(!empty($prn['quantity'])) &nbsp;|&nbsp; Qty. {{ $prn['quantity'] }} @endif
+    </div>
+    @if(!empty($prn['instructions']))
+        <div class="med-detail">{{ $prn['instructions'] }}</div>
+    @endif
+    @if(!empty($prn['sig']))
+        <div class="med-detail">{{ $prn['sig'] }}</div>
+    @endif
 
-        <table class="grid">
+    @if(count($prn['rows']) > 0)
+        <table class="prn-table">
             <thead>
             <tr>
-                <th class="time-col">Time</th>
-                @foreach($days as $d)
-                    <th>{{ $d['short'] ?? $d['dom'] }}</th>
-                @endforeach
+                <th>Date</th>
+                <th>Time</th>
+                <th>Initials / code</th>
+                <th>Notes</th>
             </tr>
             </thead>
             <tbody>
-            @foreach($section['rows'] as $row)
+            @foreach($prn['rows'] as $r)
                 <tr>
-                    <td class="time-col">{{ $row['time_label'] }}</td>
-                    @foreach($days as $d)
-                        @php $k = $d['date']; @endphp
-                        <td>{{ $row['cells'][$k] ?? '—' }}</td>
-                    @endforeach
+                    <td>{{ $r['date'] }}</td>
+                    <td>{{ $r['time'] }}</td>
+                    <td>{{ $r['initials'] }}</td>
+                    <td>{{ $r['notes'] ?? '' }}</td>
                 </tr>
             @endforeach
             </tbody>
         </table>
-    @empty
-        <p class="muted">No scheduled medications with administration times in this period.</p>
-    @endforelse
+    @else
+        <p class="muted">No administrations recorded in this date range.</p>
+    @endif
+@empty
+    <p class="muted">No PRN medications.</p>
+@endforelse
 
-    <h2>PRN medications</h2>
-    @forelse($prnSections as $prn)
-        <div class="med-title">{{ $prn['title'] }}</div>
-        <div class="med-detail">
-            @if(!empty($prn['strength'])) Strength: {{ $prn['strength'] }} @endif
-            @if(!empty($prn['quantity'])) &nbsp;|&nbsp; Qty. {{ $prn['quantity'] }} @endif
-        </div>
-        @if(!empty($prn['instructions']))
-            <div class="med-detail">{{ $prn['instructions'] }}</div>
-        @endif
-        @if(!empty($prn['sig']))
-            <div class="med-detail">{{ $prn['sig'] }}</div>
-        @endif
+<div class="legend">
+    <strong style="color: {{ $primary }};">Legend (status codes):</strong>
+    Initials = completed;
+    M = missed;
+    R = refused;
+    H+ = hospital admission;
+    Rx = pharmacy administration confirm;
+    — = no matching administration for this scheduled time.
+</div>
 
-        @if(count($prn['rows']) > 0)
-            <table class="prn-table">
-                <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Initials / code</th>
-                    <th>Notes</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($prn['rows'] as $r)
-                    <tr>
-                        <td>{{ $r['date'] }}</td>
-                        <td>{{ $r['time'] }}</td>
-                        <td>{{ $r['initials'] }}</td>
-                        <td>{{ $r['notes'] ?? '' }}</td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-        @else
-            <p class="muted">No administrations recorded in this date range.</p>
-        @endif
-    @empty
-        <p class="muted">No PRN medications.</p>
-    @endforelse
-
-    <div class="legend">
-        <strong>Legend (status codes):</strong>
-        Initials = completed;
-        M = missed;
-        R = refused;
-        H+ = hospital admission;
-        Rx = pharmacy administration confirm;
-        — = no matching administration for this scheduled time.
-    </div>
-
-    <div class="footer">
-        Generated by Evergreen. Exported on {{ $exportedAt }}. This report is confidential; discard if not the intended recipient.
-    </div>
+<div class="footer">
+    Generated by Evergreen. Exported on {{ $exportedAt }}. This report is confidential; discard if not the intended recipient.
+</div>
 </body>
 </html>

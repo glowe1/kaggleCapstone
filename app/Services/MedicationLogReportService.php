@@ -8,6 +8,8 @@ use App\Models\Resident;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class MedicationLogReportService
 {
@@ -59,6 +61,7 @@ class MedicationLogReportService
         foreach ($medications as $medication) {
             if ($this->isPrnMedication($medication)) {
                 $prnSections[] = $this->buildPrnSection($medication, $byMedication->get($medication->id, collect()));
+
                 continue;
             }
 
@@ -71,16 +74,44 @@ class MedicationLogReportService
         $facility = $resident->branch?->facility;
         $branch = $resident->branch;
 
+        $residentName = trim(implode(' ', array_filter([
+            $resident->first_name,
+            $resident->middle_names,
+            $resident->last_name,
+        ]))) ?: ($resident->name ?? 'Resident');
+
+        // Match Facility::getBrandingAttribute() defaults when colors are unset.
+        $primaryColor = $this->sanitizeHexColor($facility?->primary_color, '#1E3A5F');
+        $secondaryColor = $this->sanitizeHexColor($facility?->secondary_color, '#86EFAC');
+        $accentColor = $this->sanitizeHexColor($facility?->accent_color, '#FFFFFF');
+
+        $headerTint = $this->nearWhiteHex($secondaryColor)
+            ? $this->lightenHex($primaryColor, 0.94)
+            : $this->lightenHex($secondaryColor, 0.91);
+
+        $tableHeaderBg = $this->nearWhiteHex($secondaryColor)
+            ? $this->lightenHex($primaryColor, 0.92)
+            : $this->lightenHex($secondaryColor, 0.86);
+
+        $infoHeaderBg = $this->nearWhiteHex($secondaryColor)
+            ? $this->lightenHex($primaryColor, 0.93)
+            : $this->lightenHex($secondaryColor, 0.84);
+
+        $legendBg = $this->nearWhiteHex($secondaryColor)
+            ? $this->lightenHex($primaryColor, 0.96)
+            : $this->lightenHex($secondaryColor, 0.94);
+
+        $brandBorder = $this->lightenHex($primaryColor, 0.78);
+        $gridBorder = $this->lightenHex($primaryColor, 0.72);
+
         return [
             'facilityName' => $facility?->name ?? $branch?->name ?? 'Facility',
             'facilityAddress' => $facility?->address ?? $branch?->address,
             'facilityPhone' => $facility?->phone ?? $branch?->phone,
             'branchName' => $branch?->name,
-            'residentName' => trim(implode(' ', array_filter([
-                $resident->first_name,
-                $resident->middle_names,
-                $resident->last_name,
-            ]))) ?: ($resident->name ?? 'Resident'),
+            'residentName' => $residentName,
+            'residentInitials' => $this->initialsFromName($residentName),
+            'residentRoom' => $resident->room_number ?: $resident->room,
             'residentDob' => $resident->date_of_birth
                 ? $resident->date_of_birth->format('F j, Y')
                 : '',
@@ -93,7 +124,134 @@ class MedicationLogReportService
             'days' => $days,
             'scheduledSections' => $scheduledSections,
             'prnSections' => array_values(array_filter($prnSections)),
+            'facilityLogoDataUri' => $this->imageToDataUri($facility?->logo),
+            'residentPhotoDataUri' => $this->imageToDataUri($resident->profile_image),
+            'primaryColor' => $primaryColor,
+            'secondaryColor' => $secondaryColor,
+            'accentColor' => $accentColor,
+            'headerTint' => $headerTint,
+            'tableHeaderBg' => $tableHeaderBg,
+            'infoHeaderBg' => $infoHeaderBg,
+            'legendBg' => $legendBg,
+            'brandBorder' => $brandBorder,
+            'gridBorder' => $gridBorder,
         ];
+    }
+
+    /**
+     * Resolve a storage path or URL to a data URI for DomPDF (reliable offline rendering).
+     */
+    private function imageToDataUri(?string $raw): ?string
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+        $raw = trim($raw);
+
+        if (! filter_var($raw, FILTER_VALIDATE_URL)) {
+            if (Storage::disk('public')->exists($raw)) {
+                return $this->filePathToDataUri(Storage::disk('public')->path($raw));
+            }
+
+            return null;
+        }
+
+        $path = parse_url($raw, PHP_URL_PATH) ?? '';
+        if (str_contains($path, '/storage/')) {
+            $relative = ltrim(substr($path, strpos($path, '/storage/') + strlen('/storage/')), '/');
+            if ($relative !== '' && Storage::disk('public')->exists($relative)) {
+                return $this->filePathToDataUri(Storage::disk('public')->path($relative));
+            }
+        }
+
+        try {
+            $response = Http::timeout(8)->get($raw);
+            if (! $response->successful()) {
+                return null;
+            }
+            $mime = $response->header('Content-Type') ?? 'image/jpeg';
+            if (! str_starts_with($mime, 'image/')) {
+                return null;
+            }
+
+            return 'data:'.$mime.';base64,'.base64_encode($response->body());
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function filePathToDataUri(string $absolutePath): ?string
+    {
+        if (! is_readable($absolutePath)) {
+            return null;
+        }
+        $mime = @mime_content_type($absolutePath) ?: 'image/png';
+        if (! str_starts_with($mime, 'image/')) {
+            return null;
+        }
+        $data = @file_get_contents($absolutePath);
+        if ($data === false) {
+            return null;
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode($data);
+    }
+
+    private function sanitizeHexColor(?string $color, string $fallback): string
+    {
+        $c = is_string($color) ? trim($color) : '';
+        if (preg_match('/^#[0-9A-Fa-f]{6}$/', $c)) {
+            return $c;
+        }
+
+        return $fallback;
+    }
+
+    private function lightenHex(string $hex, float $towardWhite): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) !== 6) {
+            return '#f4f7fb';
+        }
+        $towardWhite = max(0.0, min(1.0, $towardWhite));
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $r = (int) round($r + (255 - $r) * $towardWhite);
+        $g = (int) round($g + (255 - $g) * $towardWhite);
+        $b = (int) round($b + (255 - $b) * $towardWhite);
+
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    /**
+     * True when hex is white or near-white (e.g. accent #FFFFFF), so we fall back to primary tints.
+     */
+    private function nearWhiteHex(string $hex): bool
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) !== 6) {
+            return true;
+        }
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        return $r >= 245 && $g >= 245 && $b >= 245;
+    }
+
+    private function initialsFromName(string $name): string
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return '?';
+        }
+        $parts = preg_split('/\s+/', $name) ?: [];
+        if (count($parts) >= 2) {
+            return strtoupper(mb_substr($parts[0], 0, 1).mb_substr($parts[count($parts) - 1], 0, 1));
+        }
+
+        return strtoupper(mb_substr($name, 0, 2));
     }
 
     private function isPrnMedication(Medication $medication): bool
