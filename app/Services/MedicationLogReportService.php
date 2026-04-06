@@ -290,14 +290,14 @@ class MedicationLogReportService
                 $dateKey = $day['date'];
                 $dayCarbon = Carbon::parse($dateKey, config('app.timezone'))->startOfDay();
                 if (! $this->isMedicationActiveOnDate($medication, $dayCarbon)) {
-                    $cells[$dateKey] = '—';
+                    $cells[$dateKey] = ['text' => '—', 'tone' => 'inactive'];
 
                     continue;
                 }
 
                 $slotTime = $this->combineDateAndTime($dayCarbon, $slot['time_raw']);
                 if (! $slotTime) {
-                    $cells[$dateKey] = '—';
+                    $cells[$dateKey] = ['text' => '—', 'tone' => 'inactive'];
 
                     continue;
                 }
@@ -344,10 +344,12 @@ class MedicationLogReportService
         $rows = [];
 
         foreach ($sorted as $admin) {
+            $display = $this->cellDisplayWithTone($admin);
             $rows[] = [
                 'date' => $admin->administered_at->timezone(config('app.timezone'))->format('M j, Y'),
                 'time' => $admin->administered_at->timezone(config('app.timezone'))->format('g:i A'),
-                'initials' => $this->cellDisplayForAdministration($admin),
+                'initials' => $display['text'],
+                'tone' => $display['tone'],
                 'notes' => $admin->notes,
                 'status' => $admin->status,
             ];
@@ -363,12 +365,15 @@ class MedicationLogReportService
         ];
     }
 
+    /**
+     * @return array{text: string, tone: 'taken'|'not_taken'|'inactive'}
+     */
     private function resolveCellContent(
         Medication $medication,
         Collection $medAdmins,
         Carbon $slotTime,
         Carbon $dayStart
-    ): string {
+    ): array {
         $dayEnd = $dayStart->copy()->endOfDay();
 
         $candidates = $medAdmins->filter(function (MedicationAdministration $a) use ($medication, $dayStart, $dayEnd) {
@@ -381,7 +386,7 @@ class MedicationLogReportService
         });
 
         if ($candidates->isEmpty()) {
-            return '—';
+            return ['text' => '—', 'tone' => 'not_taken'];
         }
 
         $best = null;
@@ -404,12 +409,15 @@ class MedicationLogReportService
             })->first();
         }
 
-        return $this->cellDisplayForAdministration($best);
+        return $this->cellDisplayWithTone($best);
     }
 
-    private function cellDisplayForAdministration(MedicationAdministration $admin): string
+    /**
+     * @return array{text: string, tone: 'taken'|'not_taken'}
+     */
+    private function cellDisplayWithTone(MedicationAdministration $admin): array
     {
-        return match ($admin->status) {
+        $text = match ($admin->status) {
             'completed' => $this->userInitials($admin->administeredBy) ?: '✓',
             'missed' => 'M',
             'refused' => 'R',
@@ -417,6 +425,13 @@ class MedicationLogReportService
             'pharmacy_administration_confirm' => 'Rx',
             default => strtoupper(substr((string) $admin->status, 0, 3)),
         };
+
+        $taken = in_array($admin->status, ['completed', 'pharmacy_administration_confirm'], true);
+
+        return [
+            'text' => $text,
+            'tone' => $taken ? 'taken' : 'not_taken',
+        ];
     }
 
     private function userInitials(?User $user): string

@@ -146,6 +146,20 @@
             text-align: center;
             word-wrap: break-word;
         }
+        table.grid td.cell-taken {
+            background: #dcfce7;
+            color: #166534;
+            font-weight: bold;
+        }
+        table.grid td.cell-not_taken {
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: bold;
+        }
+        table.grid td.cell-inactive {
+            background: #f1f5f9;
+            color: #64748b;
+        }
         table.grid th.time-col {
             width: 52px;
             text-align: left;
@@ -188,6 +202,16 @@
             border: 1px solid {{ $gBorder }};
             padding: 4px;
             font-size: 7px;
+        }
+        .prn-table td.prn-taken {
+            background: #dcfce7;
+            color: #166534;
+            font-weight: bold;
+        }
+        .prn-table td.prn-not_taken {
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: bold;
         }
         .footer {
             margin-top: 14px;
@@ -302,8 +326,18 @@
             <tr>
                 <td class="time-col">{{ $row['time_label'] }}</td>
                 @foreach($days as $d)
-                    @php $k = $d['date']; @endphp
-                    <td>{{ $row['cells'][$k] ?? '—' }}</td>
+                    @php
+                        $k = $d['date'];
+                        $raw = $row['cells'][$k] ?? null;
+                        if (is_array($raw)) {
+                            $cText = $raw['text'] ?? '—';
+                            $cTone = $raw['tone'] ?? 'not_taken';
+                        } else {
+                            $cText = $raw ?? '—';
+                            $cTone = 'not_taken';
+                        }
+                    @endphp
+                    <td class="cell-{{ $cTone }}">{{ $cText }}</td>
                 @endforeach
             </tr>
         @endforeach
@@ -339,10 +373,11 @@
             </thead>
             <tbody>
             @foreach($prn['rows'] as $r)
+                @php $prnTone = $r['tone'] ?? 'not_taken'; @endphp
                 <tr>
                     <td>{{ $r['date'] }}</td>
                     <td>{{ $r['time'] }}</td>
-                    <td>{{ $r['initials'] }}</td>
+                    <td class="prn-{{ $prnTone }}">{{ $r['initials'] }}</td>
                     <td>{{ $r['notes'] ?? '' }}</td>
                 </tr>
             @endforeach
@@ -356,13 +391,13 @@
 @endforelse
 
 <div class="legend">
-    <strong style="color: {{ $primary }};">Legend (status codes):</strong>
-    Initials = completed;
-    M = missed;
-    R = refused;
-    H+ = hospital admission;
-    Rx = pharmacy administration confirm;
-    — = no matching administration for this scheduled time.
+    <strong style="color: {{ $primary }};">Legend:</strong>
+    <span style="display:inline-block;padding:1px 6px;background:#dcfce7;color:#166534;font-weight:bold;margin-right:6px;">Green</span>
+    Dose given / completed (initials or ✓).
+    <span style="display:inline-block;padding:1px 6px;background:#fee2e2;color:#991b1b;font-weight:bold;margin:0 6px 0 8px;">Red</span>
+    Not given: missed, refused, no record (—), hospital (H+), or other.
+    Gray cells are outside the medication start/end window.
+    Codes: M = missed; R = refused; H+ = hospital; Rx = pharmacy confirm.
 </div>
 
 <div class="footer">
