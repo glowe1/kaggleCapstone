@@ -41,6 +41,11 @@ export default function VitalsReports() {
 
     const vitals = data?.data || [];
     const totalPages = data?.last_page || 1;
+
+    const selectedResident = React.useMemo(() => {
+        if (!residentId) return null;
+        return residents.find(r => String(r.id) === String(residentId)) ?? null;
+    }, [residentId, residents]);
     const stats = {
         total: data?.total || vitals.length,
         withBP: vitals.filter(v => v.systolic && v.diastolic).length,
@@ -81,6 +86,7 @@ export default function VitalsReports() {
         <PrintableReportLayout
             title="Vitals Reports"
             subtitle={`${dateFrom} to ${dateTo}`}
+            resident={selectedResident}
         >
             <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">

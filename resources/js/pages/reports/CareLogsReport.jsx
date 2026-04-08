@@ -47,6 +47,11 @@ export default function CareLogsReport() {
     const careLogs = careLogsData?.data ?? careLogsData ?? [];
     const list = Array.isArray(careLogs) ? careLogs : [];
 
+    const selectedResident = React.useMemo(() => {
+        if (!residentId) return null;
+        return residents.find(r => String(r.id) === String(residentId)) ?? null;
+    }, [residentId, residents]);
+
     const handleExport = async () => {
         try {
             const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
@@ -68,7 +73,11 @@ export default function CareLogsReport() {
     };
 
     return (
-        <PrintableReportLayout title="Resident Care Logs" subtitle={`${dateFrom} to ${dateTo}`}>
+        <PrintableReportLayout
+            title="Resident Care Logs"
+            subtitle={`${dateFrom} to ${dateTo}`}
+            resident={selectedResident}
+        >
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <div className="mb-8">

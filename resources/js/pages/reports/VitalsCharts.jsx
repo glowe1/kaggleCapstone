@@ -74,10 +74,16 @@ export default function VitalsCharts() {
     }
 
     const selectedBranchName = branchId ? branches.find(b => b.id === branchId)?.name : null;
+    const selectedResident = React.useMemo(() => {
+        if (residentId == null || residentId === '') return null;
+        return residents.find(r => String(r.id) === String(residentId)) ?? null;
+    }, [residentId, residents]);
+
     return (
         <PrintableReportLayout
             title="Vitals Analytics Dashboard"
-            branchName={selectedBranchName}
+            subtitle={selectedBranchName ? `Branch: ${selectedBranchName}` : undefined}
+            resident={selectedResident}
         >
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">

@@ -178,7 +178,7 @@ export default function AnalyticsDashboard() {
                 { label: 'Completed', value: data?.summary?.housekeeping?.completed || 0 },
                 { label: 'Pending', value: data?.summary?.housekeeping?.pending || 0 },
             ],
-            link: '/housekeeping',
+            link: '/reports/housekeeping',
         },
         {
             name: 'Grocery Status',
@@ -192,7 +192,7 @@ export default function AnalyticsDashboard() {
                 { label: 'Pending', value: data?.summary?.grocery_status?.pending || 0 },
                 { label: 'Completed', value: data?.summary?.grocery_status?.completed || 0 },
             ],
-            link: '/grocery-status',
+            link: '/reports/grocery-status',
         },
         {
             name: 'Fire Drills',
@@ -206,7 +206,7 @@ export default function AnalyticsDashboard() {
                 { label: 'Upcoming', value: data?.summary?.fire_drills?.upcoming || 0 },
                 { label: 'Completed', value: data?.summary?.fire_drills?.completed || 0 },
             ],
-            link: '/fire-drills',
+            link: '/reports/fire-drills',
         },
         {
             name: 'Incidents',
@@ -220,7 +220,7 @@ export default function AnalyticsDashboard() {
                 { label: 'This Month', value: data?.summary?.incidents?.month || 0 },
                 { label: 'Open Cases', value: data?.summary?.incidents?.open || 0 },
             ],
-            link: '/incidents',
+            link: '/reports/incidents',
         },
         {
             name: 'Pharmacy',
@@ -234,7 +234,7 @@ export default function AnalyticsDashboard() {
                 { label: 'Low Stock', value: data?.summary?.pharmacy?.low_stock || 0 },
                 { label: 'Out of Stock', value: data?.summary?.pharmacy?.out_of_stock || 0 },
             ],
-            link: '/pharmacy/inventory',
+            link: '/reports/pharmacy',
         },
         {
             name: 'Billing',
@@ -266,11 +266,21 @@ export default function AnalyticsDashboard() {
     }
 
     const selectedBranchName = branchId ? branches.find(b => b.id == branchId)?.name : null;
+    const selectedResident = React.useMemo(() => {
+        if (!residentId) return null;
+        return residents.find(r => String(r.id) === String(residentId)) ?? null;
+    }, [residentId, residents]);
+    const analyticsSubtitle = React.useMemo(() => {
+        const parts = [`${dateFrom} to ${dateTo}`];
+        if (selectedBranchName) parts.push(selectedBranchName);
+        return parts.join(' · ');
+    }, [dateFrom, dateTo, selectedBranchName]);
+
     return (
         <PrintableReportLayout
             title="Analytics Dashboard"
-            subtitle={`${dateFrom} to ${dateTo}`}
-            branchName={selectedBranchName}
+            subtitle={analyticsSubtitle}
+            resident={selectedResident}
         >
             <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">

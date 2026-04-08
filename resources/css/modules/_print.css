@@ -3,6 +3,10 @@
     display: none;
 }
 
+@page {
+    margin: 12mm;
+}
+
 /* Printable reports: hide app chrome so only report content + header print */
 @media print {
     /* Show elements that are print-only (e.g. report header line) */
@@ -51,8 +55,12 @@
         box-shadow: none;
         border: none;
         border-bottom: 1px solid #e5e7eb;
-        margin-bottom: 0.5rem;
-        padding-bottom: 0.25rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .print-only.report-brand-card {
+        display: block !important;
     }
 
     /* Allow content to break across pages; avoid breaking inside cards/charts where possible */

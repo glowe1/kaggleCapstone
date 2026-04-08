@@ -27,10 +27,20 @@ import {
 } from 'lucide-react';
 import PrintableReportLayout, { ReportPrintButton } from '../components/reports/PrintableReportLayout';
 
+/** Laravel paginator total from list endpoints */
+function paginatedTotal(res) {
+    const d = res?.data;
+    if (d == null) return 0;
+    if (typeof d.meta?.total === 'number') return d.meta.total;
+    if (typeof d.total === 'number') return d.total;
+    if (Array.isArray(d.data)) return d.data.length;
+    return 0;
+}
+
 export default function Reports() {
     const navigate = useNavigate();
 
-    // Fetch monthly statistics
+    // Monthly stats: use server-side date filters + per_page:1 for totals only, all requests in parallel
     const { data: statsData, isLoading } = useQuery({
         queryKey: ['reports-stats-monthly'],
         queryFn: async () => {
@@ -39,120 +49,73 @@ export default function Reports() {
             const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             const startDateStr = startOfMonth.toISOString().split('T')[0];
             const endDateStr = endOfMonth.toISOString().split('T')[0];
-            
+
             try {
-                // Get appointments for the month
-                const appointmentsRes = await api.get('/appointments', {
-                    params: {
-                        per_page: 1000,
-                        date_filter: 'all',
-                    }
-                });
-                const appointmentsCount = appointmentsRes.data?.data?.filter(apt => {
-                    const aptDate = new Date(apt.appointment_date);
-                    return aptDate >= startOfMonth && aptDate <= endOfMonth;
-                }).length || 0;
-                
-                // Get vitals for the month using date filtering
-                const vitalsRes = await api.get('/vitals', {
-                    params: {
-                        per_page: 1000,
-                        date_from: startDateStr,
-                        date_to: endDateStr,
-                    }
-                });
-                const vitalsCount = vitalsRes.data?.total || vitalsRes.data?.data?.length || 0;
-                
-                // Get residents (total count, not filtered by month)
-                const residentsRes = await api.get('/residents', { params: { per_page: 1 } });
-                const residentsCount = residentsRes.data?.total || 0;
-                
-                // Get assessments for the month
-                const assessmentsRes = await api.get('/assessments', {
-                    params: {
-                        per_page: 1000,
-                    }
-                });
-                const assessmentsCount = assessmentsRes.data?.data?.filter(assessment => {
-                    const assessDate = new Date(assessment.created_at || assessment.assessment_date || assessment.date);
-                    return assessDate >= startOfMonth && assessDate <= endOfMonth;
-                }).length || 0;
-                
-                // Get sleep records for the month
-                const sleepRes = await api.get('/sleep-records', {
-                    params: {
-                        per_page: 1000,
-                        date_from: startDateStr,
-                        date_to: endDateStr,
-                    }
-                });
-                const sleepCount = sleepRes.data?.total || sleepRes.data?.data?.length || 0;
-                
-                // Get housekeeping tasks
-                const housekeepingRes = await api.get('/cleaning/tasks', {
-                    params: {
-                        per_page: 1,
-                    }
-                });
-                const housekeepingCount = housekeepingRes.data?.meta?.total || housekeepingRes.data?.total || housekeepingRes.data?.data?.length || 0;
-                
-                // Get grocery status updates
-                const groceryRes = await api.get('/grocery-status-updates', {
-                    params: {
-                        per_page: 1,
-                    }
-                });
-                const groceryCount = groceryRes.data?.meta?.total || groceryRes.data?.total || groceryRes.data?.data?.length || 0;
-                
-                // Get fire drills
-                const fireDrillsRes = await api.get('/fire-drills', {
-                    params: {
-                        per_page: 1,
-                    }
-                });
-                const fireDrillsCount = fireDrillsRes.data?.meta?.total || fireDrillsRes.data?.total || fireDrillsRes.data?.data?.length || 0;
-                
-                // Get incidents
-                const incidentsRes = await api.get('/incidents', {
-                    params: {
-                        per_page: 1,
-                    }
-                });
-                const incidentsCount = incidentsRes.data?.meta?.total || incidentsRes.data?.total || incidentsRes.data?.data?.length || 0;
-                
-                // Get staff stats
-                const staffRes = await api.get('/charts/staff').catch(() => ({ data: { total_staff: 0 } }));
-                const staffCount = staffRes.data?.total_staff || 0;
-                
-                // Get billing/expenses stats
-                const billingRes = await api.get('/billing/expenses', {
-                    params: {
-                        per_page: 1,
-                    }
-                }).catch(() => ({ data: { meta: { total: 0 } } }));
-                const billingCount = billingRes.data?.meta?.total || billingRes.data?.total || billingRes.data?.data?.length || 0;
-                
-                // Get pharmacy inventory stats
-                const pharmacyRes = await api.get('/pharmacy-inventory', {
-                    params: {
-                        per_page: 1,
-                    }
-                }).catch(() => ({ data: { meta: { total: 0 } } }));
-                const pharmacyCount = pharmacyRes.data?.meta?.total || pharmacyRes.data?.total || pharmacyRes.data?.data?.length || 0;
-                
+                const [
+                    appointmentsRes,
+                    vitalsRes,
+                    residentsRes,
+                    assessmentsRes,
+                    sleepRes,
+                    housekeepingRes,
+                    groceryRes,
+                    fireDrillsRes,
+                    incidentsRes,
+                    staffRes,
+                    billingRes,
+                    pharmacyRes,
+                ] = await Promise.all([
+                    api.get('/appointments', {
+                        params: {
+                            per_page: 1,
+                            date_from: startDateStr,
+                            date_to: endDateStr,
+                        },
+                    }),
+                    api.get('/vitals', {
+                        params: {
+                            per_page: 1,
+                            date_from: startDateStr,
+                            date_to: endDateStr,
+                        },
+                    }),
+                    api.get('/residents', { params: { per_page: 1 } }),
+                    api.get('/assessments', {
+                        params: {
+                            per_page: 1,
+                            date_from: startDateStr,
+                            date_to: endDateStr,
+                        },
+                    }),
+                    api.get('/sleep-records', {
+                        params: {
+                            per_page: 1,
+                            date_from: startDateStr,
+                            date_to: endDateStr,
+                        },
+                    }),
+                    api.get('/cleaning/tasks', { params: { per_page: 1 } }).catch(() => ({ data: {} })),
+                    api.get('/grocery-status-updates', { params: { per_page: 1 } }).catch(() => ({ data: {} })),
+                    api.get('/fire-drills', { params: { per_page: 1 } }).catch(() => ({ data: {} })),
+                    api.get('/incidents', { params: { per_page: 1 } }).catch(() => ({ data: {} })),
+                    api.get('/charts/staff').catch(() => ({ data: { total_staff: 0 } })),
+                    api.get('/billing/expenses', { params: { per_page: 1 } }).catch(() => ({ data: { meta: { total: 0 } } })),
+                    api.get('/pharmacy-inventory', { params: { per_page: 1 } }).catch(() => ({ data: { meta: { total: 0 } } })),
+                ]);
+
                 return {
-                    appointments: appointmentsCount,
-                    vitals: vitalsCount,
-                    residents: residentsCount,
-                    assessments: assessmentsCount,
-                    sleep: sleepCount,
-                    housekeeping: housekeepingCount,
-                    grocery: groceryCount,
-                    fireDrills: fireDrillsCount,
-                    incidents: incidentsCount,
-                    staff: staffCount,
-                    billing: billingCount,
-                    pharmacy: pharmacyCount,
+                    appointments: paginatedTotal(appointmentsRes),
+                    vitals: paginatedTotal(vitalsRes),
+                    residents: paginatedTotal(residentsRes),
+                    assessments: paginatedTotal(assessmentsRes),
+                    sleep: paginatedTotal(sleepRes),
+                    housekeeping: paginatedTotal(housekeepingRes),
+                    grocery: paginatedTotal(groceryRes),
+                    fireDrills: paginatedTotal(fireDrillsRes),
+                    incidents: paginatedTotal(incidentsRes),
+                    staff: staffRes.data?.total_staff || 0,
+                    billing: paginatedTotal(billingRes),
+                    pharmacy: paginatedTotal(pharmacyRes),
                 };
             } catch (error) {
                 logger.error('Error fetching monthly stats:', error);
@@ -172,6 +135,7 @@ export default function Reports() {
                 };
             }
         },
+        staleTime: 60 * 1000,
     });
 
     const reportCategories = [
@@ -279,7 +243,7 @@ export default function Reports() {
                     title: 'Housekeeping Reports',
                     description: 'Task completion and schedules',
                     icon: Sparkles,
-                    link: '/housekeeping',
+                    link: '/reports/housekeeping',
                     value: statsData?.housekeeping || 0,
                     gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
                     iconBg: 'bg-[var(--theme-primary-bg-light)]',
@@ -289,7 +253,7 @@ export default function Reports() {
                     title: 'Grocery Status',
                     description: 'Grocery inventory and status updates',
                     icon: ShoppingCart,
-                    link: '/grocery-status',
+                    link: '/reports/grocery-status',
                     value: statsData?.grocery || 0,
                     gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
                     iconBg: 'bg-[var(--theme-primary-bg-light)]',
@@ -299,7 +263,7 @@ export default function Reports() {
                     title: 'Fire Drills',
                     description: 'Fire drill schedules and completion',
                     icon: Flame,
-                    link: '/fire-drills',
+                    link: '/reports/fire-drills',
                     value: statsData?.fireDrills || 0,
                     gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
                     iconBg: 'bg-[var(--theme-primary-bg-light)]',
@@ -309,7 +273,7 @@ export default function Reports() {
                     title: 'Incidents',
                     description: 'Incident reports and tracking',
                     icon: AlertTriangle,
-                    link: '/incidents',
+                    link: '/reports/incidents',
                     value: statsData?.incidents || 0,
                     gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
                     iconBg: 'bg-[var(--theme-primary-bg-light)]',
@@ -365,7 +329,7 @@ export default function Reports() {
                     title: 'Pharmacy Reports',
                     description: 'Inventory and medication tracking',
                     icon: Building2,
-                    link: '/pharmacy/inventory',
+                    link: '/reports/pharmacy',
                     value: statsData?.pharmacy || 0,
                     gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
                     iconBg: 'bg-[var(--theme-primary-bg-light)]',

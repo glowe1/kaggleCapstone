@@ -202,6 +202,11 @@ const SleepCharts = lazyWithRetry(() => import('./pages/reports/SleepCharts'));
 const StaffCharts = lazyWithRetry(() => import('./pages/reports/StaffCharts'));
 const CareLogsReport = lazyWithRetry(() => import('./pages/reports/CareLogsReport'));
 const InspectionPackage = lazyWithRetry(() => import('./pages/reports/InspectionPackage'));
+const HousekeepingReport = lazyWithRetry(() => import('./pages/reports/HousekeepingReport'));
+const GroceryStatusReport = lazyWithRetry(() => import('./pages/reports/GroceryStatusReport'));
+const FireDrillsReport = lazyWithRetry(() => import('./pages/reports/FireDrillsReport'));
+const IncidentsReport = lazyWithRetry(() => import('./pages/reports/IncidentsReport'));
+const PharmacyReport = lazyWithRetry(() => import('./pages/reports/PharmacyReport'));
 const ChartData = lazyWithRetry(() => import('./pages/ChartData'));
 const BehaviorChartsView = lazyWithRetry(() => import('./pages/administration/BehaviorChartsView'));
 const CaregiverChartsPage = lazyWithRetry(() => import('./pages/caregiver/CaregiverChartsPage'));
@@ -361,6 +366,11 @@ function App() {
                 <Route path="reports/staff-charts" element={<Suspense fallback={<PageLoader />}><StaffCharts /></Suspense>} />
                 <Route path="reports/care-logs" element={<Suspense fallback={<PageLoader />}><CareLogsReport /></Suspense>} />
                 <Route path="reports/inspection-package" element={<Suspense fallback={<PageLoader />}><InspectionPackage /></Suspense>} />
+                <Route path="reports/housekeeping" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="housekeeping"><HousekeepingReport /></ModuleProtectedRoute></Suspense>} />
+                <Route path="reports/grocery-status" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="grocery_status"><GroceryStatusReport /></ModuleProtectedRoute></Suspense>} />
+                <Route path="reports/fire-drills" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="fire_drills"><FireDrillsReport /></ModuleProtectedRoute></Suspense>} />
+                <Route path="reports/incidents" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="incidents"><IncidentsReport /></ModuleProtectedRoute></Suspense>} />
+                <Route path="reports/pharmacy" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="pharmacy"><PharmacyReport /></ModuleProtectedRoute></Suspense>} />
 
                 {/* Super Admin */}
                 <Route path="super-admin/dashboard" element={<Suspense fallback={<PageLoader />}><SuperAdminDashboard /></Suspense>} />

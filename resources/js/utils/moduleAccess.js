@@ -45,6 +45,11 @@ export const MODULE_MAP = {
   '/reports/staff-charts': 'reports',
   '/reports/care-logs': 'reports',
   '/reports/inspection-package': 'reports',
+  '/reports/housekeeping': 'housekeeping',
+  '/reports/grocery-status': 'grocery_status',
+  '/reports/fire-drills': 'fire_drills',
+  '/reports/incidents': 'incidents',
+  '/reports/pharmacy': 'pharmacy',
   
   // Residents module
   '/administration/residents': 'residents',

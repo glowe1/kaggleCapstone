@@ -82,11 +82,21 @@ export default function AppointmentsCharts() {
     }
 
     const selectedBranchName = branchId ? branches.find(b => b.id === branchId)?.name : null;
+    const selectedResident = React.useMemo(() => {
+        if (residentId == null || residentId === '') return null;
+        return residents.find(r => String(r.id) === String(residentId)) ?? null;
+    }, [residentId, residents]);
+    const reportSubtitle = React.useMemo(() => {
+        const parts = [`${dateFrom} to ${dateTo}`];
+        if (selectedBranchName) parts.push(selectedBranchName);
+        return parts.join(' · ');
+    }, [dateFrom, dateTo, selectedBranchName]);
+
     return (
         <PrintableReportLayout
             title="Appointments Analytics Dashboard"
-            subtitle={`${dateFrom} to ${dateTo}`}
-            branchName={selectedBranchName}
+            subtitle={reportSubtitle}
+            resident={selectedResident}
         >
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="max-w-7xl mx-auto px-4 py-8">
