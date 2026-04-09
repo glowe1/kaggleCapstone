@@ -66,6 +66,26 @@ import { useUserNotifications, useFacilityUpdates } from '../hooks/useRealtimeUp
 import { reconnectEcho } from '../services/echo';
 import { currentUserQueryOptions } from '../queries/currentUser';
 
+// Isolated clock component — prevents 1-second re-renders from propagating to the entire Layout tree
+function LiveClock({ serverTime, timezoneOffset }) {
+    const [time, setTime] = useState('');
+
+    useEffect(() => {
+        if (serverTime) {
+            setPacificServerTime(serverTime, timezoneOffset);
+        }
+    }, [serverTime, timezoneOffset]);
+
+    useEffect(() => {
+        const update = () => setTime(formatPacificTime());
+        update();
+        const id = window.setInterval(update, 1000);
+        return () => window.clearInterval(id);
+    }, [serverTime]);
+
+    return <span className="text-sm font-semibold text-gray-800">{time}</span>;
+}
+
 const navigation = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', children: null },
     { name: 'My Residents', icon: Users, path: '/my-residents', children: null },
@@ -231,7 +251,6 @@ export default function Layout() {
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoadingUser, setIsLoadingUser] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [appClock, setAppClock] = useState({ time: '', date: '' });
     const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
     const toast = useToastContext();
 
@@ -263,25 +282,6 @@ export default function Layout() {
     );
 
     // User menu is now handled by Radix DropdownMenu - no need for manual click outside handling
-
-    useEffect(() => {
-        if (currentUser?.app_current_time) {
-            setPacificServerTime(currentUser.app_current_time, currentUser.app_timezone_offset);
-        }
-    }, [currentUser?.app_current_time]);
-
-    useEffect(() => {
-        const updateClock = () => {
-            setAppClock({
-                time: formatPacificTime(),
-                date: formatPacificDate(),
-            });
-        };
-
-        updateClock();
-        const interval = window.setInterval(updateClock, 1000);
-        return () => window.clearInterval(interval);
-    }, [currentUser?.app_current_time]);
 
     useEffect(() => {
         const cleanup = setupProactiveRefresh();
@@ -327,11 +327,16 @@ export default function Layout() {
 
         const activityEvents = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
 
+        // Throttle: only reset timer at most once per 30 seconds (timeout is 4 hours)
+        let lastActivity = 0;
         const activityHandler = () => {
+            const now = Date.now();
+            if (now - lastActivity < 30000) return;
+            lastActivity = now;
             resetInactivityTimer();
         };
 
-        activityEvents.forEach((event) => window.addEventListener(event, activityHandler));
+        activityEvents.forEach((event) => window.addEventListener(event, activityHandler, { passive: true }));
         resetInactivityTimer();
 
         return () => {
@@ -741,7 +746,7 @@ export default function Layout() {
                         </div>
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
-                        <span className="text-sm font-semibold text-gray-800">{appClock.time}</span>
+                        <LiveClock serverTime={currentUser?.app_current_time} timezoneOffset={currentUser?.app_timezone_offset} />
                         {/* Hide search, notifications, and calendar for super admin */}
                         {currentUser?.role !== 'super_admin' && (
                             <>
