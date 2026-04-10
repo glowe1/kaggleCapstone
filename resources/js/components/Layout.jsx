@@ -497,8 +497,13 @@ export default function Layout() {
             }
         }
 
-        // Ensure we always return an array (fallback to default navigation if something went wrong)
-        return items && items.length > 0 ? items : (isSuperAdmin ? superAdminNavigation : navigation);
+        // Ensure we always return an array (fallback to role-appropriate navigation if filtering removed everything)
+        if (!items || items.length === 0) {
+            if (isSuperAdmin) return superAdminNavigation;
+            if (isCaregiver) return caregiverNavigation;
+            return navigation;
+        }
+        return items;
     }, [isCaregiver, isSuperAdmin, currentUser, currentUser?.enabled_modules, currentUser?.permissions]);
 
     const appTimezoneLabel = React.useMemo(() => {
