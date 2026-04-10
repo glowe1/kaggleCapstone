@@ -32,7 +32,18 @@
       "Bash(php -l app/Filament/Widgets/AdminHealthOverviewWidget.php)",
       "Bash(php -l app/Providers/Filament/AdminPanelProvider.php)",
       "Bash(php -l app/Http/Controllers/Api/ExpenseReportController.php)",
-      "Bash(php -l app/Services/PharmacyDashboardService.php)"
+      "Bash(php -l app/Services/PharmacyDashboardService.php)",
+      "Bash(npx @anthropic-ai/claude-code-skills@latest add anthropic/claude-code-skills/code-review)",
+      "Edit(/.claude/skills/code-review/**)",
+      "Bash(php -l app/Mail/StaffClockInNotification.php)",
+      "Bash(find /home/taal/Documents/Evergreen/app -name \"*.php\" -exec php -l {} \\\\;)",
+      "Bash(find /home/taal/Documents/Evergreen/app/Mail -name \"*.php\" -exec php -l {} \\\\;)",
+      "Bash(git push:*)",
+      "Bash(php artisan:*)",
+      "Bash(grep -A5 \"status.*pharmacy_orders\\\\|pharmacy_orders.*status\" /home/taal/Documents/Evergreen/database/migrations/*pharmacy*)"
+    ],
+    "additionalDirectories": [
+      "/home/taal/Documents/Evergreen/.claude/skills"
     ]
   }
 }

@@ -64,6 +64,7 @@ export default function Reports() {
                     staffRes,
                     billingRes,
                     pharmacyRes,
+                    medicationsRes,
                 ] = await Promise.all([
                     api.get('/appointments', {
                         params: {
@@ -101,6 +102,7 @@ export default function Reports() {
                     api.get('/charts/staff').catch(() => ({ data: { total_staff: 0 } })),
                     api.get('/billing/expenses', { params: { per_page: 1 } }).catch(() => ({ data: { meta: { total: 0 } } })),
                     api.get('/pharmacy-inventory', { params: { per_page: 1 } }).catch(() => ({ data: { meta: { total: 0 } } })),
+                    api.get('/medication-administrations', { params: { per_page: 1, date_from: startDateStr, date_to: endDateStr } }).catch(() => ({ data: { meta: { total: 0 } } })),
                 ]);
 
                 return {
@@ -116,6 +118,7 @@ export default function Reports() {
                     staff: staffRes.data?.total_staff || 0,
                     billing: paginatedTotal(billingRes),
                     pharmacy: paginatedTotal(pharmacyRes),
+                    medications: paginatedTotal(medicationsRes),
                 };
             } catch (error) {
                 logger.error('Error fetching monthly stats:', error);
@@ -132,6 +135,7 @@ export default function Reports() {
                     staff: 0,
                     billing: 0,
                     pharmacy: 0,
+                    medications: 0,
                 };
             }
         },
@@ -311,6 +315,16 @@ export default function Reports() {
                     icon: UserCheck,
                     link: '/reports/staff-charts',
                     value: statsData?.staff || 0,
+                    gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
+                    iconBg: 'bg-[var(--theme-primary-bg-light)]',
+                    iconColor: 'text-[var(--theme-primary)]',
+                },
+                {
+                    title: 'Medication Reports',
+                    description: 'Medication administration and adherence analytics',
+                    icon: Pill,
+                    link: '/medications/report',
+                    value: statsData?.medications || 0,
                     gradient: 'from-[var(--theme-primary)] to-[var(--theme-primary-dark)]',
                     iconBg: 'bg-[var(--theme-primary-bg-light)]',
                     iconColor: 'text-[var(--theme-primary)]',
