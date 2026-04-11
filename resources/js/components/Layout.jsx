@@ -39,6 +39,8 @@ import {
     ArrowLeftToLine,
     UserPlus,
     BarChart3,
+    Stethoscope,
+    Wrench,
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import ReminderPanel from './ReminderPanel';
@@ -213,39 +215,15 @@ const superAdminNavigation = [
 
 const caregiverNavigation = [
     // HOME
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', children: null, section: 'Home' },
-    // RESIDENTS — hub entry point replaces individual clinical links
-    { name: 'My Residents', icon: Users, path: '/my-residents', children: null, section: 'Residents' },
-    { name: 'Appointments', icon: Calendar, path: '/appointments', children: null, section: 'Residents' },
-    { name: 'Behavior Charts', icon: BarChart3, path: '/charts', children: null, section: 'Residents' },
-    // CLINICAL — global cross-resident views only
-    { name: 'Medication History', icon: ClipboardList, path: '/medication-history', children: null, section: 'Clinical' },
-    {
-        name: 'Vitals',
-        icon: Heart,
-        path: '/vitals',
-        section: 'Clinical',
-        children: [
-            { name: 'Vitals', path: '/vitals' },
-            { name: 'View Vitals', path: '/view-vitals' },
-        ]
-    },
-    {
-        name: 'Sleep',
-        icon: Moon,
-        path: '/sleep',
-        section: 'Clinical',
-        children: [
-            { name: 'Sleep Records', path: '/sleep' },
-            { name: 'Sleep Pattern', path: '/sleep-patterns' },
-        ]
-    },
-    // OPERATIONS
-    { name: 'Housekeeping', icon: Sparkles, path: '/housekeeping', children: null, section: 'Operations' },
-    { name: 'Grocery Status', icon: ShoppingCart, path: '/grocery-status', children: null, section: 'Operations' },
-    { name: 'Fire Drills', icon: Flame, path: '/fire-drills', children: null, section: 'Operations' },
-    { name: 'Incidents', icon: AlertTriangle, path: '/incidents', children: null, section: 'Operations' },
-    { name: 'Leave Requests', icon: CalendarClock, path: '/leave-requests', children: null, section: 'Operations' },
+    { name: 'Dashboard',       icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
+    // RESIDENTS
+    { name: 'My Residents',    icon: Users,           path: '/my-residents', children: null, section: 'Residents' },
+    { name: 'Appointments',    icon: Calendar,        path: '/appointments', children: null, section: 'Residents' },
+    { name: 'Behavior Charts', icon: BarChart3,       path: '/charts',       children: null, section: 'Residents' },
+    // CLINICAL — single hub link; all sub-features are on /clinical
+    { name: 'Clinical',        icon: Stethoscope,     path: '/clinical',     children: null, section: 'Clinical' },
+    // OPERATIONS — single hub link; all sub-features are on /operations
+    { name: 'Operations',      icon: Wrench,          path: '/operations',   children: null, section: 'Operations' },
 ];
 
 export default function Layout() {

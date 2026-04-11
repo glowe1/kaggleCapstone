@@ -125,6 +125,8 @@ const Residents = lazyWithRetry(() => import('./pages/Residents'));
 const MyResidentsPage = lazyWithRetry(() => import('./pages/caregiver/MyResidentsPage'));
 const ResidentDetailPage = lazyWithRetry(() => import('./pages/caregiver/ResidentDetailPage'));
 const ResidentHubPage = lazyWithRetry(() => import('./pages/caregiver/ResidentHubPage'));
+const ClinicalHubPage = lazyWithRetry(() => import('./pages/caregiver/ClinicalHubPage'));
+const OperationsHubPage = lazyWithRetry(() => import('./pages/caregiver/OperationsHubPage'));
 const Appointments = lazyWithRetry(() => import('./pages/Appointments'));
 const AppointmentsDashboard = lazyWithRetry(() => import('./pages/AppointmentsDashboard'));
 const AppointmentDetail = lazyWithRetry(() => import('./pages/AppointmentDetail'));
@@ -349,6 +351,10 @@ function App() {
                 <Route path="residents/sign-outs/view-all" element={<Suspense fallback={<PageLoader />}><ResidentSignOutsView /></Suspense>} />
                 <Route path="visitors" element={<Suspense fallback={<PageLoader />}><Visitors /></Suspense>} />
                 <Route path="visitors/view-all" element={<Suspense fallback={<PageLoader />}><VisitorsView /></Suspense>} />
+                {/* Section hub pages */}
+                <Route path="clinical"    element={<Suspense fallback={<PageLoader />}><ClinicalHubPage /></Suspense>} />
+                <Route path="operations"  element={<Suspense fallback={<PageLoader />}><OperationsHubPage /></Suspense>} />
+
                 <Route path="my-residents" element={<Suspense fallback={<PageLoader />}><MyResidentsPage /></Suspense>} />
                 <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentHubPage /></Suspense>} />
                 {/* Legacy resident detail — redirect to hub */}
