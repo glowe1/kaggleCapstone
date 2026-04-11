@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import logger from './utils/logger';
 import { hardReloadWithCacheBust } from './utils/hardReload';
@@ -124,6 +124,7 @@ const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'), 5);
 const Residents = lazyWithRetry(() => import('./pages/Residents'));
 const MyResidentsPage = lazyWithRetry(() => import('./pages/caregiver/MyResidentsPage'));
 const ResidentDetailPage = lazyWithRetry(() => import('./pages/caregiver/ResidentDetailPage'));
+const ResidentHubPage = lazyWithRetry(() => import('./pages/caregiver/ResidentHubPage'));
 const Appointments = lazyWithRetry(() => import('./pages/Appointments'));
 const AppointmentsDashboard = lazyWithRetry(() => import('./pages/AppointmentsDashboard'));
 const AppointmentDetail = lazyWithRetry(() => import('./pages/AppointmentDetail'));
@@ -314,7 +315,8 @@ function App() {
                 <Route path="medications" element={<Suspense fallback={<PageLoader />}><Medications /></Suspense>} />
                 <Route path="medications/report" element={<Suspense fallback={<PageLoader />}><MedicationsReport /></Suspense>} />
                 <Route path="medications/residents" element={<Suspense fallback={<PageLoader />}><CaregiverMedicationsResidents /></Suspense>} />
-                <Route path="medications/residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentMedicationsPage /></Suspense>} />
+                {/* Deep-link into the hub's medications tab */}
+                <Route path="medications/residents/:residentId" element={<MedResidentRedirect />} />
                 <Route path="reminders" element={<Suspense fallback={<PageLoader />}><Reminders /></Suspense>} />
                 <Route path="medication-history" element={<Suspense fallback={<PageLoader />}><MedicationHistory /></Suspense>} />
                 <Route path="medication-deliveries" element={<Suspense fallback={<PageLoader />}><MedicationDeliveries /></Suspense>} />
@@ -348,7 +350,9 @@ function App() {
                 <Route path="visitors" element={<Suspense fallback={<PageLoader />}><Visitors /></Suspense>} />
                 <Route path="visitors/view-all" element={<Suspense fallback={<PageLoader />}><VisitorsView /></Suspense>} />
                 <Route path="my-residents" element={<Suspense fallback={<PageLoader />}><MyResidentsPage /></Suspense>} />
-                <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentDetailPage /></Suspense>} />
+                <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentHubPage /></Suspense>} />
+                {/* Legacy resident detail — redirect to hub */}
+                <Route path="residents/:residentId/detail" element={<Suspense fallback={<PageLoader />}><ResidentDetailPage /></Suspense>} />
                 <Route path="charts" element={<Suspense fallback={<PageLoader />}><CaregiverChartsPage /></Suspense>} />
                 <Route path="charts/resident/:residentId" element={<Suspense fallback={<PageLoader />}><CaregiverResidentChart /></Suspense>} />
 
@@ -418,6 +422,12 @@ function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     );
+}
+
+/** Redirect /medications/residents/:residentId → /my-residents/:residentId?tab=medications */
+function MedResidentRedirect() {
+    const { residentId } = useParams();
+    return <Navigate to={`/my-residents/${residentId}?tab=medications`} replace />;
 }
 
 // App component export

@@ -214,13 +214,11 @@ const superAdminNavigation = [
 const caregiverNavigation = [
     // HOME
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', children: null, section: 'Home' },
-    // CARE
-    { name: 'My Residents', icon: Users, path: '/my-residents', children: null, section: 'Care' },
-    { name: 'Progress Notes', icon: FileText, path: '/t-logs', children: null, section: 'Care' },
-    { name: 'Appointments', icon: Calendar, path: '/appointments', children: null, section: 'Care' },
-    { name: 'Behavior Charts', icon: BarChart3, path: '/charts', children: null, section: 'Care' },
-    // CLINICAL
-    { name: 'Medication Log', icon: Pill, path: '/medications/residents', children: null, section: 'Clinical' },
+    // RESIDENTS — hub entry point replaces individual clinical links
+    { name: 'My Residents', icon: Users, path: '/my-residents', children: null, section: 'Residents' },
+    { name: 'Appointments', icon: Calendar, path: '/appointments', children: null, section: 'Residents' },
+    { name: 'Behavior Charts', icon: BarChart3, path: '/charts', children: null, section: 'Residents' },
+    // CLINICAL — global cross-resident views only
     { name: 'Medication History', icon: ClipboardList, path: '/medication-history', children: null, section: 'Clinical' },
     {
         name: 'Vitals',

@@ -158,7 +158,7 @@ const isMedicationPeriodActiveNow = (medication, referenceDate = getPacificNow()
     return true;
 };
 
-export default function ResidentMedicationsPage() {
+export default function ResidentMedicationsPage({ embedded = false }) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const { residentId } = useParams();
@@ -920,24 +920,18 @@ export default function ResidentMedicationsPage() {
         );
     }
 
-    return (
-        <div className="space-y-4">
-            <Breadcrumbs items={[
-                { label: 'My Residents', path: '/my-residents' },
-                { label: residentDisplayName !== 'Resident' ? residentDisplayName : 'Resident', path: residentId ? `/my-residents/${residentId}` : '/my-residents' },
-                { label: 'Medications', path: '' },
-            ]} />
+    const medGrid = (
+        <div className={`grid grid-cols-1 ${embedded ? 'lg:grid-cols-[1fr_272px]' : 'lg:grid-cols-[220px_1fr_272px]'} gap-4 items-start`}>
 
-            {/* ── 3-column clinical layout ─────────────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_272px] gap-4 items-start">
-
-                {/* ── LEFT: Resident profile panel ── */}
+            {/* ── LEFT: Resident profile panel (standalone only) ── */}
+            {!embedded && (
                 <ResidentProfilePanel
                     resident={resident}
                     isLoading={residentLoading}
                     residentId={residentId}
                     navigate={navigate}
                 />
+            )}
 
                 {/* ── CENTRE: Medication content ── */}
                 <div className="space-y-4 min-w-0">
@@ -1136,6 +1130,18 @@ export default function ResidentMedicationsPage() {
                 </div>
 
             </div>
+    );
+
+    if (embedded) return medGrid;
+
+    return (
+        <div className="space-y-4">
+            <Breadcrumbs items={[
+                { label: 'My Residents', path: '/my-residents' },
+                { label: residentDisplayName !== 'Resident' ? residentDisplayName : 'Resident', path: residentId ? `/my-residents/${residentId}` : '/my-residents' },
+                { label: 'Medications', path: '' },
+            ]} />
+            {medGrid}
         </div>
     );
 
