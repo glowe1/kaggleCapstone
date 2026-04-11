@@ -250,8 +250,13 @@ export default function ResidentHubPage() {
                 </div>
 
                 {/* ── Tab bar ── */}
-                <div className="border-t border-gray-100 bg-gray-50/50">
-                    <div className="flex overflow-x-auto gap-0 px-4 scroll-smooth" style={{ scrollbarWidth: 'none' }} role="tablist" aria-label="Resident sections">
+                <div className="border-t-2 border-gray-100 bg-white">
+                    <div
+                        className="flex overflow-x-auto scroll-smooth"
+                        style={{ scrollbarWidth: 'none' }}
+                        role="tablist"
+                        aria-label="Resident sections"
+                    >
                         {HUB_TABS.map(({ id, label, icon: Icon }) => {
                             const isActive = activeTab === id;
                             return (
@@ -261,14 +266,26 @@ export default function ResidentHubPage() {
                                     role="tab"
                                     aria-selected={isActive}
                                     onClick={() => setTab(id)}
-                                    className={`relative flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-primary)] ${
+                                    className={`relative flex flex-col items-center gap-1 px-5 py-3 whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-primary)] min-w-[72px] ${
                                         isActive
-                                            ? 'text-[var(--theme-primary)] bg-white border-b-2 border-[var(--theme-primary)]'
-                                            : 'text-gray-500 hover:text-gray-800 hover:bg-white/60 border-b-2 border-transparent'
+                                            ? 'text-[var(--theme-primary)]'
+                                            : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                                 >
-                                    <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                                    {label}
+                                    <Icon
+                                        className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-[var(--theme-primary)]' : 'text-gray-400'}`}
+                                        aria-hidden="true"
+                                    />
+                                    <span className={`text-[11px] font-bold tracking-wide ${isActive ? 'text-[var(--theme-primary)]' : 'text-gray-500'}`}>
+                                        {label}
+                                    </span>
+                                    {/* Active underline indicator */}
+                                    {isActive && (
+                                        <span
+                                            className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[var(--theme-primary)]"
+                                            aria-hidden="true"
+                                        />
+                                    )}
                                 </button>
                             );
                         })}

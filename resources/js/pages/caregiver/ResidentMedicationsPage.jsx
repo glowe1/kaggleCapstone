@@ -939,16 +939,18 @@ export default function ResidentMedicationsPage({ embedded = false }) {
                     {/* Compact action header */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
-                            <Tooltip content="Back to residents" position="bottom">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/medications/residents')}
-                                    className="p-1.5 hover:bg-gray-100 rounded-full transition-colors group shrink-0"
-                                    aria-label="Back to residents"
-                                >
-                                    <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-[var(--theme-primary)]" strokeWidth={2.25} />
-                                </button>
-                            </Tooltip>
+                            {!embedded && (
+                                <Tooltip content="Back to residents" position="bottom">
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/medications/residents')}
+                                        className="p-1.5 hover:bg-gray-100 rounded-full transition-colors group shrink-0"
+                                        aria-label="Back to residents"
+                                    >
+                                        <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-[var(--theme-primary)]" strokeWidth={2.25} />
+                                    </button>
+                                </Tooltip>
+                            )}
                             <div>
                                 <h2 className="text-base font-bold text-gray-900">Resident Medication</h2>
                                 <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest hidden sm:block">
