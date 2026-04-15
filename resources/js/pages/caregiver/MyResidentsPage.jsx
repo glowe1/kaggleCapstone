@@ -24,7 +24,7 @@ const initialStats = [
 
 export default function MyResidentsPage() {
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
     const [search, setSearch] = React.useState('');
     const [debouncedSearch, setDebouncedSearch] = React.useState('');
@@ -93,17 +93,6 @@ export default function MyResidentsPage() {
         return residents.filter((r) => String(r.id) === scopeId);
     }, [residents, scopeId]);
 
-    const setResidentScope = (id) => {
-        setSearchParams(
-            (prev) => {
-                const p = new URLSearchParams(prev);
-                p.set(RESIDENT_CONTEXT_QUERY_KEY, String(id));
-                return p;
-            },
-            { replace: true },
-        );
-    };
-
     const canEditResidents = !isCaregiverRole(currentUser?.role);
 
     const stats = React.useMemo(() => {
@@ -138,10 +127,10 @@ export default function MyResidentsPage() {
             <EntityCardShell
                 key={resident.id}
                 className="cursor-pointer"
-                aria-label={`Focus ${fullName || 'resident'} in directory`}
+                aria-label={`Open resident record for ${fullName || 'resident'}`}
                 onClick={(e) => {
                     if (e.target.closest('button')) return;
-                    setResidentScope(resident.id);
+                    navigate(profilePath);
                 }}
             >
                 <EntityCardHeader
@@ -263,7 +252,7 @@ export default function MyResidentsPage() {
                 className="group cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
                 onClick={(e) => {
                     if (e.target.closest('button')) return;
-                    setResidentScope(resident.id);
+                    navigate(profilePath);
                 }}
             >
                 <td className="py-3 pl-4 pr-3">
