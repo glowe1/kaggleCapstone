@@ -12,10 +12,14 @@ import Tooltip from '../components/ui/Tooltip';
 import { hasModuleAccess } from '../utils/moduleAccess';
 import { RESIDENT_CONTEXT_QUERY_KEY } from '../utils/headerResidentSwitcher';
 
-export default function Assessments() {
+export default function Assessments({ embedded = false, embeddedResidentId = null } = {}) {
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
-    const headerResidentScope = searchParams.get(RESIDENT_CONTEXT_QUERY_KEY) || searchParams.get('resident_id') || '';
+    const fromUrl = searchParams.get(RESIDENT_CONTEXT_QUERY_KEY) || searchParams.get('resident_id') || '';
+    const headerResidentScope =
+        embeddedResidentId != null && embeddedResidentId !== ''
+            ? String(embeddedResidentId)
+            : fromUrl;
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
@@ -75,7 +79,7 @@ export default function Assessments() {
     // Show loading state
     if (isLoadingUser) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className={`flex items-center justify-center ${embedded ? 'min-h-[200px]' : 'min-h-screen'}`}>
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-primary)]"></div>
                     <p className="mt-4 text-gray-600">Loading...</p>
@@ -87,7 +91,7 @@ export default function Assessments() {
     // Redirect if module access is denied
     if (!hasModuleAccessCheck) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className={`flex items-center justify-center ${embedded ? 'min-h-[200px] py-6' : 'min-h-screen'}`}>
                 <div className="bg-white rounded-lg shadow p-8 max-w-md text-center">
                     <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">Module Not Available</h2>
@@ -284,8 +288,8 @@ export default function Assessments() {
         }
     };
 
-    // If user is not an admin, show access denied message
-    if (currentUser && !isAdmin) {
+    // Full-page route: historically admin-only UI. Embedded resident hub allows caregivers with module access.
+    if (currentUser && !isAdmin && !embedded) {
         return (
             <div>
                 <SectionCard>

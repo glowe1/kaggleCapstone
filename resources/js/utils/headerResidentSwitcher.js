@@ -56,6 +56,10 @@ export function shouldShowHeaderResidentSwitcher(pathname) {
     if (pathname === '/clinical' || pathname === '/residents') {
         return false;
     }
+    // Resident record hub: hero + tabs identify context; hide strip to reduce noise.
+    if (/^\/my-residents\/[^/]+$/.test(pathname)) {
+        return false;
+    }
     return isResidentsHubPathForSwitcher(pathname) || isClinicalSectionForSwitcher(pathname);
 }
 

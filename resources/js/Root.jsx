@@ -322,13 +322,14 @@ function App() {
                     <Route path="appointments/create/:residentId" element={<Suspense fallback={<PageLoader />}><CreateAppointment /></Suspense>} />
                     <Route path="appointments/:id" element={<Suspense fallback={<PageLoader />}><AppointmentDetail /></Suspense>} />
                     <Route path="appointments" element={<Suspense fallback={<PageLoader />}><Appointments /></Suspense>} />
-                    <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentHubPage /></Suspense>} />
                     <Route path="my-residents" element={<Suspense fallback={<PageLoader />}><MyResidentsPage /></Suspense>} />
                     <Route path="residents/:residentId/detail" element={<Suspense fallback={<PageLoader />}><ResidentDetailPage /></Suspense>} />
                     <Route path="charts/resident/:residentId" element={<Suspense fallback={<PageLoader />}><CaregiverResidentChart /></Suspense>} />
                     <Route path="charts" element={<Suspense fallback={<PageLoader />}><CaregiverChartsPage /></Suspense>} />
                     <Route path="t-logs" element={<Suspense fallback={<PageLoader />}><TLogs /></Suspense>} />
                 </Route>
+                {/* Resident record hub: outside ResidentsSectionLayout to avoid duplicate hub + resident tab bars */}
+                <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentHubPage /></Suspense>} />
                 {/* ── Clinical section (persistent tab bar) ─────────────────── */}
                 <Route element={<Suspense fallback={<PageLoader />}><ClinicalSectionLayout /></Suspense>}>
                     <Route path="clinical"            element={<Suspense fallback={<PageLoader />}><ClinicalHubPage /></Suspense>} />

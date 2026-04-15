@@ -28,30 +28,36 @@ import {
     Users,
     CheckCircle,
     TrendingUp,
+    BarChart3,
+    BookOpen,
 } from 'lucide-react';
 import api from '../../services/api';
+import Assessments from '../Assessments';
+import CaregiverResidentChart from './CaregiverResidentChart';
+import { hasModuleAccess } from '../../utils/moduleAccess';
 import {
     calculateAgeFromPacificBirthDate,
     formatPacificCalendarMedium,
     getPacificNow,
 } from '../../utils/pacificTime';
-import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import ResidentDocuments from '../../components/ResidentDocuments';
 import ResidentMedicationsPage from './ResidentMedicationsPage';
 import logger from '../../utils/logger';
 import { isCaregiverRole } from '../../utils/userRoles';
 
-// ─── Tab definitions ──────────────────────────────────────────────────────────
-
-const HUB_TABS = [
-    { id: 'overview',     label: 'Overview',      icon: LayoutDashboard },
-    { id: 'medications',  label: 'Medications',   icon: Pill            },
-    { id: 'notes',        label: 'Notes',         icon: FileText        },
-    { id: 'care',         label: 'Care Plan',     icon: ClipboardList   },
-    { id: 'documents',    label: 'Documents',     icon: FolderOpen      },
-    { id: 'vitals',       label: 'Vitals',        icon: Heart           },
-    { id: 'appointments', label: 'Appointments',  icon: Calendar        },
-    { id: 'profile',      label: 'Profile',       icon: User            },
+// ─── Tab definitions (overview + directory link, then merged hub-style sections) ─────────────
+const RESIDENT_TAB_BASE = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, kind: 'tab' },
+    { id: '_directory', label: 'Directory', icon: Users, kind: 'link', href: '/my-residents' },
+    { id: 'medications', label: 'Medications', icon: Pill, kind: 'tab' },
+    { id: 'vitals', label: 'Vitals', icon: Heart, kind: 'tab' },
+    { id: 'assessments', label: 'Assessments', icon: ClipboardList, kind: 'tab', requiresAssessmentsModule: true },
+    { id: 'appointments', label: 'Appointments', icon: Calendar, kind: 'tab' },
+    { id: 'charts', label: 'Charts', icon: BarChart3, kind: 'tab' },
+    { id: 'notes', label: 'Progress notes', icon: FileText, kind: 'tab' },
+    { id: 'care', label: 'Care Plan', icon: BookOpen, kind: 'tab' },
+    { id: 'documents', label: 'Documents', icon: FolderOpen, kind: 'tab' },
+    { id: 'profile', label: 'Profile', icon: User, kind: 'tab' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,7 +97,7 @@ export default function ResidentHubPage() {
     const { residentId } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const activeTab = searchParams.get('tab') || 'overview';
+       const activeTab = searchParams.get('tab') || 'overview';
 
     const setTab = (id) => setSearchParams({ tab: id }, { replace: true });
 
@@ -99,6 +105,28 @@ export default function ResidentHubPage() {
         queryKey: ['current-user'],
         queryFn: async () => (await api.get('/user')).data,
     });
+
+    const enabledModules = Array.isArray(currentUser?.enabled_modules) ? currentUser.enabled_modules : [];
+    const isSuperAdmin = currentUser?.role === 'super_admin';
+    const showAssessmentsTab = isSuperAdmin || hasModuleAccess('/assessments', enabledModules, isSuperAdmin);
+
+    const visibleTabs = React.useMemo(() => {
+        return RESIDENT_TAB_BASE.filter((t) => {
+            if (t.requiresAssessmentsModule && !showAssessmentsTab) return false;
+            return true;
+        });
+    }, [showAssessmentsTab]);
+
+    const visibleTabIds = React.useMemo(
+        () => visibleTabs.filter((t) => t.kind === 'tab').map((t) => t.id),
+        [visibleTabs],
+    );
+
+    React.useEffect(() => {
+        if (!visibleTabIds.includes(activeTab)) {
+            setSearchParams({ tab: 'overview' }, { replace: true });
+        }
+    }, [activeTab, visibleTabIds, setSearchParams]);
 
     const { data: resident, isLoading, error } = useQuery({
         queryKey: ['resident-hub', residentId],
@@ -121,9 +149,16 @@ export default function ResidentHubPage() {
     // ── Loading ──
     if (isLoading) {
         return (
-            <div>
-                <Breadcrumbs items={[{ label: 'My Residents', path: '/my-residents' }, { label: 'Loading…', path: '' }]} />
-                <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="space-y-6">
+                <div className="flex justify-start">
+                    <Link
+                        to="/my-residents"
+                        className="text-sm font-semibold text-[var(--theme-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] rounded"
+                    >
+                        Back to directory
+                    </Link>
+                </div>
+                <div className="flex min-h-[50vh] items-center justify-center">
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--theme-primary)]/30 border-t-[var(--theme-primary)]" />
                 </div>
             </div>
@@ -133,7 +168,6 @@ export default function ResidentHubPage() {
     if (error || !resident) {
         return (
             <div>
-                <Breadcrumbs items={[{ label: 'My Residents', path: '/my-residents' }, { label: 'Not Found', path: '' }]} />
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                     <AlertCircle className="w-12 h-12 text-gray-300 mb-3" />
                     <h3 className="text-lg font-bold text-gray-900">Resident not found</h3>
@@ -148,15 +182,10 @@ export default function ResidentHubPage() {
 
     return (
         <div className="space-y-0 -mt-1">
-            <Breadcrumbs items={[
-                { label: 'My Residents', path: '/my-residents' },
-                { label: fullName || 'Resident', path: '' },
-            ]} />
-
             {/* ── Resident header card ─────────────────────────────────────── */}
             <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-0">
                 {/* Top accent bar */}
-                <div className="h-1.5 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)]" aria-hidden="true" />
+                <div className="h-1 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)]" aria-hidden="true" />
 
                 <div className="px-4 py-4 flex flex-col md:flex-row md:items-center gap-4">
                     {/* Back button */}
@@ -257,29 +286,43 @@ export default function ResidentHubPage() {
                         role="tablist"
                         aria-label="Resident sections"
                     >
-                        {HUB_TABS.map(({ id, label, icon: Icon }) => {
-                            const isActive = activeTab === id;
+                        {visibleTabs.map((tab) => {
+                            const Icon = tab.icon;
+                            if (tab.kind === 'link') {
+                                return (
+                                    <Link
+                                        key={tab.id}
+                                        to={tab.href}
+                                        role="tab"
+                                        aria-selected={false}
+                                        className="relative flex flex-col items-center gap-0.5 px-3 py-2 whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-primary)] min-w-[68px] text-gray-400 hover:text-gray-700 hover:bg-gray-50"
+                                    >
+                                        <Icon className="w-4 h-4 shrink-0 text-gray-400" aria-hidden="true" />
+                                        <span className="text-[10px] font-bold tracking-wide text-gray-500">{tab.label}</span>
+                                    </Link>
+                                );
+                            }
+                            const isActive = activeTab === tab.id;
                             return (
                                 <button
-                                    key={id}
+                                    key={tab.id}
                                     type="button"
                                     role="tab"
                                     aria-selected={isActive}
-                                    onClick={() => setTab(id)}
-                                    className={`relative flex flex-col items-center gap-1 px-5 py-3 whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-primary)] min-w-[72px] ${
+                                    onClick={() => setTab(tab.id)}
+                                    className={`relative flex flex-col items-center gap-0.5 px-3 py-2 whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-primary)] min-w-[68px] ${
                                         isActive
                                             ? 'text-[var(--theme-primary)]'
                                             : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                                 >
                                     <Icon
-                                        className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-[var(--theme-primary)]' : 'text-gray-400'}`}
+                                        className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[var(--theme-primary)]' : 'text-gray-400'}`}
                                         aria-hidden="true"
                                     />
-                                    <span className={`text-[11px] font-bold tracking-wide ${isActive ? 'text-[var(--theme-primary)]' : 'text-gray-500'}`}>
-                                        {label}
+                                    <span className={`text-[10px] font-bold tracking-wide ${isActive ? 'text-[var(--theme-primary)]' : 'text-gray-500'}`}>
+                                        {tab.label}
                                     </span>
-                                    {/* Active underline indicator */}
                                     {isActive && (
                                         <span
                                             className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[var(--theme-primary)]"
@@ -303,6 +346,16 @@ export default function ResidentHubPage() {
                 {activeTab === 'vitals'       && <VitalsTab residentId={residentId} resident={resident} navigate={navigate} />}
                 {activeTab === 'appointments' && <AppointmentsTab residentId={residentId} resident={resident} navigate={navigate} />}
                 {activeTab === 'profile'      && <ProfileTab resident={resident} />}
+                {activeTab === 'assessments' && showAssessmentsTab && (
+                    <div className="resident-hub-embed max-w-[100vw] overflow-x-auto">
+                        <Assessments embedded embeddedResidentId={residentId} />
+                    </div>
+                )}
+                {activeTab === 'charts' && (
+                    <div className="resident-hub-embed">
+                        <CaregiverResidentChart residentId={residentId} embedded />
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -10,8 +10,9 @@ import { toast } from 'sonner';
 import logger from '../../utils/logger';
 import Tooltip from '../../components/ui/Tooltip';
 
-export default function CaregiverResidentChart() {
-    const { residentId } = useParams();
+export default function CaregiverResidentChart({ residentId: residentIdProp = null, embedded = false } = {}) {
+    const params = useParams();
+    const residentId = residentIdProp != null && residentIdProp !== '' ? String(residentIdProp) : params.residentId;
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
@@ -211,19 +212,23 @@ export default function CaregiverResidentChart() {
     }, {});
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6 pb-12">
+        <div className={`max-w-7xl mx-auto space-y-6 ${embedded ? 'pb-4' : 'pb-12'}`}>
             {/* Header / Form Title */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
+                        {!embedded && (
                         <button
+                            type="button"
                             onClick={() => navigate('/charts')}
                             className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
+                            aria-label="Back to charts"
                         >
                             <ArrowLeft className="w-5 h-5 text-gray-600" />
                         </button>
+                        )}
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
+                            <h1 className={`font-bold text-gray-900 ${embedded ? 'text-lg' : 'text-2xl'}`}>
                                 Behavioral Charting
                             </h1>
                             <p className="text-sm text-gray-500">
