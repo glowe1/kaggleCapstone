@@ -4,13 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import {
     Search, ArrowRight, Users, Calendar, Heart, Pill, Moon,
     ClipboardList, Settings, AlertTriangle, FileText, LayoutDashboard,
-    Sparkles, ShoppingCart, Flame, BarChart3, History, CalendarClock
+    Sparkles, ShoppingCart, Flame, BarChart3, History, CalendarClock,
+    Stethoscope, Wrench, Briefcase,
 } from 'lucide-react';
 import api from '../../services/api';
 
 const ADMIN_COMMANDS = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, category: 'Navigation' },
-    { id: 'residents', label: 'Residents', path: '/administration/residents', icon: Users, category: 'Administration' },
+    { id: 'residents-hub', label: 'Residents hub', path: '/residents', icon: Users, category: 'Hubs' },
+    { id: 'clinical-hub', label: 'Clinical', path: '/clinical', icon: Stethoscope, category: 'Hubs' },
+    { id: 'operations-hub', label: 'Operations', path: '/operations', icon: Wrench, category: 'Hubs' },
+    { id: 'management-hub', label: 'Management', path: '/management', icon: Briefcase, category: 'Hubs' },
+    { id: 'residents', label: 'Residents (admin)', path: '/administration/residents', icon: Users, category: 'Administration' },
     { id: 'medications', label: 'Medications', path: '/medications', icon: Pill, category: 'Care' },
     { id: 'vitals', label: 'Vitals', path: '/vitals', icon: Heart, category: 'Care' },
     { id: 'appointments', label: 'Appointments', path: '/appointments', icon: Calendar, category: 'Care' },
@@ -24,6 +29,11 @@ const ADMIN_COMMANDS = [
 
 const CAREGIVER_COMMANDS = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, category: 'Navigation' },
+    { id: 'residents-hub', label: 'Residents hub', path: '/residents', icon: Users, category: 'Hubs' },
+    { id: 'clinical-hub', label: 'Clinical', path: '/clinical', icon: Stethoscope, category: 'Hubs' },
+    { id: 'operations-hub', label: 'Operations', path: '/operations', icon: Wrench, category: 'Hubs' },
+    { id: 'management-hub', label: 'Management', path: '/management', icon: Briefcase, category: 'Hubs' },
+    { id: 'reports-hub', label: 'Reports', path: '/reports', icon: FileText, category: 'Hubs' },
     { id: 'my-residents', label: 'My Residents', path: '/my-residents', icon: Users, category: 'Care' },
     { id: 'medication-log', label: 'Medication Log', path: '/medications/residents', icon: Pill, category: 'Clinical' },
     { id: 'medication-history', label: 'Medication History', path: '/medication-history', icon: History, category: 'Clinical' },

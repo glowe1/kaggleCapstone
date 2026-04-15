@@ -129,6 +129,11 @@ const ClinicalHubPage = lazyWithRetry(() => import('./pages/caregiver/ClinicalHu
 const OperationsHubPage = lazyWithRetry(() => import('./pages/caregiver/OperationsHubPage'));
 const ClinicalSectionLayout = lazyWithRetry(() => import('./pages/caregiver/ClinicalSectionLayout'));
 const OperationsSectionLayout = lazyWithRetry(() => import('./pages/caregiver/OperationsSectionLayout'));
+const ResidentsSectionLayout = lazyWithRetry(() => import('./pages/caregiver/ResidentsSectionLayout'));
+const ResidentsHubPage = lazyWithRetry(() => import('./pages/caregiver/ResidentsHubPage'));
+const ManagementSectionLayout = lazyWithRetry(() => import('./pages/caregiver/ManagementSectionLayout'));
+const ManagementHubPage = lazyWithRetry(() => import('./pages/caregiver/ManagementHubPage'));
+const ReportsSectionLayout = lazyWithRetry(() => import('./pages/caregiver/ReportsSectionLayout'));
 const Appointments = lazyWithRetry(() => import('./pages/Appointments'));
 const AppointmentsDashboard = lazyWithRetry(() => import('./pages/AppointmentsDashboard'));
 const AppointmentDetail = lazyWithRetry(() => import('./pages/AppointmentDetail'));
@@ -306,13 +311,24 @@ function App() {
                 {/* Main Pages */}
                 <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
                 <Route path="dashboard" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
-                <Route path="assessments" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><Assessments /></ModuleProtectedRoute></Suspense>} />
-                <Route path="assessments/:id" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><AssessmentDetail /></ModuleProtectedRoute></Suspense>} />
-                <Route path="assessments/:id/review" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><AssessmentReview /></ModuleProtectedRoute></Suspense>} />
-                <Route path="appointments" element={<Suspense fallback={<PageLoader />}><Appointments /></Suspense>} />
-                <Route path="appointments/dashboard" element={<Suspense fallback={<PageLoader />}><AppointmentsDashboard /></Suspense>} />
-                <Route path="appointments/:id" element={<Suspense fallback={<PageLoader />}><AppointmentDetail /></Suspense>} />
-                <Route path="appointments/create/:residentId" element={<Suspense fallback={<PageLoader />}><CreateAppointment /></Suspense>} />
+
+                {/* ── Residents section (persistent tab bar) ───────────────── */}
+                <Route element={<Suspense fallback={<PageLoader />}><ResidentsSectionLayout /></Suspense>}>
+                    <Route path="residents" element={<Suspense fallback={<PageLoader />}><ResidentsHubPage /></Suspense>} />
+                    <Route path="assessments/:id/review" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><AssessmentReview /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="assessments/:id" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><AssessmentDetail /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="assessments" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="assessments"><Assessments /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="appointments/dashboard" element={<Suspense fallback={<PageLoader />}><AppointmentsDashboard /></Suspense>} />
+                    <Route path="appointments/create/:residentId" element={<Suspense fallback={<PageLoader />}><CreateAppointment /></Suspense>} />
+                    <Route path="appointments/:id" element={<Suspense fallback={<PageLoader />}><AppointmentDetail /></Suspense>} />
+                    <Route path="appointments" element={<Suspense fallback={<PageLoader />}><Appointments /></Suspense>} />
+                    <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentHubPage /></Suspense>} />
+                    <Route path="my-residents" element={<Suspense fallback={<PageLoader />}><MyResidentsPage /></Suspense>} />
+                    <Route path="residents/:residentId/detail" element={<Suspense fallback={<PageLoader />}><ResidentDetailPage /></Suspense>} />
+                    <Route path="charts/resident/:residentId" element={<Suspense fallback={<PageLoader />}><CaregiverResidentChart /></Suspense>} />
+                    <Route path="charts" element={<Suspense fallback={<PageLoader />}><CaregiverChartsPage /></Suspense>} />
+                    <Route path="t-logs" element={<Suspense fallback={<PageLoader />}><TLogs /></Suspense>} />
+                </Route>
                 {/* ── Clinical section (persistent tab bar) ─────────────────── */}
                 <Route element={<Suspense fallback={<PageLoader />}><ClinicalSectionLayout /></Suspense>}>
                     <Route path="clinical"            element={<Suspense fallback={<PageLoader />}><ClinicalHubPage /></Suspense>} />
@@ -344,51 +360,68 @@ function App() {
                     <Route path="leave-requests"          element={<Suspense fallback={<PageLoader />}><LeaveRequests /></Suspense>} />
                 </Route>
 
-                <Route path="t-logs" element={<Suspense fallback={<PageLoader />}><TLogs /></Suspense>} />
-                <Route path="pharmacy/dashboard" element={<Suspense fallback={<PageLoader />}><PharmacyDashboard /></Suspense>} />
-                <Route path="pharmacy/suppliers" element={<Suspense fallback={<PageLoader />}><PharmacySuppliers /></Suspense>} />
-                <Route path="pharmacy/inventory" element={<Suspense fallback={<PageLoader />}><PharmacyInventory /></Suspense>} />
-                <Route path="pharmacy/orders" element={<Suspense fallback={<PageLoader />}><PharmacyOrders /></Suspense>} />
-                <Route path="billing/expense-categories" element={<Suspense fallback={<PageLoader />}><ExpenseCategories /></Suspense>} />
-                <Route path="billing/expenses" element={<Suspense fallback={<PageLoader />}><Expenses /></Suspense>} />
-                <Route path="billing/invoices" element={<Suspense fallback={<PageLoader />}><BillingInvoices /></Suspense>} />
-                <Route path="billing/reports" element={<Suspense fallback={<PageLoader />}><ExpenseReports /></Suspense>} />
-                <Route path="check-in-dashboard" element={<Suspense fallback={<PageLoader />}><CheckInDashboard /></Suspense>} />
-                <Route path="staff/clock" element={<Suspense fallback={<PageLoader />}><StaffClock /></Suspense>} />
-                <Route path="staff/clock-ins" element={<Suspense fallback={<PageLoader />}><StaffClockInsView /></Suspense>} />
-                <Route path="staff/schedule" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="staff_scheduling"><StaffSchedule /></ModuleProtectedRoute></Suspense>} />
-                <Route path="staff/availability" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="staff_scheduling"><StaffAvailability /></ModuleProtectedRoute></Suspense>} />
-                <Route path="staff/attendance" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="staff_scheduling"><StaffClockInsView /></ModuleProtectedRoute></Suspense>} />
-                <Route path="residents/sign-out" element={<Suspense fallback={<PageLoader />}><ResidentSignOut /></Suspense>} />
-                <Route path="residents/sign-outs/view-all" element={<Suspense fallback={<PageLoader />}><ResidentSignOutsView /></Suspense>} />
-                <Route path="visitors" element={<Suspense fallback={<PageLoader />}><Visitors /></Suspense>} />
-                <Route path="visitors/view-all" element={<Suspense fallback={<PageLoader />}><VisitorsView /></Suspense>} />
-                <Route path="my-residents" element={<Suspense fallback={<PageLoader />}><MyResidentsPage /></Suspense>} />
-                <Route path="my-residents/:residentId" element={<Suspense fallback={<PageLoader />}><ResidentHubPage /></Suspense>} />
-                {/* Legacy resident detail — redirect to hub */}
-                <Route path="residents/:residentId/detail" element={<Suspense fallback={<PageLoader />}><ResidentDetailPage /></Suspense>} />
-                <Route path="charts" element={<Suspense fallback={<PageLoader />}><CaregiverChartsPage /></Suspense>} />
-                <Route path="charts/resident/:residentId" element={<Suspense fallback={<PageLoader />}><CaregiverResidentChart /></Suspense>} />
+                {/* ── Management section (persistent tab bar) ──────────────── */}
+                <Route element={<Suspense fallback={<PageLoader />}><ManagementSectionLayout /></Suspense>}>
+                    <Route path="management" element={<Suspense fallback={<PageLoader />}><ManagementHubPage /></Suspense>} />
+                    <Route path="pharmacy/dashboard" element={<Suspense fallback={<PageLoader />}><PharmacyDashboard /></Suspense>} />
+                    <Route path="pharmacy/suppliers" element={<Suspense fallback={<PageLoader />}><PharmacySuppliers /></Suspense>} />
+                    <Route path="pharmacy/inventory" element={<Suspense fallback={<PageLoader />}><PharmacyInventory /></Suspense>} />
+                    <Route path="pharmacy/orders" element={<Suspense fallback={<PageLoader />}><PharmacyOrders /></Suspense>} />
+                    <Route path="billing/expense-categories" element={<Suspense fallback={<PageLoader />}><ExpenseCategories /></Suspense>} />
+                    <Route path="billing/expenses" element={<Suspense fallback={<PageLoader />}><Expenses /></Suspense>} />
+                    <Route path="billing/invoices" element={<Suspense fallback={<PageLoader />}><BillingInvoices /></Suspense>} />
+                    <Route path="billing/reports" element={<Suspense fallback={<PageLoader />}><ExpenseReports /></Suspense>} />
+                    <Route path="check-in-dashboard" element={<Suspense fallback={<PageLoader />}><CheckInDashboard /></Suspense>} />
+                    <Route path="staff/clock" element={<Suspense fallback={<PageLoader />}><StaffClock /></Suspense>} />
+                    <Route path="staff/clock-ins" element={<Suspense fallback={<PageLoader />}><StaffClockInsView /></Suspense>} />
+                    <Route path="staff/schedule" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="staff_scheduling"><StaffSchedule /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="staff/availability" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="staff_scheduling"><StaffAvailability /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="staff/attendance" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="staff_scheduling"><StaffClockInsView /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="residents/sign-out" element={<Suspense fallback={<PageLoader />}><ResidentSignOut /></Suspense>} />
+                    <Route path="residents/sign-outs/view-all" element={<Suspense fallback={<PageLoader />}><ResidentSignOutsView /></Suspense>} />
+                    <Route path="visitors" element={<Suspense fallback={<PageLoader />}><Visitors /></Suspense>} />
+                    <Route path="visitors/view-all" element={<Suspense fallback={<PageLoader />}><VisitorsView /></Suspense>} />
+                    <Route path="administration/residents" element={<Suspense fallback={<PageLoader />}><Residents /></Suspense>} />
+                    <Route path="administration/resident-contacts" element={<Suspense fallback={<PageLoader />}><ResidentContacts /></Suspense>} />
+                    <Route path="administration/branches" element={<Suspense fallback={<PageLoader />}><Branches /></Suspense>} />
+                    <Route path="administration/vital-ranges" element={<Suspense fallback={<PageLoader />}><VitalRanges /></Suspense>} />
+                    <Route path="administration/leave-requests" element={<Suspense fallback={<PageLoader />}><LeaveRequests /></Suspense>} />
+                    <Route path="administration/roles" element={<Suspense fallback={<PageLoader />}><Roles /></Suspense>} />
+                    <Route path="administration/facility-permissions" element={<Suspense fallback={<PageLoader />}><Permissions /></Suspense>} />
+                    <Route path="administration/users" element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
+                    <Route path="administration/email-settings" element={<Suspense fallback={<PageLoader />}><SuperAdminEmailSettings /></Suspense>} />
+                    <Route path="administration/users/create" element={<Suspense fallback={<PageLoader />}><UserCreate /></Suspense>} />
+                    <Route path="administration/users/:id/edit" element={<Suspense fallback={<PageLoader />}><UserEdit /></Suspense>} />
+                    <Route path="administration/users/:id" element={<Suspense fallback={<PageLoader />}><ViewUser /></Suspense>} />
+                    <Route path="administration/chart-data" element={<Suspense fallback={<PageLoader />}><ChartData /></Suspense>} />
+                    <Route path="administration/behavior-charts" element={<Suspense fallback={<PageLoader />}><BehaviorChartsView /></Suspense>} />
+                    <Route path="administration/drugs" element={<Suspense fallback={<PageLoader />}><Drugs /></Suspense>} />
+                    <Route path="administration/employee-documents" element={<Suspense fallback={<PageLoader />}><EmployeeDocuments /></Suspense>} />
+                    <Route path="administration/activity-logs" element={<Suspense fallback={<PageLoader />}><ActivityLogs /></Suspense>} />
+                    <Route path="administration/deactivated" element={<Suspense fallback={<PageLoader />}><DeactivatedRecords /></Suspense>} />
+                </Route>
 
-                {/* Reports */}
-                <Route path="reports" element={<Suspense fallback={<PageLoader />}><Reports /></Suspense>} />
-                <Route path="reports/analytics" element={<Suspense fallback={<PageLoader />}><AnalyticsDashboard /></Suspense>} />
-                <Route path="reports/charts" element={<Suspense fallback={<PageLoader />}><ChartReports /></Suspense>} />
-                <Route path="reports/resident-charts" element={<Suspense fallback={<PageLoader />}><ResidentCharts /></Suspense>} />
-                <Route path="reports/vitals-charts" element={<Suspense fallback={<PageLoader />}><VitalsCharts /></Suspense>} />
-                <Route path="reports/vitals-reports" element={<Suspense fallback={<PageLoader />}><VitalsReports /></Suspense>} />
-                <Route path="reports/assessment-charts" element={<Suspense fallback={<PageLoader />}><AssessmentCharts /></Suspense>} />
-                <Route path="reports/appointments-charts" element={<Suspense fallback={<PageLoader />}><AppointmentsCharts /></Suspense>} />
-                <Route path="reports/vitals-history" element={<Suspense fallback={<PageLoader />}><VitalsHistory /></Suspense>} />
-                <Route path="reports/sleep-charts" element={<Suspense fallback={<PageLoader />}><SleepCharts /></Suspense>} />
-                <Route path="reports/staff-charts" element={<Suspense fallback={<PageLoader />}><StaffCharts /></Suspense>} />
-                <Route path="reports/care-logs" element={<Suspense fallback={<PageLoader />}><CareLogsReport /></Suspense>} />
-                <Route path="reports/inspection-package" element={<Suspense fallback={<PageLoader />}><InspectionPackage /></Suspense>} />
-                <Route path="reports/housekeeping" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="housekeeping"><HousekeepingReport /></ModuleProtectedRoute></Suspense>} />
-                <Route path="reports/grocery-status" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="grocery_status"><GroceryStatusReport /></ModuleProtectedRoute></Suspense>} />
-                <Route path="reports/fire-drills" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="fire_drills"><FireDrillsReport /></ModuleProtectedRoute></Suspense>} />
-                <Route path="reports/incidents" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="incidents"><IncidentsReport /></ModuleProtectedRoute></Suspense>} />
-                <Route path="reports/pharmacy" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="pharmacy"><PharmacyReport /></ModuleProtectedRoute></Suspense>} />
+                {/* ── Reports section (persistent tab bar) ─────────────────── */}
+                <Route element={<Suspense fallback={<PageLoader />}><ReportsSectionLayout /></Suspense>}>
+                    <Route path="reports" element={<Suspense fallback={<PageLoader />}><Reports /></Suspense>} />
+                    <Route path="reports/analytics" element={<Suspense fallback={<PageLoader />}><AnalyticsDashboard /></Suspense>} />
+                    <Route path="reports/charts" element={<Suspense fallback={<PageLoader />}><ChartReports /></Suspense>} />
+                    <Route path="reports/resident-charts" element={<Suspense fallback={<PageLoader />}><ResidentCharts /></Suspense>} />
+                    <Route path="reports/vitals-charts" element={<Suspense fallback={<PageLoader />}><VitalsCharts /></Suspense>} />
+                    <Route path="reports/vitals-reports" element={<Suspense fallback={<PageLoader />}><VitalsReports /></Suspense>} />
+                    <Route path="reports/assessment-charts" element={<Suspense fallback={<PageLoader />}><AssessmentCharts /></Suspense>} />
+                    <Route path="reports/appointments-charts" element={<Suspense fallback={<PageLoader />}><AppointmentsCharts /></Suspense>} />
+                    <Route path="reports/vitals-history" element={<Suspense fallback={<PageLoader />}><VitalsHistory /></Suspense>} />
+                    <Route path="reports/sleep-charts" element={<Suspense fallback={<PageLoader />}><SleepCharts /></Suspense>} />
+                    <Route path="reports/staff-charts" element={<Suspense fallback={<PageLoader />}><StaffCharts /></Suspense>} />
+                    <Route path="reports/care-logs" element={<Suspense fallback={<PageLoader />}><CareLogsReport /></Suspense>} />
+                    <Route path="reports/inspection-package" element={<Suspense fallback={<PageLoader />}><InspectionPackage /></Suspense>} />
+                    <Route path="reports/housekeeping" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="housekeeping"><HousekeepingReport /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="reports/grocery-status" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="grocery_status"><GroceryStatusReport /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="reports/fire-drills" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="fire_drills"><FireDrillsReport /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="reports/incidents" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="incidents"><IncidentsReport /></ModuleProtectedRoute></Suspense>} />
+                    <Route path="reports/pharmacy" element={<Suspense fallback={<PageLoader />}><ModuleProtectedRoute module="pharmacy"><PharmacyReport /></ModuleProtectedRoute></Suspense>} />
+                </Route>
 
                 {/* Super Admin */}
                 <Route path="super-admin/dashboard" element={<Suspense fallback={<PageLoader />}><SuperAdminDashboard /></Suspense>} />
@@ -408,27 +441,6 @@ function App() {
                 <Route path="super-admin/facilities/:id" element={<Suspense fallback={<PageLoader />}><FacilityView /></Suspense>} />
                 <Route path="super-admin/facilities/:id/edit" element={<Suspense fallback={<PageLoader />}><FacilityEdit /></Suspense>} />
                 <Route path="super-admin/permissions" element={<Suspense fallback={<PageLoader />}><Permissions /></Suspense>} />
-
-                {/* Administration */}
-                <Route path="administration/residents" element={<Suspense fallback={<PageLoader />}><Residents /></Suspense>} />
-                <Route path="administration/resident-contacts" element={<Suspense fallback={<PageLoader />}><ResidentContacts /></Suspense>} />
-                {/* Facilities route removed - only accessible via /super-admin/facilities */}
-                <Route path="administration/branches" element={<Suspense fallback={<PageLoader />}><Branches /></Suspense>} />
-                <Route path="administration/vital-ranges" element={<Suspense fallback={<PageLoader />}><VitalRanges /></Suspense>} />
-                <Route path="administration/leave-requests" element={<Suspense fallback={<PageLoader />}><LeaveRequests /></Suspense>} />
-                <Route path="administration/roles" element={<Suspense fallback={<PageLoader />}><Roles /></Suspense>} />
-                <Route path="administration/facility-permissions" element={<Suspense fallback={<PageLoader />}><Permissions /></Suspense>} />
-                <Route path="administration/users" element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
-                <Route path="administration/email-settings" element={<Suspense fallback={<PageLoader />}><SuperAdminEmailSettings /></Suspense>} />
-                <Route path="administration/users/create" element={<Suspense fallback={<PageLoader />}><UserCreate /></Suspense>} />
-                <Route path="administration/users/:id/edit" element={<Suspense fallback={<PageLoader />}><UserEdit /></Suspense>} />
-                <Route path="administration/users/:id" element={<Suspense fallback={<PageLoader />}><ViewUser /></Suspense>} />
-                <Route path="administration/chart-data" element={<Suspense fallback={<PageLoader />}><ChartData /></Suspense>} />
-                <Route path="administration/behavior-charts" element={<Suspense fallback={<PageLoader />}><BehaviorChartsView /></Suspense>} />
-                <Route path="administration/drugs" element={<Suspense fallback={<PageLoader />}><Drugs /></Suspense>} />
-                <Route path="administration/employee-documents" element={<Suspense fallback={<PageLoader />}><EmployeeDocuments /></Suspense>} />
-                <Route path="administration/activity-logs" element={<Suspense fallback={<PageLoader />}><ActivityLogs /></Suspense>} />
-                <Route path="administration/deactivated" element={<Suspense fallback={<PageLoader />}><DeactivatedRecords /></Suspense>} />
 
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

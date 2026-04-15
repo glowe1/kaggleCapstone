@@ -34,6 +34,7 @@ export const MODULE_MAP = {
   
   // Reports module
   '/reports': 'reports',
+  '/reports/analytics': 'reports',
   '/reports/charts': 'reports',
   '/reports/resident-charts': 'reports',
   '/reports/vitals-charts': 'reports',
@@ -54,7 +55,8 @@ export const MODULE_MAP = {
   // Residents module
   '/administration/residents': 'residents',
   '/my-residents': 'residents',
-  
+  '/residents': 'residents',
+
   // Grocery Status module
   '/grocery-status': 'grocery_status',
   

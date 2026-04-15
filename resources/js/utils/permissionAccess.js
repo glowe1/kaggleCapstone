@@ -21,6 +21,7 @@ export const PERMISSION_MAP = {
   
   // Other navigation items that require specific permissions
   '/my-residents': 'view_residents',
+  '/residents': 'view_residents',
 };
 
 /**

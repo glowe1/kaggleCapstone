@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import api, { setupProactiveRefresh, clearStoredAuth } from '../services/api';
 import { 
     LayoutDashboard, 
-    Calendar, 
     Building2, 
     Users, 
     FileText, 
@@ -14,7 +13,6 @@ import {
     Maximize2,
     User,
     LogOut,
-    ClipboardList,
     Settings,
     ChevronDown,
     ChevronRight,
@@ -23,14 +21,12 @@ import {
     Command,
     Clock,
     Shield,
-    DollarSign,
-    UserCheck,
     ArrowRightFromLine,
     ArrowLeftToLine,
     UserPlus,
-    BarChart3,
     Stethoscope,
     Wrench,
+    Briefcase,
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import ReminderPanel from './ReminderPanel';
@@ -86,112 +82,34 @@ const superAdminNavigation = [
     { name: 'Settings', icon: Settings, path: '/super-admin/settings', children: null },
 ];
 
+const HUB_SECTION = 'Hubs';
+
+/** Prefixes for sidebar active state when nested routes are open inside a hub. */
+const RESIDENT_HUB_PREFIXES = ['/my-residents', '/assessments', '/appointments', '/charts', '/t-logs'];
+/** Legacy route: /residents/:id/detail (does not match /residents/sign-out). */
+const RESIDENT_LEGACY_DETAIL = /^\/residents\/[^/]+\/detail(?:\/|$)/;
+const CLINICAL_HUB_PREFIXES = ['/vitals', '/view-vitals', '/medication-history', '/sleep', '/sleep-patterns', '/medications', '/medication-deliveries'];
+const OPERATIONS_HUB_PREFIXES = ['/housekeeping', '/grocery-status', '/fire-drills', '/incidents', '/leave-requests'];
+const MANAGEMENT_HUB_PREFIXES = ['/pharmacy', '/billing', '/check-in-dashboard', '/staff', '/visitors', '/residents/sign-out', '/residents/sign-outs', '/administration'];
+
+/** Caregivers: six primary destinations — detail lives inside each hub. */
 const caregiverNavigation = [
-    // HOME
-    { name: 'Dashboard',       icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
-    // RESIDENTS
-    { name: 'My Residents',    icon: Users,           path: '/my-residents', children: null, section: 'Residents' },
-    { name: 'Appointments',    icon: Calendar,        path: '/appointments', children: null, section: 'Residents' },
-    { name: 'Behavior Charts', icon: BarChart3,       path: '/charts',       children: null, section: 'Residents' },
-    // CLINICAL — single hub link; all sub-features are on /clinical
-    { name: 'Clinical',        icon: Stethoscope,     path: '/clinical',     children: null, section: 'Clinical' },
-    // OPERATIONS — single hub link; all sub-features are on /operations
-    { name: 'Operations',      icon: Wrench,          path: '/operations',   children: null, section: 'Operations' },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
+    { name: 'Residents',  icon: Users,           path: '/residents',    children: null, section: HUB_SECTION, activePathPrefixes: RESIDENT_HUB_PREFIXES, activePathRegex: RESIDENT_LEGACY_DETAIL },
+    { name: 'Clinical',   icon: Stethoscope,     path: '/clinical',     children: null, section: HUB_SECTION, activePathPrefixes: CLINICAL_HUB_PREFIXES },
+    { name: 'Operations', icon: Wrench,          path: '/operations',   children: null, section: HUB_SECTION, activePathPrefixes: OPERATIONS_HUB_PREFIXES },
+    { name: 'Management', icon: Briefcase,       path: '/management',   children: null, section: HUB_SECTION, activePathPrefixes: MANAGEMENT_HUB_PREFIXES },
+    { name: 'Reports',    icon: FileText,        path: '/reports',      children: null, section: HUB_SECTION },
 ];
 
-/**
- * Facility admins: hub entry points for Clinical / Operations only — no sidebar links that
- * duplicate destinations already on those hub pages or their tab bars.
- */
+/** Facility staff: same hub structure as caregivers. */
 const facilityStaffHubNavigation = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
-    { name: 'My Residents',    icon: Users,           path: '/my-residents', children: null, section: 'Residents' },
-    { name: 'Assessments',     icon: ClipboardList,   path: '/assessments', children: null, section: 'Residents' },
-    {
-        name: 'Appointments',
-        icon: Calendar,
-        path: '/appointments/dashboard',
-        section: 'Residents',
-        children: [
-            { name: 'Dashboard', path: '/appointments/dashboard' },
-            { name: 'All appointments', path: '/appointments' },
-        ],
-    },
-    { name: 'Behavior Charts', icon: BarChart3,       path: '/charts',       children: null, section: 'Residents' },
-    { name: 'Clinical',        icon: Stethoscope,     path: '/clinical',     children: null, section: 'Clinical' },
-    { name: 'Operations',      icon: Wrench,          path: '/operations',   children: null, section: 'Operations' },
-    { name: 'Progress notes',  icon: FileText,        path: '/t-logs',       children: null, section: 'Work' },
-    {
-        name: 'Check-In/Out',
-        icon: UserCheck,
-        path: '/check-in-dashboard',
-        section: 'Work',
-        children: [
-            { name: 'Dashboard', path: '/check-in-dashboard' },
-            { name: 'Staff Clock-In/Out', path: '/staff/clock' },
-            { name: 'View All Clock-Ins', path: '/staff/clock-ins' },
-            { name: 'Resident Sign-Outs', path: '/residents/sign-out' },
-            { name: 'Visitors', path: '/visitors' },
-        ],
-    },
-    {
-        name: 'Staff Scheduling',
-        icon: Clock,
-        path: '/staff/schedule',
-        section: 'Work',
-        children: [
-            { name: 'Schedule', path: '/staff/schedule' },
-            { name: 'Availability', path: '/staff/availability' },
-            { name: 'Attendance', path: '/staff/attendance' },
-        ],
-    },
-    {
-        name: 'Pharmacy',
-        icon: Building2,
-        path: '/pharmacy/dashboard',
-        section: 'Management',
-        children: [
-            { name: 'Dashboard', path: '/pharmacy/dashboard' },
-            { name: 'Suppliers', path: '/pharmacy/suppliers' },
-            { name: 'Inventory', path: '/pharmacy/inventory' },
-            { name: 'Orders', path: '/pharmacy/orders' },
-        ],
-    },
-    {
-        name: 'Billing',
-        icon: DollarSign,
-        path: '/billing/expense-categories',
-        section: 'Management',
-        children: [
-            { name: 'Expense Categories', path: '/billing/expense-categories' },
-            { name: 'Expenses', path: '/billing/expenses' },
-            { name: 'Invoices', path: '/billing/invoices' },
-            { name: 'Reports', path: '/billing/reports' },
-        ],
-    },
-    { name: 'Reports', icon: FileText,        path: '/reports',      children: null, section: 'Management' },
-    { name: 'Charts',          icon: ClipboardList,   path: '/administration/behavior-charts', children: null, section: 'Management' },
-    {
-        name: 'Administration',
-        icon: Settings,
-        path: '/administration',
-        section: 'Management',
-        children: [
-            { name: 'Residents', path: '/administration/residents' },
-            { name: 'Family Portal (Contacts)', path: '/administration/resident-contacts' },
-            { name: 'Branches', path: '/administration/branches' },
-            { name: 'Email Notifications', path: '/administration/email-settings' },
-            { name: 'Vital Ranges', path: '/administration/vital-ranges' },
-            { name: 'Leave Requests', path: '/administration/leave-requests' },
-            { name: 'Roles & Permissions', path: '/administration/roles' },
-            { name: 'Users', path: '/administration/users' },
-            { name: 'Drugs', path: '/administration/drugs' },
-            { name: 'Behavior Category Charts', path: '/administration/chart-data' },
-            { name: 'Inactive Records', path: '/administration/deactivated' },
-            { name: 'Employee Documents', path: '/administration/employee-documents' },
-            { name: 'Activity Logs', path: '/administration/activity-logs' },
-        ],
-    },
+    { name: 'Dashboard',  icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
+    { name: 'Residents',  icon: Users,           path: '/residents',    children: null, section: HUB_SECTION, activePathPrefixes: RESIDENT_HUB_PREFIXES, activePathRegex: RESIDENT_LEGACY_DETAIL },
+    { name: 'Clinical',   icon: Stethoscope,     path: '/clinical',     children: null, section: HUB_SECTION, activePathPrefixes: CLINICAL_HUB_PREFIXES },
+    { name: 'Operations', icon: Wrench,          path: '/operations',   children: null, section: HUB_SECTION, activePathPrefixes: OPERATIONS_HUB_PREFIXES },
+    { name: 'Management', icon: Briefcase,       path: '/management',   children: null, section: HUB_SECTION, activePathPrefixes: MANAGEMENT_HUB_PREFIXES },
+    { name: 'Reports',    icon: FileText,        path: '/reports',      children: null, section: HUB_SECTION },
 ];
 
 export default function Layout() {
@@ -792,12 +710,19 @@ function getItemActiveState(item, location, navigationItems) {
             child => location.pathname === child.path || location.pathname.startsWith(child.path + '/')
         );
     }
-    let isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-    if (isActive && location.pathname !== item.path) {
+    const pathname = location.pathname;
+    const primaryMatch = pathname === item.path || pathname.startsWith(item.path + '/');
+    const prefixes = item.activePathPrefixes || [];
+    const prefixMatch = prefixes.some(
+        p => pathname === p || pathname.startsWith(p + '/')
+    );
+    const regexMatch = item.activePathRegex?.test?.(pathname) ?? false;
+    let isActive = primaryMatch || prefixMatch || regexMatch;
+    if (isActive && primaryMatch && pathname !== item.path) {
         const hasMoreSpecific = (navigationItems || []).some(
             other => other.path !== item.path &&
                 other.path.startsWith(item.path + '/') &&
-                location.pathname.startsWith(other.path)
+                pathname.startsWith(other.path)
         );
         if (hasMoreSpecific) isActive = false;
     }

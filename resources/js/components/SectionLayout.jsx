@@ -15,6 +15,9 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 
 function pathnameMatchesTab(pathname, tab) {
+    if (tab.exact) {
+        return pathname === tab.path;
+    }
     const paths = [tab.path, ...(tab.extraPaths || [])].filter(Boolean);
     return paths.some(
         p => pathname === p || pathname.startsWith(p + '/')
@@ -61,7 +64,7 @@ export default function SectionLayout({ title, subtitle, tabs = [] }) {
                             return (
                                 <Link
                                     key={tab.id}
-                                    to={tab.path}
+                                    to={tab.linkTo ?? tab.path}
                                     role="tab"
                                     aria-selected={isActive}
                                     className={`
