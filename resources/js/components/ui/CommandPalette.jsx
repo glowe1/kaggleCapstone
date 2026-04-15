@@ -11,7 +11,7 @@ import api from '../../services/api';
 
 const ADMIN_COMMANDS = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, category: 'Navigation' },
-    { id: 'residents-hub', label: 'Residents hub', path: '/residents', icon: Users, category: 'Hubs' },
+    { id: 'residents-hub', label: 'Residents', path: '/my-residents', icon: Users, category: 'Hubs' },
     { id: 'clinical-hub', label: 'Clinical', path: '/clinical', icon: Stethoscope, category: 'Hubs' },
     { id: 'operations-hub', label: 'Operations', path: '/operations', icon: Wrench, category: 'Hubs' },
     { id: 'management-hub', label: 'Management', path: '/management', icon: Briefcase, category: 'Hubs' },
@@ -29,7 +29,7 @@ const ADMIN_COMMANDS = [
 
 const CAREGIVER_COMMANDS = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, category: 'Navigation' },
-    { id: 'residents-hub', label: 'Residents hub', path: '/residents', icon: Users, category: 'Hubs' },
+    { id: 'residents-hub', label: 'Residents', path: '/my-residents', icon: Users, category: 'Hubs' },
     { id: 'clinical-hub', label: 'Clinical', path: '/clinical', icon: Stethoscope, category: 'Hubs' },
     { id: 'operations-hub', label: 'Operations', path: '/operations', icon: Wrench, category: 'Hubs' },
     { id: 'management-hub', label: 'Management', path: '/management', icon: Briefcase, category: 'Hubs' },

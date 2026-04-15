@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
@@ -31,7 +32,10 @@ const TABS = [
 ];
 
 export default function ResidentsSectionLayout() {
+    const { pathname } = useLocation();
+    const showTabBar = pathname !== '/my-residents';
+
     return (
-        <SectionLayout title="Residents" tabs={TABS} />
+        <SectionLayout title="Residents" tabs={TABS} showTabBar={showTabBar} />
     );
 }

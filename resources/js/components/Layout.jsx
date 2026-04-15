@@ -97,7 +97,7 @@ const MANAGEMENT_HUB_PREFIXES = ['/pharmacy', '/billing', '/check-in-dashboard',
 /** Caregivers: six primary destinations — detail lives inside each hub. */
 const caregiverNavigation = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
-    { name: 'Residents',  icon: Users,           path: '/residents',    children: null, section: HUB_SECTION, activePathPrefixes: RESIDENT_HUB_PREFIXES, activePathRegex: RESIDENT_LEGACY_DETAIL },
+    { name: 'Residents',  icon: Users,           path: '/my-residents', children: null, section: HUB_SECTION, activePathPrefixes: RESIDENT_HUB_PREFIXES, activePathRegex: RESIDENT_LEGACY_DETAIL },
     { name: 'Clinical',   icon: Stethoscope,     path: '/clinical',     children: null, section: HUB_SECTION, activePathPrefixes: CLINICAL_HUB_PREFIXES },
     { name: 'Operations', icon: Wrench,          path: '/operations',   children: null, section: HUB_SECTION, activePathPrefixes: OPERATIONS_HUB_PREFIXES },
     { name: 'Management', icon: Briefcase,       path: '/management',   children: null, section: HUB_SECTION, activePathPrefixes: MANAGEMENT_HUB_PREFIXES },
@@ -107,7 +107,7 @@ const caregiverNavigation = [
 /** Facility staff: same hub structure as caregivers. */
 const facilityStaffHubNavigation = [
     { name: 'Dashboard',  icon: LayoutDashboard, path: '/dashboard',  children: null, section: 'Home' },
-    { name: 'Residents',  icon: Users,           path: '/residents',    children: null, section: HUB_SECTION, activePathPrefixes: RESIDENT_HUB_PREFIXES, activePathRegex: RESIDENT_LEGACY_DETAIL },
+    { name: 'Residents',  icon: Users,           path: '/my-residents', children: null, section: HUB_SECTION, activePathPrefixes: RESIDENT_HUB_PREFIXES, activePathRegex: RESIDENT_LEGACY_DETAIL },
     { name: 'Clinical',   icon: Stethoscope,     path: '/clinical',     children: null, section: HUB_SECTION, activePathPrefixes: CLINICAL_HUB_PREFIXES },
     { name: 'Operations', icon: Wrench,          path: '/operations',   children: null, section: HUB_SECTION, activePathPrefixes: OPERATIONS_HUB_PREFIXES },
     { name: 'Management', icon: Briefcase,       path: '/management',   children: null, section: HUB_SECTION, activePathPrefixes: MANAGEMENT_HUB_PREFIXES },
