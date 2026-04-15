@@ -472,10 +472,10 @@ export default function Layout() {
 
                 {/* Logo / branding header */}
                 <div className={`border-b border-[var(--theme-primary-light)] flex items-center overflow-hidden
-                    ${sidebarCollapsed ? 'justify-center py-4 px-2' : 'p-4 gap-3'}`}
+                    ${sidebarCollapsed ? 'justify-center py-2.5 px-2' : 'py-2.5 px-3 gap-2.5'}`}
                 >
                     {/* Logo circle */}
-                    <div className="w-10 h-10 flex-shrink-0 rounded-full bg-[var(--theme-primary)] flex items-center justify-center shadow-lg overflow-hidden ring-2 ring-white/20">
+                    <div className="w-9 h-9 flex-shrink-0 rounded-full bg-[var(--theme-primary)] flex items-center justify-center shadow-lg overflow-hidden ring-2 ring-white/20">
                         <img
                             src={facilityBranding.logo}
                             alt={facilityBranding.name}
@@ -505,7 +505,7 @@ export default function Layout() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 p-2 overflow-y-auto" aria-label="Main navigation">
+                <nav className="flex-1 flex flex-col px-2 py-1.5 overflow-y-auto min-h-0" aria-label="Main navigation">
                     {isLoadingUser ? (
                         <div className="flex items-center justify-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--theme-text-on-primary)]" aria-label="Loading navigation" />
@@ -524,7 +524,7 @@ export default function Layout() {
                             collapsed={sidebarCollapsed}
                         />
                     ) : (
-                        <div className="space-y-0.5">
+                        <div className="flex flex-col w-full gap-0.5">
                             {navigationItems.map((item) => (
                                 <NavItem
                                     key={item.name}
@@ -542,13 +542,13 @@ export default function Layout() {
                 </nav>
 
                 {/* Collapse toggle button — pinned to sidebar bottom */}
-                <div className="border-t border-[var(--theme-primary-light)] p-2">
+                <div className="border-t border-[var(--theme-primary-light)] p-1.5">
                     <Tooltip content={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} position="right">
                         <button
                             type="button"
                             onClick={toggleSidebar}
                             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                            className={`w-full flex items-center rounded-lg px-2 py-2.5 text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-light)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50
+                            className={`w-full flex items-center rounded-lg px-2 py-2 text-[var(--theme-text-on-primary)] hover:bg-[var(--theme-primary-light)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50
                                 ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}
                         >
                             {sidebarCollapsed
@@ -566,7 +566,7 @@ export default function Layout() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
                 {/* Top Bar */}
-                <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between gap-2 shadow-sm">
+                <header className="bg-white border-b border-gray-200 px-3 md:px-5 py-2 md:py-2.5 flex items-center justify-between gap-2 shadow-sm min-h-0">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
                         <button
                             type="button"
@@ -580,7 +580,7 @@ export default function Layout() {
                         {/* Facility context indicator */}
                         <Link
                             to="/profile"
-                            className="group flex items-center gap-2 min-w-0 rounded-lg px-2 py-1 -mx-2 hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]"
+                            className="group flex items-center gap-2 min-w-0 rounded-lg px-1.5 py-0.5 -mx-1.5 hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]"
                             aria-label={`Active facility: ${facilityBranding.name}. Go to profile settings.`}
                         >
                             <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden border border-gray-200 bg-[var(--theme-primary)] hidden sm:flex items-center justify-center">
@@ -607,7 +607,7 @@ export default function Layout() {
                             userLoading={isLoadingUserData}
                         />
                     ) : null}
-                    <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
+                    <div className="flex items-center space-x-1.5 md:space-x-3 shrink-0">
                         <LiveClock serverTime={currentUser?.app_current_time} timezoneOffset={currentUser?.app_timezone_offset} />
                         {/* Hide search, notifications, and calendar for super admin */}
                         {currentUser?.role !== 'super_admin' && (
@@ -757,7 +757,7 @@ function NavItem({ item, location, expandedMenus, setExpandedMenus, navigationIt
                     onClick={onLinkClick}
                     aria-label={item.name}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`flex items-center justify-center w-full py-2.5 rounded-lg transition-colors ${isActive ? activeClass : inactiveClass}`}
+                    className={`flex items-center justify-center w-full min-h-[2.5rem] py-2 rounded-lg transition-colors ${isActive ? activeClass : inactiveClass}`}
                 >
                     <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={2.25} aria-hidden="true" />
                 </Link>
@@ -768,12 +768,12 @@ function NavItem({ item, location, expandedMenus, setExpandedMenus, navigationIt
     // ── Expanded: full label ───────────────────────────────────────────────────
     if (hasChildren) {
         return (
-            <div>
+            <div className="w-full min-w-0">
                 <button
                     type="button"
                     onClick={() => setExpandedMenus({ ...expandedMenus, [item.name]: !isExpanded })}
                     aria-expanded={isExpanded}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${isActive ? activeClass : inactiveClass}`}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${isActive ? activeClass : inactiveClass}`}
                 >
                     <div className="flex items-center gap-3">
                         <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={2.25} aria-hidden="true" />
@@ -809,7 +809,7 @@ function NavItem({ item, location, expandedMenus, setExpandedMenus, navigationIt
         <Link
             to={item.path}
             onClick={onLinkClick}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm ${isActive ? activeClass : inactiveClass}`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm w-full ${isActive ? activeClass : inactiveClass}`}
             aria-current={isActive ? 'page' : undefined}
         >
             <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={2.25} aria-hidden="true" />
@@ -836,12 +836,12 @@ function CaregiverNav({ items, location, expandedMenus, setExpandedMenus, onLink
     }, [items]);
 
     return (
-        <div className={collapsed ? 'space-y-0.5' : 'space-y-4'}>
+        <div className={`flex flex-col w-full ${collapsed ? 'gap-1' : 'gap-3'}`}>
             {sections.map(({ section, items: sectionItems }) => (
-                <div key={section}>
+                <div key={section} className="flex flex-col w-full min-w-0">
                     {/* Section label — hidden for "Home" and when sidebar is collapsed */}
                     {section !== 'Home' && !collapsed && (
-                        <div className="px-3 pb-1">
+                        <div className="px-3 pb-1 w-full">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 select-none">
                                 {section}
                             </span>
@@ -849,9 +849,9 @@ function CaregiverNav({ items, location, expandedMenus, setExpandedMenus, onLink
                     )}
                     {/* Subtle divider between sections in collapsed mode */}
                     {section !== 'Home' && collapsed && (
-                        <div className="border-t border-white/10 my-1" aria-hidden="true" />
+                        <div className="border-t border-white/10 my-0.5 w-full shrink-0" aria-hidden="true" />
                     )}
-                    <div className="space-y-0.5">
+                    <div className="flex flex-col w-full gap-0.5">
                         {sectionItems.map(item => (
                             <NavItem
                                 key={item.name}
