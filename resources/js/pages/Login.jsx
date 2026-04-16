@@ -4,7 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, ClipboardList, Clock, Home, Info, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { storeAuthToken } from '../services/api';
-import { clearCachedCurrentUser } from '../queries/currentUser';
+import { clearCachedCurrentUser, currentUserQueryOptions } from '../queries/currentUser';
+import { dashboardStatsQueryOptions } from '../queries/dashboardStats';
 import { useAnimateOnMount } from '../hooks/useAnimateOnMount';
 import { slideInLeft, slideInRight, fadeIn, shake, shouldAnimate } from '../utils/animationPresets';
 import { getUserLocation, formatDistance } from '../utils/location';
@@ -180,7 +181,17 @@ export default function Login() {
                     localStorage.setItem('user_role', response.data.user.role || '');
                 }
                 const role = response.data.user?.role ?? '';
-                navigate(role === 'family' ? '/portal' : '/dashboard');
+                if (role === 'family') {
+                    navigate('/portal');
+                } else {
+                    try {
+                        await queryClient.prefetchQuery(currentUserQueryOptions);
+                        await queryClient.prefetchQuery(dashboardStatsQueryOptions);
+                    } catch (prefetchErr) {
+                        logger.warn('Post-login dashboard prefetch failed:', prefetchErr);
+                    }
+                    navigate('/dashboard');
+                }
             }
         } catch (err) {
             // Handle location-based errors with distance information

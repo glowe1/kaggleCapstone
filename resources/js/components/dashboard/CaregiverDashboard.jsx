@@ -10,7 +10,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import SectionCard from '../SectionCard';
-import { slideInUp, shouldAnimate } from '../../utils/animationPresets';
+import { slideInUpNoFade, shouldAnimate } from '../../utils/animationPresets';
 import api from '../../services/api';
 import { getPacificNow, formatPacificTime, formatPacificDate } from '../../utils/pacificTime';
 
@@ -438,7 +438,7 @@ function ResidentStrip({ residents, medReminderIds, navigate }) {
 
     React.useEffect(() => {
         if (stripRef.current && shouldAnimate()) {
-            slideInUp(stripRef.current, { duration: 280, delay: 60 });
+            slideInUpNoFade(stripRef.current, { duration: 280, delay: 60 });
         }
     }, []);
 
@@ -536,7 +536,7 @@ function AlertsWidget({ items, navigate }) {
 
     React.useEffect(() => {
         if (widgetRef.current && shouldAnimate()) {
-            slideInUp(widgetRef.current, { duration: 320, delay: 80 });
+            slideInUpNoFade(widgetRef.current, { duration: 320, delay: 80 });
         }
     }, []);
 
@@ -714,7 +714,7 @@ function BirthdaysWidget({ birthdays, navigate }) {
 
     React.useEffect(() => {
         if (widgetRef.current && shouldAnimate()) {
-            slideInUp(widgetRef.current, { duration: 300, delay: 100 });
+            slideInUpNoFade(widgetRef.current, { duration: 300, delay: 100 });
         }
     }, []);
 

@@ -16,6 +16,7 @@ import {
 import api from '../services/api';
 import logger from '../utils/logger';
 import { currentUserQueryOptions } from '../queries/currentUser';
+import { dashboardStatsQueryOptions } from '../queries/dashboardStats';
 import { useTheme } from '../contexts/ThemeContext';
 import { hexToRgb, addOpacity } from '../utils/colorUtils';
 import {
@@ -39,6 +40,7 @@ import ActionableItemsSection from '../components/dashboard/ActionableItemsSecti
 import MobileDashboard from '../components/dashboard/MobileDashboard';
 import UpcomingEventsWidget from '../components/dashboard/UpcomingEventsWidget';
 import CaregiverDashboard from '../components/dashboard/CaregiverDashboard';
+import DashboardLoadingSplash from '../components/dashboard/DashboardLoadingSplash';
 import { useUserNotifications, useFacilityUpdates, useStaffClockUpdates } from '../hooks/useRealtimeUpdates';
 
 // Register Chart.js components
@@ -223,7 +225,7 @@ function ResidentVitalsTrendSection({ residents, defaultTrend }) {
 export default function Dashboard() {
     const navigate = useNavigate();
 
-    const { data: currentUser } = useQuery(currentUserQueryOptions);
+    const { data: currentUser, isFetched: userFetched } = useQuery(currentUserQueryOptions);
 
     // Redirect super admins to super admin dashboard
     useEffect(() => {
@@ -257,25 +259,7 @@ export default function Dashboard() {
     // Real-time: personal notifications
     useUserNotifications(currentUser?.id, { showToast: true });
 
-    const { data: stats, isLoading, error } = useQuery({
-        queryKey: ['dashboard-stats'],
-        queryFn: async () => {
-            try {
-                const response = await api.get('/dashboard/stats');
-                if (response.data && response.data.data) {
-                    return response.data.data;
-                }
-                return response.data;
-            } catch (err) {
-                logger.error('Dashboard API error:', err);
-                // Return null to show error state instead of zeros
-                return null;
-            }
-        },
-        retry: 1,
-        refetchInterval: 60000, // Poll every 60 seconds for real-time updates
-        refetchIntervalInBackground: false, // Don't poll in background to save resources
-    });
+    const { data: stats, isLoading: statsLoading, isFetched: statsFetched, error } = useQuery(dashboardStatsQueryOptions);
 
     // Fetch daily activities for calendar (last 30 days)
     const { data: dailyActivities } = useQuery({
@@ -297,7 +281,7 @@ export default function Dashboard() {
         refetchInterval: 120000, // Poll every 2 minutes
         refetchIntervalInBackground: false,
         // Defer until primary stats load so the first paint does fewer parallel requests
-        enabled: !isLoading,
+        enabled: !statsLoading,
     });
 
     // Determine user type early
@@ -320,7 +304,7 @@ export default function Dashboard() {
             }
         },
         retry: false,
-        enabled: !isCaregiver && !isLoading, // Only fetch for admins after stats load
+        enabled: !isCaregiver && !statsLoading, // Only fetch for admins after stats load
         refetchInterval: 180000, // Poll every 3 minutes
         refetchIntervalInBackground: false,
     });
@@ -789,8 +773,13 @@ export default function Dashboard() {
     const showTrendsBesideUpcoming = trendsChartHasData && !showFireDrills;
     const adminMiddleRowTwoCols = showFireDrills || showTrendsBesideUpcoming;
 
+    const isDashboardReady = userFetched && statsFetched;
+    if (!isDashboardReady) {
+        return <DashboardLoadingSplash />;
+    }
+
     // Mobile view
-    if (isMobile && !isLoading) {
+    if (isMobile && !statsLoading) {
         return (
             <MobileDashboard
                 greeting={greeting}
@@ -805,7 +794,7 @@ export default function Dashboard() {
     }
 
     // Caregiver Dashboard View
-    if (isCaregiver && !isLoading) {
+    if (isCaregiver && !statsLoading) {
         return (
             <div className="min-h-screen bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
@@ -836,7 +825,7 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {!isLoading && stats && stats.facility_context_missing && (
+                    {!statsLoading && stats && stats.facility_context_missing && (
                         <div className="bg-yellow-50 rounded-xl shadow-sm border-l-4 border-yellow-500 p-4">
                             <div className="flex items-center space-x-3">
                                 <AlertTriangle className="w-5 h-5 text-yellow-600" />
@@ -856,11 +845,11 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {isLoading && (
+                    {statsLoading && (
                         <DashboardSkeleton />
                     )}
 
-                    {!isLoading && (
+                    {!statsLoading && (
                         <>
                             {/* Compact admin hero — date + context without large vertical padding */}
                             <div
