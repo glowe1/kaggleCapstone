@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, ClipboardList, Clock, Home, Info, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { storeAuthToken } from '../services/api';
-import { clearCachedCurrentUser, currentUserQueryOptions } from '../queries/currentUser';
+import { clearCachedCurrentUser, currentUserQueryOptions, CURRENT_USER_QUERY_KEY } from '../queries/currentUser';
 import { dashboardStatsQueryOptions } from '../queries/dashboardStats';
 import { useAnimateOnMount } from '../hooks/useAnimateOnMount';
 import { slideInLeft, slideInRight, fadeIn, shake, shouldAnimate } from '../utils/animationPresets';
@@ -179,6 +179,9 @@ export default function Login() {
                 if (response.data.user) {
                     localStorage.setItem('user_name', response.data.user.name || response.data.user.email);
                     localStorage.setItem('user_role', response.data.user.role || '');
+                    
+                    // Seed the current-user query cache immediately so ThemeWrapper hasn't got to fetch it
+                    queryClient.setQueryData(CURRENT_USER_QUERY_KEY, response.data.user);
                 }
                 const role = response.data.user?.role ?? '';
                 if (role === 'family') {
