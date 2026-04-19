@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class MedicationLogReportController extends Controller
 {
@@ -40,27 +41,42 @@ class MedicationLogReportController extends Controller
         $dateFrom = Carbon::createFromFormat('Y-m-d', $validated['date_from'], $tz)->startOfDay();
         $dateTo = Carbon::createFromFormat('Y-m-d', $validated['date_to'], $tz)->endOfDay();
 
-        $data = $this->medicationLogReportService->buildViewData($resident, $dateFrom, $dateTo);
+        try {
+            $data = $this->medicationLogReportService->buildViewData($resident, $dateFrom, $dateTo);
 
-        $safeName = preg_replace('/[^a-zA-Z0-9_-]+/', '_', $resident->last_name ?: 'resident');
-        $filename = sprintf(
-            'Premium_Medication_Log_%s_%s_%s.pdf',
-            $validated['date_from'],
-            $validated['date_to'],
-            $safeName
-        );
+            $safeName = preg_replace('/[^a-zA-Z0-9_-]+/', '_', $resident->last_name ?: 'resident');
+            $filename = sprintf(
+                'Premium_Medication_Log_%s_%s_%s.pdf',
+                $validated['date_from'],
+                $validated['date_to'],
+                $safeName
+            );
 
-        $pdfBinary = $this->premiumReportService->generate(
-            'reports.premium-medication-log',
-            $data,
-            $filename,
-            ['orientation' => 'landscape']
-        );
+            $pdfBinary = $this->premiumReportService->generate(
+                'reports.premium-medication-log',
+                $data,
+                $filename,
+                ['orientation' => 'landscape']
+            );
 
-        return response($pdfBinary, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+            return response($pdfBinary, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Premium Medication Log generation failed', [
+                'resident_id' => $resident->id,
+                'date_from' => $validated['date_from'],
+                'date_to' => $validated['date_to'],
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to generate report. Please try again later.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     private function isCaregiver(?User $user): bool

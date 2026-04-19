@@ -34,7 +34,11 @@ class MedicationReports extends Page
     public function mount(): void
     {
         if (request()->has('export')) {
-            $this->exportMedicationReport(app(PremiumReportService::class));
+            $response = $this->exportMedicationReport(app(PremiumReportService::class));
+            if ($response) {
+                $response->send();
+                exit;
+            }
         }
     }
 
@@ -239,8 +243,7 @@ class MedicationReports extends Page
         return response($pdfBinary, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ])->send();
-        exit;
+        ]);
     }
 
     protected function getHeaderWidgets(): array

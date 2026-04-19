@@ -5,6 +5,7 @@ namespace App\Services;
 use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class PremiumReportService
 {
@@ -19,6 +20,8 @@ class PremiumReportService
      */
     public function generate(string $view, array $data = [], ?string $filename = null, array $options = []): string
     {
+        Log::debug('Starting professional PDF generation', ['view' => $view, 'filename' => $filename]);
+
         // Render the HTML view
         $html = View::make($view, $data)->render();
 
@@ -31,26 +34,50 @@ class PremiumReportService
                 $options['margin_bottom'] ?? 10,
                 $options['margin_left'] ?? 10
             )
-            ->showBackground()
-            ->waitUntilNetworkIdle();
+            ->showBackground();
 
         // Handle orientation
         if (($options['orientation'] ?? 'portrait') === 'landscape') {
             $browsershot->landscape();
         }
 
-        // Use system chrome binary and required linux flags
-        $browsershot->setChromePath('/usr/bin/google-chrome')
-            ->setNodeBinary('/usr/bin/node')
-            ->setNpmBinary('/usr/bin/npm')
-            ->timeout(60) // Increase timeout to 60s for network-heavy reports
+        // Environment-aware binary paths
+        $chromePath = env('CHROME_PATH', '/usr/bin/google-chrome');
+        if (!file_exists($chromePath)) {
+            $chromePath = '/usr/bin/google-chrome-stable';
+            if (!file_exists($chromePath)) {
+                $chromePath = '/usr/bin/chromium-browser';
+                if (!file_exists($chromePath)) {
+                    $chromePath = '/usr/bin/chromium';
+                }
+            }
+        }
+
+        if (file_exists($chromePath)) {
+            Log::debug('Using Chrome binary at: ' . $chromePath);
+            $browsershot->setChromePath($chromePath);
+        } else {
+            Log::warning('Chrome binary not found at standard paths. Browsershot will attempt auto-discovery.');
+        }
+
+        if (file_exists('/usr/bin/node')) {
+            $browsershot->setNodeBinary('/usr/bin/node');
+        }
+
+        if (file_exists('/usr/bin/npm')) {
+            $browsershot->setNpmBinary('/usr/bin/npm');
+        }
+
+        // Optimized settings for production stability
+        $browsershot->timeout(120) // Even higher timeout for heavy reports
             ->addChromiumArguments([
                 'no-sandbox',
                 'disable-setuid-sandbox',
                 'disable-dev-shm-usage',
                 'disable-gpu',
                 'disable-extensions',
-                'font-render-hinting=none'
+                'font-render-hinting=none',
+                'disable-web-security'
             ]);
 
         return $browsershot->pdf();

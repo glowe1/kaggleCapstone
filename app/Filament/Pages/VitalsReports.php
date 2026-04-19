@@ -30,7 +30,11 @@ class VitalsReports extends Page
     public function mount(): void
     {
         if (request()->has('export')) {
-            $this->exportVitalsReport(app(PremiumReportService::class));
+            $response = $this->exportVitalsReport(app(PremiumReportService::class));
+            if ($response) {
+                $response->send();
+                exit;
+            }
         }
     }
 
@@ -212,7 +216,6 @@ class VitalsReports extends Page
         return response($pdfBinary, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ])->send();
-        exit;
+        ]);
     }
 }
