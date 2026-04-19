@@ -29,8 +29,6 @@ class Reports extends Page
     protected static ?string $navigationGroup = 'Reports';
     protected static ?int $navigationSort = 7;
 
-    protected static ?int $navigationSort = 7;
-
     #[Url]
     public $search = '';
 
