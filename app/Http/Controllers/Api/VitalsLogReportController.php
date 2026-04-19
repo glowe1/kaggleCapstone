@@ -43,8 +43,10 @@ class VitalsLogReportController extends Controller
                     'diastolic' => $vital->diastolic,
                     'pulse' => $vital->pulse,
                     'temperature' => $vital->temperature,
-                    'oxygen' => $vital->oxygen_saturation,
+                    'oxygen_saturation' => $vital->oxygen_saturation,
                     'weight' => $vital->weight,
+                    'bmi' => $vital->weight && $resident->height ? round(($vital->weight / ($resident->height * $resident->height)) * 703, 1) : 'N/A',
+                    'resident_name' => $resident->name,
                     'taken_by' => $vital->takenBy?->name ?? 'N/A',
                 ];
             }

@@ -43,43 +43,59 @@ class PremiumReportService
 
         // Environment-aware binary paths
         $chromePath = env('CHROME_PATH', '/usr/bin/google-chrome');
-        if (!file_exists($chromePath)) {
-            $chromePath = '/usr/bin/google-chrome-stable';
-            if (!file_exists($chromePath)) {
-                $chromePath = '/usr/bin/chromium-browser';
-                if (!file_exists($chromePath)) {
-                    $chromePath = '/usr/bin/chromium';
-                }
+        $possibleChromePaths = [
+            $chromePath,
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/snap/bin/chromium',
+            '/usr/bin/google-chrome'
+        ];
+
+        foreach ($possibleChromePaths as $path) {
+            if ($path && file_exists($path)) {
+                $browsershot->setChromePath($path);
+                Log::debug('PremiumReportService: Using Chrome at ' . $path);
+                break;
             }
         }
 
-        if (file_exists($chromePath)) {
-            Log::debug('Using Chrome binary at: ' . $chromePath);
-            $browsershot->setChromePath($chromePath);
-        } else {
-            Log::warning('Chrome binary not found at standard paths. Browsershot will attempt auto-discovery.');
-        }
+        $possibleNodePaths = [
+            env('NODE_PATH'),
+            '/usr/bin/node',
+            '/usr/local/bin/node',
+            '/home/forge/.nvm/versions/node/v20.11.0/bin/node', // Common Forge path
+        ];
 
-        if (file_exists('/usr/bin/node')) {
-            $browsershot->setNodeBinary('/usr/bin/node');
-        }
-
-        if (file_exists('/usr/bin/npm')) {
-            $browsershot->setNpmBinary('/usr/bin/npm');
+        foreach ($possibleNodePaths as $path) {
+            if ($path && file_exists($path)) {
+                $browsershot->setNodeBinary($path);
+                Log::debug('PremiumReportService: Using Node at ' . $path);
+                break;
+            }
         }
 
         // Optimized settings for production stability
-        $browsershot->timeout(120) // Even higher timeout for heavy reports
+        $browsershot->timeout(120)
+            ->noSandbox()
             ->addChromiumArguments([
-                'no-sandbox',
                 'disable-setuid-sandbox',
                 'disable-dev-shm-usage',
                 'disable-gpu',
                 'disable-extensions',
                 'font-render-hinting=none',
-                'disable-web-security'
+                'disable-web-security',
+                'no-sandbox'
             ]);
 
-        return $browsershot->pdf();
+        try {
+            return $browsershot->pdf();
+        } catch (\Exception $e) {
+            Log::error('Browsershot PDF generation failed', [
+                'error' => $e->getMessage(),
+                'view' => $view
+            ]);
+            throw $e;
+        }
     }
 }

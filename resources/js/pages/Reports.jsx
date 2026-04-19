@@ -77,11 +77,11 @@ export default function Reports() {
                 link.remove();
             }, 100);
             
-            toast.show('success', 'Report generated successfully');
+            toast.success('Report generated successfully');
         } catch (error) {
             console.error('Download error:', error);
             const message = error.response?.data?.message || error.message || 'Failed to generate report.';
-            toast.show('error', message);
+            toast.error(message);
         } finally {
             setIsExporting(false);
         }
