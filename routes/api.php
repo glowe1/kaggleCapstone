@@ -50,6 +50,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitorController;
 use App\Http\Controllers\Api\VitalRangeController;
 use App\Http\Controllers\Api\VitalSignController;
+use App\Http\Controllers\Api\VitalsLogReportController;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
@@ -104,6 +105,7 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\SetFacilityContext::class]
 
     // Residents
     Route::get('/residents/{resident}/reports/medication-log', MedicationLogReportController::class)->middleware('auth:sanctum');
+    Route::get('/residents/{resident}/reports/vitals-log', VitalsLogReportController::class)->middleware('auth:sanctum');
     Route::apiResource('residents', ResidentController::class)->middleware('auth:sanctum');
     Route::get('/residents/{id}/appointments', [ResidentController::class, 'appointments'])->middleware('auth:sanctum');
     Route::get('/residents/{id}/vitals', [ResidentController::class, 'vitals'])->middleware('auth:sanctum');

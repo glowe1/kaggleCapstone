@@ -18,6 +18,8 @@ use App\Services\PremiumReportService;
 use App\Support\ReportBranding;
 use App\Models\Facility;
 use Carbon\Carbon;
+use Livewire\Attributes\Url;
+use Filament\Notifications\Notification;
 
 class Reports extends Page
 {
@@ -27,27 +29,119 @@ class Reports extends Page
     protected static ?string $navigationGroup = 'Reports';
     protected static ?int $navigationSort = 7;
 
+    protected static ?int $navigationSort = 7;
+
+    #[Url]
+    public $search = '';
+
+    public $selectedResidentId = null;
+
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('exportResident')
-                ->label('Export Resident Report')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('primary')
-                ->action('exportResidentReport'),
-            
-            Action::make('exportStaff')
-                ->label('Export Staff Report')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('success')
-                ->action('exportStaffReport'),
-            
             Action::make('exportFinancial')
-                ->label('Export Financial Report')
-                ->icon('heroicon-o-arrow-down-tray')
+                ->label('Export Global Financial')
+                ->icon('heroicon-o-currency-dollar')
                 ->color('warning')
                 ->action('exportFinancialReport'),
+
+            Action::make('exportStaff')
+                ->label('Export Staff Performance')
+                ->icon('heroicon-o-user-group')
+                ->color('success')
+                ->action('exportStaffReport'),
         ];
+    }
+
+    public function getResidents()
+    {
+        return Resident::query()
+            ->with(['branch'])
+            ->when($this->search, function ($query) {
+                $query->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('room', 'like', '%' . $this->search . '%');
+            })
+            ->limit(12) // Limit for performance, might need pagination or "load more"
+            ->get();
+    }
+
+    public function selectResident($id)
+    {
+        $this->selectedResidentId = $id;
+        $this->dispatch('open-modal', id: 'resident-report-hub');
+    }
+
+    public function exportResidentVitals(PremiumReportService $service)
+    {
+        if (!$this->selectedResidentId) return;
+
+        $resident = Resident::findOrFail($this->selectedResidentId);
+        $vitals = VitalSign::where('resident_id', $this->selectedResidentId)
+            ->latest('measurement_date')
+            ->limit(31)
+            ->get();
+
+        $facility = Facility::first();
+        $branding = ReportBranding::palette($facility);
+
+        $reportData = [];
+        foreach ($vitals as $vital) {
+            $reportData[] = [
+                'date' => $vital->measurement_date->format('Y-m-d'),
+                'time' => $vital->created_at?->format('H:i') ?? '',
+                'systolic' => $vital->systolic,
+                'diastolic' => $vital->diastolic,
+                'pulse' => $vital->pulse,
+                'temperature' => $vital->temperature,
+                'oxygen' => $vital->oxygen_saturation,
+                'weight' => $vital->weight,
+                'taken_by' => $vital->takenBy?->name ?? 'N/A',
+            ];
+        }
+
+        $data = [
+            'reportTitle' => 'Vitals Log: ' . $resident->name,
+            'facilityName' => $facility?->name ?? 'Evergreen Care',
+            'facilityAddress' => $facility?->address,
+            'facilityLogoDataUri' => ReportBranding::imageToDataUri($facility?->logo),
+            'vitals' => $reportData,
+            'residentName' => $resident->name,
+            'exportedAt' => now()->format('M d, Y g:i A'),
+            ...$branding
+        ];
+
+        return response($service->generate('reports.premium-vitals-report', $data, null, ['orientation' => 'landscape']), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Vitals_Log_' . str_replace(' ', '_', $resident->name) . '.pdf"',
+        ])->send();
+    }
+
+    public function exportResidentMAR(PremiumReportService $service)
+    {
+        // This would use the MedicationLogReportService logic
+        if (!$this->selectedResidentId) return;
+
+        $resident = Resident::findOrFail($this->selectedResidentId);
+        
+        // Redirect to a route or call a service; for simplicity, I'll return a downloadable response
+        // but typically this would hit the controller we looked at earlier.
+        $startDate = now()->startOfMonth();
+        $endDate = now()->endOfMonth();
+
+        $medicationService = app(\App\Services\MedicationLogReportService::class);
+        $data = $medicationService->buildViewData($resident, $startDate, $endDate);
+
+        $pdfBinary = $service->generate(
+            'reports.premium-medication-log',
+            $data,
+            'MAR_' . $resident->name . '.pdf',
+            ['orientation' => 'landscape']
+        );
+
+        return response($pdfBinary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="MAR_' . str_replace(' ', '_', $resident->name) . '.pdf"',
+        ])->send();
     }
 
     public function getStats(): array
