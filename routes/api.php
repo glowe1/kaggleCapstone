@@ -43,6 +43,8 @@ use App\Http\Controllers\Api\ResidentController;
 use App\Http\Controllers\Api\ResidentSignOutController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SleepRecordController;
+use App\Http\Controllers\Api\SleepLogReportController;
+use App\Http\Controllers\Api\AppointmentReportController;
 use App\Http\Controllers\Api\StaffClockInController;
 use App\Http\Controllers\Api\StaffEmailPreferenceController;
 use App\Http\Controllers\Api\SystemSettingsController;
