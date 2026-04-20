@@ -145,4 +145,85 @@ class MedicationLogReportTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_medication_log_pdf_rejects_when_both_sections_disabled(): void
+    {
+        $user = $this->createAndActAs('administrator');
+
+        $resident = Resident::withoutGlobalScopes()->create([
+            'name' => 'Jane Doe',
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'branch_id' => $this->branch->id,
+            'date_of_birth' => '1950-01-15',
+            'gender' => 'female',
+            'admission_date' => '2024-01-01',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+
+        $response = $this->get(
+            '/api/v1/residents/'.$resident->id.'/reports/medication-log?date_from=2026-04-01&date_to=2026-04-30&include_scheduled=0&include_prn=0'
+        );
+
+        $response->assertStatus(422);
+    }
+
+    public function test_medication_log_pdf_rejects_foreign_medication_ids(): void
+    {
+        $user = $this->createAndActAs('administrator');
+
+        $resident = Resident::withoutGlobalScopes()->create([
+            'name' => 'Jane Doe',
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'branch_id' => $this->branch->id,
+            'date_of_birth' => '1950-01-15',
+            'gender' => 'female',
+            'admission_date' => '2024-01-01',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+
+        $response = $this->get(
+            '/api/v1/residents/'.$resident->id.'/reports/medication-log?date_from=2026-04-01&date_to=2026-04-30&medication_ids[]=999999'
+        );
+
+        $response->assertStatus(422);
+    }
+
+    public function test_medication_log_pdf_accepts_portrait_orientation(): void
+    {
+        $user = $this->createAndActAs('administrator');
+
+        $resident = Resident::withoutGlobalScopes()->create([
+            'name' => 'Jane Doe',
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'branch_id' => $this->branch->id,
+            'date_of_birth' => '1950-01-15',
+            'gender' => 'female',
+            'admission_date' => '2024-01-01',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+
+        Medication::create([
+            'resident_id' => $resident->id,
+            'branch_id' => $this->branch->id,
+            'name' => 'Aspirin Tablet',
+            'instructions' => 'b.i.d',
+            'time_1' => '08:00:00',
+            'created_by' => $user->id,
+            'is_active' => true,
+            'start_date' => '2020-01-01',
+        ]);
+
+        $response = $this->get(
+            '/api/v1/residents/'.$resident->id.'/reports/medication-log?date_from=2026-04-01&date_to=2026-04-30&orientation=portrait'
+        );
+
+        $response->assertOk();
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
 }

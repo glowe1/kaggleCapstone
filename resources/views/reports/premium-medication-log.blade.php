@@ -12,8 +12,11 @@
             margin: 0;
             padding: 30px;
         }
+        @php
+            $isLandscape = ($pdfOrientation ?? 'landscape') === 'landscape';
+        @endphp
         @page {
-            size: A4 landscape;
+            size: A4 {{ $isLandscape ? 'landscape' : 'portrait' }};
             margin: 0;
         }
 
@@ -86,6 +89,7 @@
     </div>
 
     <!-- Resident Info Card -->
+    @if($includeResidentCard ?? true)
     <div class="grid">
         <div class="grid-col">
             <div class="flex items-center gap-4">
@@ -114,8 +118,10 @@
             <p class="text-xs text-red-600"><strong>Allergies:</strong> {{ $allergies }}</p>
         </div>
     </div>
+    @endif
 
     <!-- Medications Table -->
+    @if($includeScheduledSection ?? true)
     <div>
         <div class="section-header">
             Scheduled Medications
@@ -162,8 +168,9 @@
             <div style="padding: 20px; text-align: center; color: #94a3b8; font-style: italic;">No scheduled medications.</div>
         @endforelse
     </div>
+    @endif
 
-        @if(count($prnSections) > 0)
+        @if(($includePrnSection ?? true) && count($prnSections) > 0)
         <div>
             <div class="section-header" style="border-color: #fb923c;">
                 PRN (As Needed) Medications
@@ -181,7 +188,9 @@
                                 <tr style="border-bottom: 1px solid #e2e8f0;">
                                     <th style="text-align: left; padding: 5px;">Date/Time</th>
                                     <th style="text-align: center; padding: 5px;">Init.</th>
+                                    @if($includePrnAdminNotes ?? true)
                                     <th style="text-align: left; padding: 5px;">Notes</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -189,10 +198,12 @@
                                 <tr style="border-bottom: 1px solid #f1f5f9;">
                                     <td style="padding: 5px;">{{ $r['date'] }} <span style="color: #94a3b8;">{{ $r['time'] }}</span></td>
                                     <td style="padding: 5px; text-align: center; font-weight: bold; color: #16a34a;">{{ $r['initials'] }}</td>
+                                    @if($includePrnAdminNotes ?? true)
                                     <td style="padding: 5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">{{ $r['notes'] }}</td>
+                                    @endif
                                 </tr>
                                 @empty
-                                <tr><td colspan="3" style="padding: 10px; text-align: center; color: #94a3b8; font-style: italic;">No PRN administrations.</td></tr>
+                                <tr><td colspan="{{ ($includePrnAdminNotes ?? true) ? 3 : 2 }}" style="padding: 10px; text-align: center; color: #94a3b8; font-style: italic;">No PRN administrations.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -202,9 +213,9 @@
             </div>
         </div>
         @endif
-    </div>
 
     <!-- Footer Legend -->
+    @if($includeLegend ?? true)
     <div style="margin-top: 40px; padding: 15px; background: {{ $primaryColor ?? '#1E3A5F' }}; color: #ffffff; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 10px;">
         <div style="display: flex; gap: 20px;">
             <div style="display: flex; align-items: center; gap: 5px;">
@@ -220,5 +231,6 @@
             Powered by HomeLogic360 | Secure Clinical Reporting
         </div>
     </div>
+    @endif
 </body>
 </html>

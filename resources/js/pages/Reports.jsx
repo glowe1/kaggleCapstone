@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
-import { 
-    Users, 
-    Search, 
-    ChevronRight, 
-    ClipboardList, 
-    Heart, 
-    AlertTriangle, 
+import {
+    Users,
+    Search,
+    ChevronRight,
+    ClipboardList,
+    Heart,
+    AlertTriangle,
     FileText,
     Download,
     Loader2,
     Calendar,
-    BarChart3
 } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import { useToastContext } from '../contexts/ToastContext';
@@ -37,6 +36,14 @@ export default function Reports() {
     const [selectedResident, setSelectedResident] = useState(null);
     const [marDateFrom, setMarDateFrom] = useState('');
     const [marDateTo, setMarDateTo] = useState('');
+    const [marOrientation, setMarOrientation] = useState('landscape');
+    const [marIncludeScheduled, setMarIncludeScheduled] = useState(true);
+    const [marIncludePrn, setMarIncludePrn] = useState(true);
+    const [marResidentCard, setMarResidentCard] = useState(true);
+    const [marLegend, setMarLegend] = useState(true);
+    const [marPrnNotes, setMarPrnNotes] = useState(true);
+    const [marMedFilterAll, setMarMedFilterAll] = useState(true);
+    const [marMedSelectedIds, setMarMedSelectedIds] = useState(() => new Set());
     const [reportHubStep, setReportHubStep] = useState('grid');
     const [isExporting, setIsExporting] = useState(false);
     const toast = useToastContext();
@@ -59,7 +66,42 @@ export default function Reports() {
         const { dateFrom, dateTo } = getCurrentMonthRangeLocal();
         setMarDateFrom(dateFrom);
         setMarDateTo(dateTo);
+        setMarOrientation('landscape');
+        setMarIncludeScheduled(true);
+        setMarIncludePrn(true);
+        setMarResidentCard(true);
+        setMarLegend(true);
+        setMarPrnNotes(true);
+        setMarMedFilterAll(true);
+        setMarMedSelectedIds(new Set());
         setReportHubStep('mar');
+    };
+
+    const { data: marResidentDetail, isLoading: marResidentLoading } = useQuery({
+        queryKey: ['resident-mar-builder', selectedResident?.id],
+        queryFn: async () => {
+            const res = await api.get(`/residents/${selectedResident.id}`);
+            return res.data.data;
+        },
+        enabled: !!selectedResident?.id && reportHubStep === 'mar',
+    });
+
+    const marMedications = useMemo(() => marResidentDetail?.medications ?? [], [marResidentDetail]);
+
+    const toggleMarMedId = (id) => {
+        setMarMedSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const selectAllMarMeds = () => {
+        setMarMedSelectedIds(new Set(marMedications.map((m) => m.id)));
     };
 
     const resolveDownloadErrorMessage = async (error) => {
@@ -96,10 +138,33 @@ export default function Reports() {
                             setIsExporting(false);
                             return;
                         }
+                        if (range.include_scheduled === false && range.include_prn === false) {
+                            toast.error('Include at least scheduled medications or PRN on the MAR.');
+                            setIsExporting(false);
+                            return;
+                        }
+                        if (
+                            range.medication_ids &&
+                            Array.isArray(range.medication_ids) &&
+                            range.medication_ids.length === 0
+                        ) {
+                            toast.error('Select at least one medication, or choose all medications.');
+                            setIsExporting(false);
+                            return;
+                        }
                         params = {
                             date_from: range.dateFrom,
                             date_to: range.dateTo,
+                            orientation: range.orientation ?? 'landscape',
+                            include_scheduled: range.include_scheduled ?? true,
+                            include_prn: range.include_prn ?? true,
+                            include_resident_card: range.include_resident_card ?? true,
+                            include_legend: range.include_legend ?? true,
+                            include_prn_admin_notes: range.include_prn_admin_notes ?? true,
                         };
+                        if (range.medication_ids?.length) {
+                            params.medication_ids = range.medication_ids;
+                        }
                     }
                     break;
                 case 'vitals':
@@ -146,9 +211,7 @@ export default function Reports() {
             toast.success('Report generated successfully');
         } catch (error) {
             console.error('Download error:', error);
-            const apiError = error.response?.data?.error;
-            const apiMessage = error.response?.data?.message;
-            const message = apiError || apiMessage || error.message || 'Failed to generate report.';
+            const message = await resolveDownloadErrorMessage(error);
             toast.error(message);
         } finally {
             setIsExporting(false);
@@ -255,14 +318,14 @@ export default function Reports() {
                             <h2 className="text-2xl font-bold text-gray-900">{selectedResident?.name}</h2>
                             <p className="text-sm text-gray-500">
                                 {reportHubStep === 'mar'
-                                    ? 'Choose the date range for the medication MAR, then generate the PDF.'
+                                    ? 'Configure the MAR: dates, layout, sections, and medications, then generate the PDF.'
                                     : 'Pick a report module to generate a professional PDF.'}
                             </p>
                         </div>
                     </div>
 
                     {reportHubStep === 'mar' ? (
-                        <div className="space-y-6">
+                        <div className="space-y-6 max-h-[min(70vh,520px)] overflow-y-auto pr-1">
                             <button
                                 type="button"
                                 onClick={() => setReportHubStep('grid')}
@@ -271,6 +334,7 @@ export default function Reports() {
                             >
                                 ← Back to reports
                             </button>
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="mar-date-from" className="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -297,17 +361,170 @@ export default function Reports() {
                                     />
                                 </div>
                             </div>
-                            <p className="text-xs text-gray-500">
-                                The MAR is generated in landscape and includes scheduled and PRN medications for this resident.
-                            </p>
+
+                            <fieldset className="space-y-2 border border-gray-100 rounded-xl p-4 bg-gray-50/80">
+                                <legend className="text-xs font-bold text-gray-700 px-1">Page layout</legend>
+                                <div className="flex flex-wrap gap-4">
+                                    <label className="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="mar-orientation"
+                                            checked={marOrientation === 'landscape'}
+                                            onChange={() => setMarOrientation('landscape')}
+                                            className="text-teal-600 focus:ring-teal-500"
+                                        />
+                                        Landscape (recommended for MAR grids)
+                                    </label>
+                                    <label className="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="mar-orientation"
+                                            checked={marOrientation === 'portrait'}
+                                            onChange={() => setMarOrientation('portrait')}
+                                            className="text-teal-600 focus:ring-teal-500"
+                                        />
+                                        Portrait
+                                    </label>
+                                </div>
+                            </fieldset>
+
+                            <fieldset className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50/80">
+                                <legend className="text-xs font-bold text-gray-700 px-1">What to include</legend>
+                                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={marIncludeScheduled}
+                                        onChange={(e) => setMarIncludeScheduled(e.target.checked)}
+                                        className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                    />
+                                    <span>Scheduled medications (time-slot grid)</span>
+                                </label>
+                                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={marIncludePrn}
+                                        onChange={(e) => setMarIncludePrn(e.target.checked)}
+                                        className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                    />
+                                    <span>PRN (as-needed) medications &amp; administrations</span>
+                                </label>
+                                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={marResidentCard}
+                                        onChange={(e) => setMarResidentCard(e.target.checked)}
+                                        className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                    />
+                                    <span>Resident header (photo, room, DOB, diagnosis, allergies)</span>
+                                </label>
+                                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={marLegend}
+                                        onChange={(e) => setMarLegend(e.target.checked)}
+                                        className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                    />
+                                    <span>Footer legend (given / missed key)</span>
+                                </label>
+                                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={marPrnNotes}
+                                        onChange={(e) => setMarPrnNotes(e.target.checked)}
+                                        disabled={!marIncludePrn}
+                                        className="mt-0.5 rounded text-teal-600 focus:ring-teal-500 disabled:opacity-40"
+                                    />
+                                    <span>Show PRN administration notes column</span>
+                                </label>
+                            </fieldset>
+
+                            <fieldset className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50/80">
+                                <legend className="text-xs font-bold text-gray-700 px-1">Medications</legend>
+                                {marResidentLoading ? (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+                                        Loading medication orders…
+                                    </div>
+                                ) : marMedications.length === 0 ? (
+                                    <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                        No medication orders on file for this resident. The PDF will only show facility branding and any sections you enabled.
+                                    </p>
+                                ) : (
+                                    <>
+                                        <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="mar-med-scope"
+                                                checked={marMedFilterAll}
+                                                onChange={() => {
+                                                    setMarMedFilterAll(true);
+                                                    setMarMedSelectedIds(new Set());
+                                                }}
+                                                className="text-teal-600 focus:ring-teal-500"
+                                            />
+                                            All medication orders for this resident
+                                        </label>
+                                        <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="mar-med-scope"
+                                                checked={!marMedFilterAll}
+                                                onChange={() => {
+                                                    setMarMedFilterAll(false);
+                                                    selectAllMarMeds();
+                                                }}
+                                                className="text-teal-600 focus:ring-teal-500"
+                                            />
+                                            Only selected medications
+                                        </label>
+                                        {!marMedFilterAll && (
+                                            <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+                                                {marMedications.map((m) => (
+                                                    <label
+                                                        key={m.id}
+                                                        className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={marMedSelectedIds.has(m.id)}
+                                                            onChange={() => toggleMarMedId(m.id)}
+                                                            className="rounded text-teal-600 focus:ring-teal-500"
+                                                        />
+                                                        <span className="min-w-0 flex-1 truncate">
+                                                            {m.name}
+                                                            {m.instructions ? (
+                                                                <span className="text-gray-500 font-normal"> — {m.instructions}</span>
+                                                            ) : null}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </fieldset>
+
                             <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
+                                    const medicationIdsPayload = (() => {
+                                        if (marMedFilterAll || marMedications.length === 0) {
+                                            return undefined;
+                                        }
+                                        return Array.from(marMedSelectedIds);
+                                    })();
                                     handleDownload('mar', selectedResident.id, selectedResident.name, {
                                         dateFrom: marDateFrom,
                                         dateTo: marDateTo,
-                                    })
-                                }
+                                        orientation: marOrientation,
+                                        include_scheduled: marIncludeScheduled,
+                                        include_prn: marIncludePrn,
+                                        include_resident_card: marResidentCard,
+                                        include_legend: marLegend,
+                                        include_prn_admin_notes: marPrnNotes,
+                                        medication_ids: medicationIdsPayload,
+                                    });
+                                }}
                                 disabled={isExporting || !marDateFrom || !marDateTo}
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >

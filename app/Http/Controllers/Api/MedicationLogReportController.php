@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Medication;
 use App\Models\Resident;
 use App\Models\User;
 use App\Services\MedicationLogReportService;
@@ -35,14 +36,55 @@ class MedicationLogReportController extends Controller
         $validated = $request->validate([
             'date_from' => 'required|date_format:Y-m-d',
             'date_to' => 'required|date_format:Y-m-d|after_or_equal:date_from',
+            'orientation' => 'sometimes|in:portrait,landscape',
+            'include_scheduled' => 'sometimes|boolean',
+            'include_prn' => 'sometimes|boolean',
+            'include_resident_card' => 'sometimes|boolean',
+            'include_legend' => 'sometimes|boolean',
+            'include_prn_admin_notes' => 'sometimes|boolean',
+            'medication_ids' => 'sometimes|array',
+            'medication_ids.*' => 'integer|min:1',
         ]);
+
+        if (! $request->boolean('include_scheduled', true) && ! $request->boolean('include_prn', true)) {
+            return response()->json([
+                'message' => 'Select at least one of scheduled medications or PRN for the MAR.',
+            ], 422);
+        }
+
+        $medicationIds = null;
+        if (! empty($validated['medication_ids'])) {
+            $requested = array_values(array_unique(array_map('intval', $validated['medication_ids'])));
+            $validCount = Medication::withoutGlobalScopes()
+                ->where('resident_id', $resident->id)
+                ->whereIn('id', $requested)
+                ->count();
+            if ($validCount !== count($requested)) {
+                return response()->json([
+                    'message' => 'One or more selected medications are not valid for this resident.',
+                ], 422);
+            }
+            $medicationIds = $requested;
+        }
 
         $tz = config('app.timezone');
         $dateFrom = Carbon::createFromFormat('Y-m-d', $validated['date_from'], $tz)->startOfDay();
         $dateTo = Carbon::createFromFormat('Y-m-d', $validated['date_to'], $tz)->endOfDay();
 
+        $serviceOptions = [
+            'include_scheduled' => $request->boolean('include_scheduled', true),
+            'include_prn' => $request->boolean('include_prn', true),
+            'include_resident_card' => $request->boolean('include_resident_card', true),
+            'include_legend' => $request->boolean('include_legend', true),
+            'include_prn_admin_notes' => $request->boolean('include_prn_admin_notes', true),
+            'medication_ids' => $medicationIds,
+        ];
+
+        $orientation = $validated['orientation'] ?? 'landscape';
+
         try {
-            $data = $this->medicationLogReportService->buildViewData($resident, $dateFrom, $dateTo);
+            $data = $this->medicationLogReportService->buildViewData($resident, $dateFrom, $dateTo, $serviceOptions);
+            $data['pdfOrientation'] = $orientation;
 
             $safeName = preg_replace('/[^a-zA-Z0-9_-]+/', '_', $resident->last_name ?: 'resident');
             $filename = sprintf(
@@ -56,12 +98,12 @@ class MedicationLogReportController extends Controller
                 'reports.premium-medication-log',
                 $data,
                 $filename,
-                ['orientation' => 'landscape']
+                ['orientation' => $orientation]
             );
 
             return response($pdfBinary, 200, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ]);
         } catch (\Throwable $e) {
             Log::error('Premium Medication Log generation failed', [
@@ -69,7 +111,7 @@ class MedicationLogReportController extends Controller
                 'date_from' => $validated['date_from'],
                 'date_to' => $validated['date_to'],
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([

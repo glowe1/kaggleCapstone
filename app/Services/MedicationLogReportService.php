@@ -17,28 +17,51 @@ class MedicationLogReportService
     /**
      * Build view data for the medication log PDF.
      *
+     * @param  array{
+     *     include_scheduled?: bool,
+     *     include_prn?: bool,
+     *     include_resident_card?: bool,
+     *     include_legend?: bool,
+     *     include_prn_admin_notes?: bool,
+     *     medication_ids?: list<int>|null
+     * }  $options  medication_ids: non-empty list limits to those orders; null = all for this resident
      * @return array<string, mixed>
      */
-    public function buildViewData(Resident $resident, Carbon $dateFrom, Carbon $dateTo): array
+    public function buildViewData(Resident $resident, Carbon $dateFrom, Carbon $dateTo, array $options = []): array
     {
+        $includeScheduled = $options['include_scheduled'] ?? true;
+        $includePrn = $options['include_prn'] ?? true;
+        $includeResidentCard = $options['include_resident_card'] ?? true;
+        $includeLegend = $options['include_legend'] ?? true;
+        $includePrnAdminNotes = $options['include_prn_admin_notes'] ?? true;
+        $medicationIdsFilter = $options['medication_ids'] ?? null;
+
         $tz = config('app.timezone');
         $dateFrom = $dateFrom->copy()->timezone($tz)->startOfDay();
         $dateTo = $dateTo->copy()->timezone($tz)->endOfDay();
 
         $resident->load(['branch.facility']);
 
-        $medications = Medication::query()
+        $medicationsQuery = Medication::query()
             ->where('resident_id', $resident->id)
             ->with(['drug'])
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+        if (is_array($medicationIdsFilter) && $medicationIdsFilter !== []) {
+            $medicationsQuery->whereIn('id', $medicationIdsFilter);
+        }
 
-        $administrations = MedicationAdministration::query()
+        $medications = $medicationsQuery->get();
+
+        $administrationsQuery = MedicationAdministration::query()
             ->where('resident_id', $resident->id)
             ->where('administered_at', '>=', $dateFrom)
             ->where('administered_at', '<=', $dateTo)
-            ->with(['administeredBy'])
-            ->get();
+            ->with(['administeredBy']);
+        if (is_array($medicationIdsFilter) && $medicationIdsFilter !== []) {
+            $administrationsQuery->whereIn('medication_id', $medicationIdsFilter);
+        }
+
+        $administrations = $administrationsQuery->get();
 
         $byMedication = $administrations->groupBy('medication_id');
 
@@ -59,7 +82,19 @@ class MedicationLogReportService
 
         foreach ($medications as $medication) {
             if ($this->isPrnMedication($medication)) {
-                $prnSections[] = $this->buildPrnSection($medication, $byMedication->get($medication->id, collect()));
+                if (! $includePrn) {
+                    continue;
+                }
+                $prnSections[] = $this->buildPrnSection(
+                    $medication,
+                    $byMedication->get($medication->id, collect()),
+                    $includePrnAdminNotes
+                );
+
+                continue;
+            }
+
+            if (! $includeScheduled) {
                 continue;
             }
 
@@ -201,7 +236,7 @@ class MedicationLogReportService
     /**
      * @param  Collection<int, MedicationAdministration>  $medAdmins
      */
-    private function buildPrnSection(Medication $medication, Collection $medAdmins): array
+    private function buildPrnSection(Medication $medication, Collection $medAdmins, bool $includeAdminNotes = true): array
     {
         $drug = $medication->drug;
         $drugName = $drug?->name ?: $medication->name;
@@ -216,7 +251,7 @@ class MedicationLogReportService
                 'time' => $admin->administered_at->timezone(config('app.timezone'))->format('g:i A'),
                 'initials' => $display['text'],
                 'tone' => $display['tone'],
-                'notes' => $admin->notes,
+                'notes' => $includeAdminNotes ? $admin->notes : '',
                 'status' => $admin->status,
             ];
         }

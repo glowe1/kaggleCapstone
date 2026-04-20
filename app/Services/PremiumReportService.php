@@ -2,30 +2,48 @@
 
 namespace App\Services;
 
-use Spatie\Browsershot\Browsershot;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
+use Spatie\Browsershot\Browsershot;
 
 class PremiumReportService
 {
     /**
-     * Generate a professional PDF from a Blade view using Browsershot.
-     * 
-     * @param string $view The blade view name
-     * @param array $data Data to pass to the view
-     * @param string|null $filename Optional filename for the download or storage
-     * @param array $options Additional Browsershot options
-     * @return string The binary PDF content
+     * Generate a professional PDF from a Blade view using Browsershot when available, or DomPDF.
+     *
+     * @param  array<string, mixed>  $options  orientation, format, margins, etc.
      */
     public function generate(string $view, array $data = [], ?string $filename = null, array $options = []): string
     {
         Log::debug('Starting professional PDF generation', ['view' => $view, 'filename' => $filename]);
 
-        // Render the HTML view
+        $driver = config('reports.pdf_driver', 'auto');
+
+        if ($driver === 'dompdf') {
+            return $this->generateWithDompdf($view, $data, $options);
+        }
+
+        if ($driver === 'browsershot') {
+            return $this->generateWithBrowsershotOrDompdf($view, $data, $options);
+        }
+
+        if ($this->resolveChromePath() === null) {
+            Log::info('PremiumReportService: No Chrome/Chromium binary found; using DomPDF', ['view' => $view]);
+
+            return $this->generateWithDompdf($view, $data, $options);
+        }
+
+        return $this->generateWithBrowsershotOrDompdf($view, $data, $options);
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    private function generateWithBrowsershotOrDompdf(string $view, array $data, array $options): string
+    {
         $html = View::make($view, $data)->render();
 
-        // Initialize Browsershot
         $browsershot = Browsershot::html($html)
             ->format($options['format'] ?? 'A4')
             ->margins(
@@ -36,47 +54,25 @@ class PremiumReportService
             )
             ->showBackground();
 
-        // Handle orientation
         if (($options['orientation'] ?? 'portrait') === 'landscape') {
             $browsershot->landscape();
         }
 
-        // Environment-aware binary paths
-        $chromePath = env('CHROME_PATH', '/usr/bin/google-chrome');
-        $possibleChromePaths = [
-            $chromePath,
-            '/usr/bin/google-chrome-stable',
-            '/usr/bin/chromium-browser',
-            '/usr/bin/chromium',
-            '/snap/bin/chromium',
-            '/usr/bin/google-chrome'
-        ];
-
-        foreach ($possibleChromePaths as $path) {
-            if ($path && file_exists($path)) {
-                $browsershot->setChromePath($path);
-                Log::debug('PremiumReportService: Using Chrome at ' . $path);
-                break;
-            }
+        $chromePath = $this->resolveChromePath();
+        if ($chromePath !== null) {
+            $browsershot->setChromePath($chromePath);
+            Log::debug('PremiumReportService: Using Chrome at '.$chromePath);
         }
 
-        $possibleNodePaths = [
-            env('NODE_PATH'),
-            '/usr/bin/node',
-            '/usr/local/bin/node',
-            '/home/forge/.nvm/versions/node/v20.11.0/bin/node', // Common Forge path
-        ];
-
-        foreach ($possibleNodePaths as $path) {
+        foreach ($this->candidateNodePaths() as $path) {
             if ($path && file_exists($path)) {
                 $browsershot->setNodeBinary($path);
-                Log::debug('PremiumReportService: Using Node at ' . $path);
+                Log::debug('PremiumReportService: Using Node at '.$path);
                 break;
             }
         }
 
-        // Optimized settings for production stability
-        $browsershot->timeout(180) // 3 minutes timeout for heavy reports
+        $browsershot->timeout(180)
             ->noSandbox()
             ->addChromiumArguments([
                 'disable-setuid-sandbox',
@@ -86,22 +82,75 @@ class PremiumReportService
                 'font-render-hinting=none',
                 'disable-web-security',
                 'no-sandbox',
-                'single-process'
+                'single-process',
             ]);
 
         try {
             Log::debug('PremiumReportService: Attempting browsershot->pdf()');
             $pdf = $browsershot->pdf();
             Log::debug('PremiumReportService: PDF generated successfully');
+
             return $pdf;
-        } catch (\Exception $e) {
-            Log::error('Browsershot PDF generation failed', [
+        } catch (\Throwable $e) {
+            Log::warning('Browsershot PDF failed; falling back to DomPDF', [
                 'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'view' => $view
+                'view' => $view,
             ]);
-            throw new \Exception("PDF Generation Error: " . $e->getMessage());
+
+            return $this->generateWithDompdf($view, $data, $options);
         }
+    }
+
+    private function resolveChromePath(): ?string
+    {
+        $candidates = array_unique(array_filter([
+            env('CHROME_PATH'),
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/snap/bin/chromium',
+        ]));
+
+        foreach ($candidates as $path) {
+            if ($path && @is_executable($path)) {
+                return $path;
+            }
+        }
+
+        foreach ($candidates as $path) {
+            if ($path && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string|null>
+     */
+    private function candidateNodePaths(): array
+    {
+        return [
+            env('NODE_PATH'),
+            '/usr/bin/node',
+            '/usr/local/bin/node',
+            '/home/forge/.nvm/versions/node/v20.11.0/bin/node',
+        ];
+    }
+
+    /**
+     * DomPDF does not require Chrome/Node (works on typical PHP hosting).
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function generateWithDompdf(string $view, array $data, array $options): string
+    {
+        $orientation = ($options['orientation'] ?? 'portrait') === 'landscape' ? 'landscape' : 'portrait';
+
+        return Pdf::loadView($view, $data)
+            ->setPaper('a4', $orientation)
+            ->output();
     }
 }
