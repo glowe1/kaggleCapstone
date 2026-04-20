@@ -36,7 +36,7 @@ export default function SectionLayout({ title, tabs = [], showTabBar = true }) {
         ?? tabs[0];
 
     return (
-        <div className="space-y-0 -mt-1">
+        <div className={showTabBar ? 'space-y-0 -mt-1' : undefined}>
 
             {showTabBar && (
                 <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
