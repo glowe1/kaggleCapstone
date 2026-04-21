@@ -9,14 +9,12 @@ import {
     Stethoscope,
     Building2,
     Truck,
-    Shield,
     FileText,
     User,
     ArrowLeft,
     UserCircle,
 } from 'lucide-react';
 import api from '../../../services/api';
-import { isMedicationClinicalAdmin } from '../../../utils/medicationHubPermissions';
 import {
     formatPacificCalendarMedium,
     calculateAgeFromPacificBirthDate,
@@ -30,7 +28,6 @@ const TAB_BASE = [
     { id: 'prn', path: 'prn', label: 'PRN', icon: Stethoscope },
     { id: 'pharmacy', path: 'pharmacy', label: 'Pharmacy', icon: Building2 },
     { id: 'deliveries', path: 'deliveries', label: 'Deliveries', icon: Truck },
-    { id: 'narcotics', path: 'narcotics', label: 'Narc. count', icon: Shield, adminOnly: true },
     { id: 'orders', path: 'orders', label: 'Orders', icon: FileText },
     { id: 'context', path: 'context', label: 'Profile', icon: User },
 ];
@@ -38,13 +35,6 @@ const TAB_BASE = [
 export default function ResidentMedicationHubLayout() {
     const { residentId } = useParams();
     const navigate = useNavigate();
-
-    const { data: currentUser } = useQuery({
-        queryKey: ['current-user'],
-        queryFn: async () => (await api.get('/user')).data,
-    });
-
-    const isClinicalAdmin = isMedicationClinicalAdmin(currentUser);
 
     const { data: resident, isLoading } = useQuery({
         queryKey: ['med-hub-layout-resident', residentId],
@@ -55,10 +45,7 @@ export default function ResidentMedicationHubLayout() {
         enabled: !!residentId,
     });
 
-    const tabs = React.useMemo(
-        () => TAB_BASE.filter((t) => !t.adminOnly || isClinicalAdmin),
-        [isClinicalAdmin],
-    );
+    const tabs = TAB_BASE;
 
     const fullName = resident
         ? [resident.first_name, resident.middle_names, resident.last_name].filter(Boolean).join(' ')

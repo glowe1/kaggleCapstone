@@ -149,7 +149,6 @@ const CaregiverMedicationsResidents = lazyWithRetry(() => import('./pages/caregi
 const ResidentMedicationsPage = lazyWithRetry(() => import('./pages/caregiver/ResidentMedicationsPage'));
 const ResidentMedicationHubLayout = lazyWithRetry(() => import('./pages/caregiver/medication-hub/ResidentMedicationHubLayout'));
 const MedicationHubOverviewTab = lazyWithRetry(() => import('./pages/caregiver/medication-hub/MedicationHubOverviewTab'));
-const MedicationHubPlaceholderTab = lazyWithRetry(() => import('./pages/caregiver/medication-hub/MedicationHubPlaceholderTab'));
 const MedicationHubDeliveriesTab = lazyWithRetry(() => import('./pages/caregiver/medication-hub/MedicationHubDeliveriesTab'));
 const MedicationHubOrdersTab = lazyWithRetry(() => import('./pages/caregiver/medication-hub/MedicationHubOrdersTab'));
 const MedicationHubProfileSliceTab = lazyWithRetry(() => import('./pages/caregiver/medication-hub/MedicationHubProfileSliceTab'));
@@ -364,17 +363,6 @@ function App() {
                             }
                         />
                         <Route path="deliveries" element={<Suspense fallback={<PageLoader />}><MedicationHubDeliveriesTab /></Suspense>} />
-                        <Route
-                            path="narcotics"
-                            element={
-                                <Suspense fallback={<PageLoader />}>
-                                    <MedicationHubPlaceholderTab
-                                        title="Narcotics count"
-                                        description="Controlled substance counting will be available to administrators in a future release."
-                                    />
-                                </Suspense>
-                            }
-                        />
                         <Route path="orders" element={<Suspense fallback={<PageLoader />}><MedicationHubOrdersTab /></Suspense>} />
                         <Route path="context" element={<Suspense fallback={<PageLoader />}><MedicationHubProfileSliceTab /></Suspense>} />
                     </Route>
