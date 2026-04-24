@@ -78,6 +78,12 @@
     color: var(--theme-text-on-primary, #FFFFFF) !important;
 }
 
+/* White/light cards on those surfaces: links must stay readable (default was white on white) */
+[style*="background-color: var(--theme-primary)"] [class*="bg-white"] a[href],
+[style*="background: var(--theme-primary)"] [class*="bg-white"] a[href] {
+    color: #2563eb !important;
+}
+
 [class~="bg-black"]:not([class*="bg-white"]),
 [style*="background-color: #000"]:not([class*="bg-white"]),
 [style*="background: #000"]:not([class*="bg-white"]) {

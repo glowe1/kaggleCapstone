@@ -224,7 +224,7 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-100 py-8 sm:py-10 overflow-x-hidden overflow-y-auto">
+        <div className="auth-page-login min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-100 py-8 sm:py-10 overflow-x-hidden overflow-y-auto">
             <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 min-h-0 flex items-center">
                 <div className="w-full grid lg:grid-cols-2 gap-6 items-center">
                     {/* Brand / Welcome Panel - Compact with High Contrast */}
@@ -307,7 +307,7 @@ export default function Login() {
                                 <h2 className="text-2xl font-bold text-gray-900">Sign in to HomeLogic360</h2>
                             </div>
 
-                            <div className="bg-white border-2 border-gray-300 rounded-xl shadow-xl p-6 space-y-4">
+                            <div className="auth-login-card bg-white border-2 border-gray-300 rounded-xl shadow-xl p-6 space-y-4">
                                 {error && (
                                     <div ref={errorRef} className="p-3 bg-red-100 border-2 border-red-400 rounded-lg space-y-2">
                                         <p className="text-sm font-semibold text-red-900">{error}</p>
@@ -379,7 +379,7 @@ export default function Login() {
                                     <div className="flex justify-end -mt-0.5">
                                         <Link
                                             to="/forgot-password"
-                                            className="text-sm font-semibold text-blue-700 hover:text-blue-800 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                                            className="text-sm font-semibold text-blue-800 hover:text-blue-900 underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
                                         >
                                             Forgot your password?
                                         </Link>
@@ -395,9 +395,12 @@ export default function Login() {
                                 </form>
 
                                 <div className="pt-4 border-t-2 border-gray-300">
-                                    <p className="text-sm text-gray-700 text-center font-medium">
+                                    <p className="auth-login-help text-sm text-gray-800 text-center font-medium">
                                         Need help?{' '}
-                                        <a href="mailto:support@homelogic360.com" className="text-blue-700 font-bold hover:text-blue-800 hover:underline transition-colors">
+                                        <a
+                                            href="mailto:support@homelogic360.com"
+                                            className="font-bold text-blue-800 hover:text-blue-900 hover:underline transition-colors"
+                                        >
                                             Contact support
                                         </a>
                                     </p>
