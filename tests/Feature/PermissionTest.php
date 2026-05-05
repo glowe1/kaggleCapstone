@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Tests\Traits\SetupFacility;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+use Tests\Traits\SetupFacility;
 
 class PermissionTest extends TestCase
 {
@@ -46,13 +46,19 @@ class PermissionTest extends TestCase
             'email' => 'staff@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'first_name' => 'New',
+            'last_name' => 'Staff',
+            'phone_number' => '555-0200',
+            'date_of_birth' => '1988-03-20',
+            'sex' => 'female',
+            'date_employed' => '2021-06-01',
             'role' => 'caregiver',
             'assigned_branch_id' => $this->branch->id,
         ]);
 
         $this->assertTrue(
             in_array($response->status(), [200, 201]),
-            "Expected 200 or 201 but got {$response->status()}: " . $response->content()
+            "Expected 200 or 201 but got {$response->status()}: ".$response->content()
         );
     }
 

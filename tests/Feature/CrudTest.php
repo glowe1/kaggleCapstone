@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Tests\Traits\SetupFacility;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use Tests\Traits\SetupFacility;
 
 class CrudTest extends TestCase
 {
@@ -36,11 +36,12 @@ class CrudTest extends TestCase
             'address' => '123 Test St',
             'phone' => '555-1234',
             'email' => 'branch@test.com',
+            'facility_id' => $this->facility->id,
         ]);
 
         $this->assertTrue(
             in_array($response->status(), [200, 201]),
-            "Expected 200 or 201 but got {$response->status()}: " . $response->content()
+            "Expected 200 or 201 but got {$response->status()}: ".$response->content()
         );
     }
 
@@ -90,7 +91,7 @@ class CrudTest extends TestCase
 
         $this->assertTrue(
             in_array($response->status(), [200, 201]),
-            "Expected 200 or 201 but got {$response->status()}: " . $response->content()
+            "Expected 200 or 201 but got {$response->status()}: ".$response->content()
         );
     }
 
@@ -121,13 +122,19 @@ class CrudTest extends TestCase
             'email' => 'caregiver@test.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'first_name' => 'Test',
+            'last_name' => 'Caregiver',
+            'phone_number' => '555-0100',
+            'date_of_birth' => '1990-06-15',
+            'sex' => 'other',
+            'date_employed' => '2020-01-01',
             'role' => 'caregiver',
             'assigned_branch_id' => $this->branch->id,
         ]);
 
         $this->assertTrue(
             in_array($response->status(), [200, 201]),
-            "Expected 200 or 201 but got {$response->status()}: " . $response->content()
+            "Expected 200 or 201 but got {$response->status()}: ".$response->content()
         );
     }
 

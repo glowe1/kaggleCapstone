@@ -872,8 +872,8 @@ function CaregiverNav({ items, location, expandedMenus, setExpandedMenus, onLink
         <div className={`flex flex-col w-full ${collapsed ? 'gap-1' : 'gap-3'}`}>
             {sections.map(({ section, items: sectionItems }) => (
                 <div key={section} className="flex flex-col w-full min-w-0">
-                    {/* Section label — hidden for "Home" and when sidebar is collapsed */}
-                    {section !== 'Home' && !collapsed && (
+                    {/* Section label — hidden for "Home", hub grouping, and when sidebar is collapsed */}
+                    {section !== 'Home' && section !== HUB_SECTION && !collapsed && (
                         <div className="px-3 pb-1 w-full">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 select-none">
                                 {section}

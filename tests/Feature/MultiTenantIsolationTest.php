@@ -2,20 +2,20 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Tests\Traits\SetupFacility;
 use App\Models\Branch;
 use App\Models\Facility;
 use App\Models\Resident;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+use Tests\Traits\SetupFacility;
 
 class MultiTenantIsolationTest extends TestCase
 {
     use RefreshDatabase, SetupFacility;
 
     private Facility $facilityB;
+
     private Branch $branchB;
 
     protected function setUp(): void
@@ -59,7 +59,7 @@ class MultiTenantIsolationTest extends TestCase
 
         $this->assertTrue(
             in_array($response->status(), [403, 404]),
-            "Expected 403 or 404 but got {$response->status()}"
+            "Expected 403 or 404 but got {$response->status()}: ".$response->getContent()
         );
     }
 
