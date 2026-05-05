@@ -46,7 +46,7 @@ export default function SubscriptionBillingPage() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[240px] text-gray-500 gap-2">
+            <div className="max-w-4xl mx-auto w-full flex items-center justify-center min-h-[240px] text-gray-500 gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" aria-hidden />
                 <span>Loading billing…</span>
             </div>
@@ -56,7 +56,7 @@ export default function SubscriptionBillingPage() {
     if (isError) {
         const msg = error?.response?.data?.message || 'You do not have access to subscription billing.';
         return (
-            <div className="rounded-xl border border-amber-100 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
+            <div className="max-w-4xl mx-auto w-full rounded-xl border border-amber-100 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
                 {msg}
             </div>
         );
@@ -67,7 +67,7 @@ export default function SubscriptionBillingPage() {
     const stripe = data?.stripe;
 
     return (
-        <div className="space-y-6 max-w-4xl">
+        <div className="space-y-6 max-w-4xl mx-auto w-full">
             <div>
                 <h1 className="text-xl font-bold text-gray-900">Subscription &amp; billing</h1>
                 <p className="mt-1 text-sm text-gray-600">
@@ -107,7 +107,7 @@ export default function SubscriptionBillingPage() {
                         type="button"
                         onClick={() => portalMutation.mutate()}
                         disabled={portalMutation.isPending}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-[#635BFF] hover:bg-[#5851EA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#635BFF] disabled:opacity-60"
+                        className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-[var(--theme-text-on-primary)] bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--theme-primary)] disabled:opacity-60 motion-safe:transition-colors"
                     >
                         {portalMutation.isPending ? (
                             <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
