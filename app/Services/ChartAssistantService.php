@@ -34,7 +34,7 @@ class ChartAssistantService
                 ])
                 ->post('https://api.anthropic.com/v1/messages', [
                     'model' => 'claude-opus-4-8',
-                    'max_tokens' => 800,
+                    'max_tokens' => (int) env('ANTHROPIC_MAX_TOKENS', 2048),
                     'messages' => [[
                         'role' => 'user',
                         'content' => $this->buildAnthropicPrompt($payload, $prompt),
